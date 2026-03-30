@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 157.4 42.74">
+  <defs>
+    <style>
+      .cls-1 {
+        font-family: SFPro-Medium, 'SF Pro';
+        font-size: 21.86px;
+        font-variation-settings: 'wdth' 100, 'opsz' 28, 'wght' 510;
+        font-weight: 500;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        fill: #fff;
+      }
+
+      .cls-3 {
+        font-family: SFPro-Light, 'SF Pro';
+        font-size: 12.35px;
+        font-variation-settings: 'wdth' 100, 'opsz' 28, 'wght' 274;
+        font-weight: 300;
+        letter-spacing: .06em;
+      }
+
+      .cls-4 {
+        letter-spacing: 0em;
+      }
+
+      .cls-5 {
+        letter-spacing: 0em;
+      }
+    </style>
+  </defs>
+  <g id="Layer_3" data-name="Layer 3">
+    <g>
+      <g>
+        <polygon class="cls-2" points="15.65 3.55 15.64 23.73 6.17 8.91 0 8.91 .01 34.78 6.64 34.78 6.37 20.52 14.86 34.78 21.66 34.78 21.79 0 15.65 3.55"/>
+        <polygon class="cls-2" points="30.71 28.93 30.7 3.66 24.95 0 24.95 34.78 43.53 34.71 43.53 28.91 30.71 28.93"/>
+      </g>
+      <text class="cls-1" transform="translate(50.07 20.96)"><tspan class="cls-4" x="0" y="0">N</tspan><tspan class="cls-5" x="15.2" y="0">ahuel Lim</tspan></text>
+      <text class="cls-3" transform="translate(49.94 34.96)"><tspan x="0" y="0">Asesor Inmobiliario</tspan></text>
+    </g>
+  </g>
+</svg>
