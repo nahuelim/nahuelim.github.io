@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ciudad de la Paz al 1500 · Belgrano · Venta USD 170.000</title>
+<style>
+  :root {
+    --primary: #003153;
+    --accent: #E8630A;
+    --bg: #f2f3f5;
+    --sidebar-w: 320px;
+    --nav-h: 64px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #1a1a2e; }
+
+  /* ── NAVBAR ── */
+  .navbar {
+    position: sticky; top: 0; z-index: 100;
+    height: var(--nav-h);
+    background: var(--primary);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.35);
+  }
+  .nav-logos { display: flex; align-items: center; gap: 16px; }
+  .nav-logo-nl { height: 38px; }
+  .nav-sep { width: 1px; height: 32px; background: rgba(255,255,255,.25); }
+  .nav-logo-c21 { height: 26px; opacity: .7; }
+  .btn-wa {
+    display: flex; align-items: center; gap: 8px;
+    background: #25D366; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: .875rem; font-weight: 600;
+    text-decoration: none; white-space: nowrap;
+    transition: background .2s;
+  }
+  .btn-wa:hover { background: #1ebe5a; }
+  .btn-wa svg { flex-shrink: 0; }
+
+  /* ── SLIDER ── */
+  .slider { position: relative; width: 100%; overflow: hidden; background: #000; }
+  .slider-track { display: flex; height: 520px; }
+  .slide {
+    min-width: 100%; height: 100%;
+    opacity: 0; position: absolute; top: 0; left: 0;
+    transition: opacity .8s ease;
+  }
+  .slide.active { opacity: 1; position: relative; }
+  .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* arrows */
+  .slider-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(0,0,0,.45); border: none; color: #fff;
+    width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+    font-size: 1.25rem; display: flex; align-items: center; justify-content: center;
+    transition: background .2s; z-index: 10;
+  }
+  .slider-btn:hover { background: rgba(0,0,0,.75); }
+  .slider-btn.prev { left: 14px; }
+  .slider-btn.next { right: 14px; }
+  /* dots */
+  .slider-dots {
+    position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 10;
+  }
+  .dot {
+    height: 8px; width: 8px; border-radius: 99px;
+    background: rgba(255,255,255,.5); transition: width .3s, background .3s;
+    cursor: pointer;
+  }
+  .dot.active { width: 22px; background: #fff; }
+  /* counter button */
+  .btn-fotos {
+    position: absolute; bottom: 14px; right: 14px; z-index: 10;
+    background: rgba(255,255,255,.18); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.35); color: #fff;
+    border-radius: 8px; padding: 8px 14px; font-size: .82rem; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background .2s;
+  }
+  .btn-fotos:hover { background: rgba(255,255,255,.28); }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.92); flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .lightbox.open { display: flex; }
+  .lb-main { position: relative; max-width: 900px; width: 100%; }
+  .lb-main img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 4px; }
+  .lb-close {
+    position: absolute; top: -40px; right: 0;
+    background: none; border: none; color: #fff; font-size: 1.8rem; cursor: pointer;
+  }
+  .lb-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,.15); border: none; color: #fff;
+    width: 42px; height: 42px; border-radius: 50%; cursor: pointer;
+    font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .lb-arrow:hover { background: rgba(255,255,255,.3); }
+  .lb-arrow.prev { left: -54px; }
+  .lb-arrow.next { right: -54px; }
+  .lb-thumbs {
+    display: flex; gap: 8px; margin-top: 14px;
+    overflow-x: auto; max-width: 900px; padding-bottom: 4px;
+  }
+  .lb-thumb {
+    flex-shrink: 0; width: 72px; height: 52px; border-radius: 4px;
+    overflow: hidden; cursor: pointer; opacity: .5; transition: opacity .2s;
+    border: 2px solid transparent;
+  }
+  .lb-thumb.active { opacity: 1; border-color: var(--accent); }
+  .lb-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ── MAIN LAYOUT ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
+  .layout { display: grid; grid-template-columns: 1fr var(--sidebar-w); gap: 32px; }
+
+  /* ── CONTENT ── */
+  .content {}
+  .prop-meta { font-size: .8rem; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .prop-title { font-size: 1.55rem; font-weight: 700; color: var(--primary); line-height: 1.25; margin-bottom: 20px; }
+
+  /* precio */
+  .precio-box {
+    background: #fff; border-radius: 12px; padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 24px;
+    display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap;
+  }
+  .precio-main { display: flex; flex-direction: column; }
+  .precio-label { font-size: .75rem; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; }
+  .precio-valor { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .expensas { font-size: .85rem; color: #6b7280; margin-top: 4px; }
+  .divider-v { width: 1px; background: #e5e7eb; align-self: stretch; }
+
+  /* características */
+  .caract-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .caract-item {
+    background: #fff; border-radius: 10px; padding: 14px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .caract-item img { width: 28px; height: 28px; }
+  .caract-val { font-size: .95rem; font-weight: 700; color: var(--primary); }
+  .caract-lbl { font-size: .7rem; color: #6b7280; text-align: center; }
+
+  /* tags */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+  .tag {
+    background: rgba(0,49,83,.08); color: var(--primary);
+    border-radius: 20px; padding: 5px 12px; font-size: .78rem; font-weight: 500;
+  }
+
+  /* descripción */
+  .section-title { font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 12px; border-left: 3px solid var(--accent); padding-left: 10px; }
+  .descripcion {
+    background: #fff; border-radius: 12px; padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 28px;
+    line-height: 1.7; font-size: .92rem; color: #374151;
+  }
+
+  /* mapa */
+  .mapa-wrap { border-radius: 12px; overflow: hidden; margin-bottom: 28px; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  .mapa-wrap iframe { width: 100%; height: 360px; border: none; display: block; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { display: flex; flex-direction: column; gap: 20px; }
+  .card-asesor {
+    background: #fff; border-radius: 14px; padding: 28px 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1); text-align: center;
+    position: sticky; top: calc(var(--nav-h) + 16px);
+  }
+  .asesor-foto {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 3px solid var(--accent); object-fit: cover; margin: 0 auto 12px;
+    display: block;
+  }
+  .asesor-nombre { font-size: 1.05rem; font-weight: 700; color: var(--primary); }
+  .asesor-titulo { font-size: .78rem; color: #6b7280; margin-bottom: 14px; }
+  .asesor-logo-c21 { height: 22px; opacity: .75; margin-bottom: 18px; }
+  .btn-wa-sidebar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: #25D366; color: #fff;
+    border: none; border-radius: 10px;
+    padding: 13px 18px; font-size: .9rem; font-weight: 700;
+    text-decoration: none; width: 100%; transition: background .2s;
+  }
+  .btn-wa-sidebar:hover { background: #1ebe5a; }
+  .consultame { font-size: .75rem; color: #9ca3af; margin-top: 10px; }
+  .cucicba { font-size: .7rem; color: #b0b8c1; margin-top: 8px; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #00243d; color: rgba(255,255,255,.6);
+    padding: 28px 24px; text-align: center; font-size: .8rem;
+  }
+  footer a { color: rgba(255,255,255,.8); text-decoration: none; }
+  .footer-logos { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 12px; }
+  .footer-logos img { height: 28px; opacity: .7; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .slider-track { height: 260px; }
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { order: -1; }
+    .card-asesor { position: static; }
+    .lb-arrow.prev { left: -36px; }
+    .lb-arrow.next { right: -36px; }
+    .nav-logo-nl { height: 28px; }
+    .nav-logo-c21 { height: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-logos">
+    <img class="nav-logo-nl" src="https://nahuelim.com.ar/assets/nl-logo.svg" alt="Nahuel Lim">
+    <div class="nav-sep"></div>
+    <img class="nav-logo-c21" src="https://nahuelim.com.ar/assets/c21-logo.svg" alt="Century 21">
+  </div>
+  <a class="btn-wa" href="https://wa.me/5491178268244?text=Hola%2C%20vi%20la%20ficha%20en%20Ciudad%20de%20la%20Paz%201500%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.858L0 24l6.335-1.654A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.373l-.36-.214-3.732.975.999-3.645-.235-.375A9.818 9.818 0 1112 21.818z"/></svg>
+    Consultar
+  </a>
+</nav>
+
+<!-- SLIDER -->
+<div class="slider" id="slider">
+  <!-- Slides will be injected by JS -->
+  <button class="slider-btn prev" onclick="moveSlide(-1)">&#8249;</button>
+  <button class="slider-btn next" onclick="moveSlide(1)">&#8250;</button>
+  <div class="slider-dots" id="dots"></div>
+  <button class="btn-fotos" onclick="openLightbox(currentSlide)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+    Ver las 23 fotos
+  </button>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-main">
+    <button class="lb-close" onclick="closeLightbox()">✕</button>
+    <button class="lb-arrow prev" onclick="lbMove(-1)">&#8249;</button>
+    <img id="lb-img" src="" alt="">
+    <button class="lb-arrow next" onclick="lbMove(1)">&#8250;</button>
+  </div>
+  <div class="lb-thumbs" id="lb-thumbs"></div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+  <div class="layout">
+
+    <!-- CONTENT -->
+    <div class="content">
+      <p class="prop-meta">Departamento · Venta · Belgrano, CABA</p>
+      <h1 class="prop-title">Ciudad de la Paz y Virrey del Pino<br><span style="font-weight:400; font-size:1.1rem; color:#4b5563;">Ciudad de la Paz al 1500, Belgrano, Capital Federal</span></h1>
+
+      <div class="precio-box">
+        <div class="precio-main">
+          <span class="precio-label">Precio de venta</span>
+          <span class="precio-valor">USD 170.000</span>
+          <span class="expensas">Expensas: $ 132.000 / mes</span>
+        </div>
+      </div>
+
+      <!-- CARACTERÍSTICAS -->
+      <div class="caract-grid">
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/ambientes.9e33dd.svg" alt="Ambientes">
+          <span class="caract-val">3</span>
+          <span class="caract-lbl">Ambientes</span>
+        </div>
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/dormitorio.349d35.svg" alt="Dormitorios">
+          <span class="caract-val">2</span>
+          <span class="caract-lbl">Dormitorios</span>
+        </div>
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/banos.827612.svg" alt="Baños">
+          <span class="caract-val">1</span>
+          <span class="caract-lbl">Baño</span>
+        </div>
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/stotal.38e4f4.svg" alt="Sup. Total">
+          <span class="caract-val">95 m²</span>
+          <span class="caract-lbl">Sup. Total</span>
+        </div>
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/scubierta.695fb2.svg" alt="Sup. Cubierta">
+          <span class="caract-val">60 m²</span>
+          <span class="caract-lbl">Sup. Cubierta</span>
+        </div>
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/antiguedad.eb15bc.svg" alt="Antigüedad">
+          <span class="caract-val">30 años</span>
+          <span class="caract-lbl">Antigüedad</span>
+        </div>
+        <div class="caract-item">
+          <img src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/orientacion.3a91e2.svg" alt="Orientación">
+          <span class="caract-val">Frente</span>
+          <span class="caract-lbl">Orientación</span>
+        </div>
+      </div>
+
+      <div class="tags">
+        <span class="tag">Muy luminoso</span>
+        <span class="tag">Terraza propia en esquina</span>
+        <span class="tag">Lavadero</span>
+        <span class="tag">Living con AC</span>
+        <span class="tag">Placard</span>
+      </div>
+
+      <!-- DESCRIPCIÓN -->
+      <h2 class="section-title">Descripción</h2>
+      <div class="descripcion">
+        <p><strong>Ciudad de la Paz y Virrey del Pino</strong></p>
+        <br>
+        <p>Departamento de tres ambientes y terraza en esquina en venta.</p>
+        <br>
+        <p>Amplio piso, terraza propia cubriendo toda la esquina, con doble acceso desde lavadero y living. Dormitorio principal con placard y segundo dormitorio/escritorio.</p>
+        <p>Cocina separada y lavadero aparte.</p>
+        <br>
+        <p>Living comedor con aire acondicionado.</p>
+        <br>
+        <p><em>Las medidas son aproximadas y orientativas. Las medidas exactas surgirán del título de propiedad.</em></p>
+      </div>
+
+      <!-- MAPA -->
+      <h2 class="section-title">Ubicación</h2>
+      <div class="mapa-wrap">
+        <iframe
+          src="https://www.google.com/maps?q=Ciudad+de+la+Paz+1500,+Belgrano,+Buenos+Aires&output=embed"
+          allowfullscreen loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="card-asesor">
+        <img class="asesor-foto" src="https://nahuelim.com.ar/assets/profile.jpg" alt="Nahuel Lim">
+        <div class="asesor-nombre">Nahuel Lim</div>
+        <div class="asesor-titulo">Asesor Inmobiliario</div>
+        <img class="asesor-logo-c21" src="https://nahuelim.com.ar/assets/c21-logo.svg" alt="Century 21">
+        <a class="btn-wa-sidebar" href="https://wa.me/5491178268244?text=Hola%2C%20vi%20la%20ficha%20en%20Ciudad%20de%20la%20Paz%201500%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.532 5.858L0 24l6.335-1.654A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.002-1.373l-.36-.214-3.732.975.999-3.645-.235-.375A9.818 9.818 0 1112 21.818z"/></svg>
+          Consultar por WhatsApp
+        </a>
+        <p class="consultame">Consultame sin compromiso</p>
+        <p class="cucicba">CUCICBA 9135 · MN377<br>Century 21 Evolución Inmobiliaria S.A.</p>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logos">
+    <img src="https://nahuelim.com.ar/assets/nl-logo.svg" alt="Nahuel Lim">
+    <img src="https://nahuelim.com.ar/assets/c21-logo.svg" alt="Century 21">
+  </div>
+  <p>Nahuel Lim · Asesor Inmobiliario · <a href="tel:+5491178268244">+54 9 11 7826-8244</a></p>
+  <p style="margin-top:6px;">Century 21 Evolución Inmobiliaria S.A. · CUCICBA 9135 · MN377</p>
+</footer>
+
+<script>
+const photos = [
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719523.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719517.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719518.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719519.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719520.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719521.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719522.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719524.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719525.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719526.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719527.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719528.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719529.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719530.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719531.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719532.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719533.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719534.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719535.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719536.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719537.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719538.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/14/26/59/1200x1200/2026719539.jpg"
+];
+
+let currentSlide = 0;
+let autoTimer;
+
+// Build slider
+const slider = document.getElementById('slider');
+const dotsEl = document.getElementById('dots');
+
+photos.forEach((url, i) => {
+  const slide = document.createElement('div');
+  slide.className = 'slide' + (i === 0 ? ' active' : '');
+  slide.style.cssText = i === 0 ? '' : 'display:none';
+  const img = document.createElement('img');
+  img.src = url; img.alt = 'Foto ' + (i+1);
+  img.loading = i === 0 ? 'eager' : 'lazy';
+  slide.appendChild(img);
+  // insert before buttons
+  slider.insertBefore(slide, slider.querySelector('.slider-btn.prev'));
+
+  const dot = document.createElement('div');
+  dot.className = 'dot' + (i === 0 ? ' active' : '');
+  dot.onclick = () => goSlide(i);
+  dotsEl.appendChild(dot);
+});
+
+// Show only 3 dots around current
+function updateDots() {
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.className = 'dot' + (i === currentSlide ? ' active' : '');
+    d.style.display = Math.abs(i - currentSlide) <= 1 ? 'block' : 'none';
+  });
+}
+
+function goSlide(n) {
+  const slides = slider.querySelectorAll('.slide');
+  slides[currentSlide].className = 'slide';
+  slides[currentSlide].style.display = 'none';
+  currentSlide = (n + photos.length) % photos.length;
+  slides[currentSlide].className = 'slide active';
+  slides[currentSlide].style.display = '';
+  updateDots();
+  resetAuto();
+}
+function moveSlide(dir) { goSlide(currentSlide + dir); }
+
+function resetAuto() {
+  clearInterval(autoTimer);
+  autoTimer = setInterval(() => moveSlide(1), 5000);
+}
+updateDots();
+resetAuto();
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (document.getElementById('lightbox').classList.contains('open')) {
+    if (e.key === 'ArrowLeft') lbMove(-1);
+    if (e.key === 'ArrowRight') lbMove(1);
+    if (e.key === 'Escape') closeLightbox();
+  } else {
+    if (e.key === 'ArrowLeft') moveSlide(-1);
+    if (e.key === 'ArrowRight') moveSlide(1);
+  }
+});
+
+// Lightbox
+let lbCurrent = 0;
+const lb = document.getElementById('lightbox');
+const lbImg = document.getElementById('lb-img');
+const lbThumbs = document.getElementById('lb-thumbs');
+
+photos.forEach((url, i) => {
+  const t = document.createElement('div');
+  t.className = 'lb-thumb';
+  const img = document.createElement('img');
+  img.src = url; img.alt = ''; img.loading = 'lazy';
+  t.appendChild(img);
+  t.onclick = () => lbGo(i);
+  lbThumbs.appendChild(t);
+});
+
+function openLightbox(idx) {
+  lb.classList.add('open');
+  lbGo(idx);
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  lb.classList.remove('open');
+  document.body.style.overflow = '';
+}
+function lbGo(n) {
+  lbCurrent = (n + photos.length) % photos.length;
+  lbImg.src = photos[lbCurrent];
+  const thumbs = lbThumbs.querySelectorAll('.lb-thumb');
+  thumbs.forEach((t, i) => t.classList.toggle('active', i === lbCurrent));
+  thumbs[lbCurrent]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+function lbMove(dir) { lbGo(lbCurrent + dir); }
+
+lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
+</script>
+</body>
+</html>
