@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nahuel Lim · Asesor Inmobiliario · Century 21 Evolución</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            prussian: { 950:'#001a30', 900:'#003153', 800:'#004070' },
+            ember: { 500:'#E8630A', 400:'#f07530', 600:'#c4530a' },
+          },
+          fontFamily: {
+            display: ['"Cormorant Garamond"','Georgia','serif'],
+            body:    ['"DM Sans"','system-ui','sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      --prussian:      #003153;
+      --prussian-dark: #001a30;
+      --ember:         #E8630A;
+      --ember-light:   #f07530;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html  { scroll-behavior: smooth; }
+    body  {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #f9fafb;
+      color: #001a30;
+      -webkit-font-smoothing: antialiased;
+      margin: 0;
+    }
+    .font-display { font-family: 'Cormorant Garamond', Georgia, serif; }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: rgba(255,255,255,0.93);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(0,49,83,0.08);
+    }
+
+    /* ── Hero ── */
+    .hero-bg {
+      position: absolute; inset: 0;
+      background-image: url('https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1600&q=85&auto=format&fit=crop&crop=top');
+      background-size: cover;
+      background-position: center 40%;
+    }
+    .hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        120deg,
+        rgba(0,26,48,0.94) 0%,
+        rgba(0,49,83,0.80) 50%,
+        rgba(0,49,83,0.40) 100%
+      );
+    }
+
+    /* ── Buttons ── */
+    .btn-ember {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--ember);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600; font-size: 14px;
+      padding: 14px 28px; border-radius: 10px;
+      border: none; cursor: pointer; text-decoration: none;
+      transition: background .22s, transform .18s, box-shadow .22s;
+      box-shadow: 0 4px 18px rgba(232,99,10,.30);
+    }
+    .btn-ember:hover {
+      background: var(--ember-light);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 26px rgba(232,99,10,.40);
+    }
+    .btn-ghost-white {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: transparent; color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500; font-size: 14px;
+      padding: 13px 24px; border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,.28);
+      text-decoration: none;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-ghost-white:hover {
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.5);
+    }
+    .btn-prussian {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--prussian); color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600; font-size: 13px;
+      padding: 11px 20px; border-radius: 9px;
+      text-decoration: none;
+      transition: background .2s, transform .18s;
+    }
+    .btn-prussian:hover { background: var(--prussian-dark); transform: translateY(-1px); }
+
+    /* ── Pill badge ── */
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(232,99,10,.12);
+      border: 1px solid rgba(232,99,10,.28);
+      color: #f07530;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .09em; text-transform: uppercase;
+      padding: 5px 13px; border-radius: 100px;
+    }
+
+    /* ── Accent line ── */
+    .accent-line {
+      width: 36px; height: 2px;
+      background: var(--ember); border-radius: 2px;
+    }
+
+    /* ── Zone cards ── */
+    .zone-card {
+      position: relative; border-radius: 16px;
+      overflow: hidden; height: 300px;
+      transition: transform .32s cubic-bezier(.2,.8,.4,1), box-shadow .32s ease;
+    }
+    .zone-card:hover { transform: translateY(-5px); box-shadow: 0 22px 50px rgba(0,26,48,.16); }
+    .zone-card img { width:100%; height:100%; object-fit:cover; display:block; }
+    .zone-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,26,48,.90) 0%, rgba(0,26,48,.15) 65%);
+    }
+    .zone-label { position:absolute; bottom:0; left:0; padding:24px; }
+
+    /* ── Pillars ── */
+    .pillar {
+      background: #fff;
+      border: 1px solid rgba(0,49,83,.08);
+      border-radius: 14px; padding: 24px;
+      transition: box-shadow .25s;
+    }
+    .pillar:hover { box-shadow: 0 8px 28px rgba(0,49,83,.09); }
+    .pillar-icon {
+      width:42px; height:42px;
+      background: rgba(0,49,83,.06);
+      border-radius: 10px;
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:14px;
+    }
+
+    /* ── Profile frame ── */
+    .profile-frame {
+      border-radius: 16px; overflow: hidden;
+      position: relative; aspect-ratio: 4/5;
+    }
+    .profile-frame img { width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+    .profile-badge {
+      position: absolute; bottom:16px; left:16px; right:16px;
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 4px 20px rgba(0,26,48,.14);
+    }
+
+    /* ── CTA section ── */
+    .cta-section {
+      background: var(--prussian);
+      position: relative; overflow: hidden;
+    }
+    .cta-section::before {
+      content:''; position:absolute;
+      top:-60px; right:-80px;
+      width:300px; height:300px;
+      background: radial-gradient(circle, rgba(232,99,10,.18) 0%, transparent 70%);
+      pointer-events:none;
+    }
+    .cta-section::after {
+      content:''; position:absolute;
+      bottom:-80px; left:-60px;
+      width:280px; height:280px;
+      background: radial-gradient(circle, rgba(0,80,138,.35) 0%, transparent 70%);
+      pointer-events:none;
+    }
+
+    /* ── WhatsApp float ── */
+    .wa-btn {
+      position:fixed; bottom:22px; right:20px; z-index:200;
+      width:54px; height:54px;
+      background:#25d366; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 20px rgba(37,211,102,.42);
+      text-decoration:none;
+      transition:transform .22s, box-shadow .22s;
+    }
+    .wa-btn:hover { transform:scale(1.08); box-shadow:0 8px 28px rgba(37,211,102,.52); }
+
+    /* ── Scroll reveal ── */
+    .reveal {
+      opacity:0; transform:translateY(22px);
+      transition:opacity .65s ease, transform .65s ease;
+    }
+    .reveal.visible { opacity:1; transform:none; }
+
+    /* ── Hero stagger ── */
+    .h1{opacity:0;animation:fadeUp .75s ease .15s forwards;}
+    .h2{opacity:0;animation:fadeUp .75s ease .30s forwards;}
+    .h3{opacity:0;animation:fadeUp .75s ease .45s forwards;}
+    .h4{opacity:0;animation:fadeUp .75s ease .60s forwards;}
+    .h5{opacity:0;animation:fadeUp .75s ease .75s forwards;}
+    @keyframes fadeUp {
+      from{opacity:0;transform:translateY(24px);}
+      to  {opacity:1;transform:none;}
+    }
+    @keyframes bounce2 {
+      0%,100%{transform:translateY(0);}
+      50%{transform:translateY(5px);}
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:rgba(0,49,83,.2);border-radius:4px;}
+
+    /* ── Responsive grid helpers ── */
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; }
+    @media(max-width:768px){
+      .grid-3 { grid-template-columns:1fr; }
+      .grid-2 { grid-template-columns:1fr; gap:36px; }
+      .hide-mobile { display:none !important; }
+    }
+    @media(max-width:480px){
+      .cta-row { flex-direction:column; }
+      .stat-row { gap:18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════ NAVBAR ══════════════════════ -->
+<header class="navbar" style="position:fixed;top:0;inset-inline:0;z-index:50;">
+  <div style="max-width:1024px;margin:0 auto;padding:0 20px;height:64px;display:flex;align-items:center;justify-content:space-between;">
+
+    <a href="#" style="display:flex;align-items:center;gap:12px;text-decoration:none;flex-shrink:0;">
+      <img src="https://nahuelim.com.ar/assets/nl-logo.svg" alt="NL"
+           style="height:34px;width:auto;"
+           onerror="this.style.display='none';document.getElementById('nl-fallback').style.display='flex'">
+      <div id="nl-fallback" style="display:none;width:34px;height:34px;background:#003153;border-radius:8px;align-items:center;justify-content:center;">
+        <span style="color:#fff;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:15px;">NL</span>
+      </div>
+    </a>
+
+    <nav class="hide-mobile" style="display:flex;align-items:center;gap:32px;">
+      <a href="#zonas"    style="color:#5a6a7a;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#003153'" onmouseout="this.style.color='#5a6a7a'">Zonas</a>
+      <a href="#sobre-mi" style="color:#5a6a7a;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#003153'" onmouseout="this.style.color='#5a6a7a'">Sobre mí</a>
+      <a href="#contacto" style="color:#5a6a7a;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='#003153'" onmouseout="this.style.color='#5a6a7a'">Contacto</a>
+    </nav>
+
+    <a href="https://wa.me/5491178268244?text=Hola+Nahuel%2C+quiero+consultar" target="_blank" class="btn-prussian">
+      <i data-lucide="message-circle" style="width:15px;height:15px;"></i>
+      Contactar
+    </a>
+  </div>
+</header>
+
+
+<!-- ══════════════════════ HERO ══════════════════════ -->
+<section style="position:relative;min-height:100svh;display:flex;align-items:center;padding-top:64px;overflow:hidden;">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <div style="position:relative;z-index:10;max-width:1024px;margin:0 auto;padding:80px 20px;width:100%;">
+    <div style="max-width:560px;">
+
+      <div class="pill h1" style="margin-bottom:20px;">
+        <i data-lucide="shield-check" style="width:12px;height:12px;"></i>
+        Tasación gratuita · Respuesta en 24 hs
+      </div>
+
+      <h1 class="font-display h2" style="color:#fff;font-size:clamp(40px,6vw,64px);font-weight:700;line-height:1.05;margin:0 0 20px;">
+        ¿Necesitás tasar<br>
+        <span style="color:#f07530;">tu propiedad</span><br>
+        en 24 hs?
+      </h1>
+
+      <p class="h3" style="color:rgba(255,255,255,.70);font-size:17px;line-height:1.65;margin:0 0 14px;max-width:420px;">
+        Asesoramiento profesional en Palermo, Belgrano y Caballito. Sin rodeos ni promesas vacías.
+      </p>
+
+      <div class="h3" style="display:flex;align-items:center;gap:8px;margin-bottom:36px;">
+        <span style="color:rgba(255,255,255,.40);font-size:12px;">Con el respaldo de</span>
+        <img src="https://nahuelim.com.ar/assets/c21-logo.svg" alt="Century 21"
+             style="height:18px;width:auto;filter:brightness(0) invert(1);opacity:.65;"
+             onerror="this.outerHTML='<span style=\'color:rgba(255,255,255,.45);font-size:12px;font-weight:600;\'>Century 21 Evolución</span>'">
+      </div>
+
+      <div class="h4 cta-row" style="display:flex;flex-wrap:wrap;gap:12px;">
+        <a href="https://wa.me/5491178268244?text=Hola+Nahuel%2C+quiero+solicitar+una+tasación+gratuita" target="_blank" class="btn-ember">
+          <i data-lucide="home" style="width:16px;height:16px;"></i>
+          Solicitar Tasación Gratis
+        </a>
+        <a href="#zonas" class="btn-ghost-white">
+          Ver zonas
+          <i data-lucide="arrow-down" style="width:14px;height:14px;"></i>
+        </a>
+      </div>
+
+      <div class="h5 stat-row" style="display:flex;align-items:center;gap:28px;margin-top:52px;">
+        <div>
+          <p class="font-display" style="color:#fff;font-size:30px;font-weight:700;line-height:1;margin:0;">24 hs</p>
+          <p style="color:rgba(255,255,255,.42);font-size:12px;margin:5px 0 0;">Respuesta garantizada</p>
+        </div>
+        <div style="width:1px;height:36px;background:rgba(255,255,255,.15);"></div>
+        <div>
+          <p class="font-display" style="color:#fff;font-size:30px;font-weight:700;line-height:1;margin:0;">+10</p>
+          <p style="color:rgba(255,255,255,.42);font-size:12px;margin:5px 0 0;">Años en el sector</p>
+        </div>
+        <div style="width:1px;height:36px;background:rgba(255,255,255,.15);"></div>
+        <div>
+          <p class="font-display" style="color:#fff;font-size:30px;font-weight:700;line-height:1;margin:0;">3</p>
+          <p style="color:rgba(255,255,255,.42);font-size:12px;margin:5px 0 0;">Barrios de expertise</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;bottom:28px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:rgba(255,255,255,.32);z-index:10;">
+    <span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;">scroll</span>
+    <i data-lucide="chevron-down" style="width:14px;height:14px;animation:bounce2 1.6s infinite;"></i>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ PILARES ══════════════════════ -->
+<section style="background:#fff;padding:64px 20px;">
+  <div style="max-width:1024px;margin:0 auto;" class="grid-3">
+
+    <div class="pillar reveal">
+      <div class="pillar-icon">
+        <i data-lucide="clock" style="width:20px;height:20px;color:#003153;"></i>
+      </div>
+      <p style="font-weight:600;font-size:15px;color:#001a30;margin:0 0 6px;">Tasación en 24 hs</p>
+      <p style="color:#6b7a8d;font-size:14px;line-height:1.6;margin:0;">Análisis de mercado real. Precios de cierre, no de publicación.</p>
+    </div>
+
+    <div class="pillar reveal" style="transition-delay:.1s;">
+      <div class="pillar-icon">
+        <i data-lucide="user-check" style="width:20px;height:20px;color:#003153;"></i>
+      </div>
+      <p style="font-weight:600;font-size:15px;color:#001a30;margin:0 0 6px;">Trato directo</p>
+      <p style="color:#6b7a8d;font-size:14px;line-height:1.6;margin:0;">Hablás con el asesor desde el primer mensaje. Sin intermediarios.</p>
+    </div>
+
+    <div class="pillar reveal" style="transition-delay:.2s;">
+      <div class="pillar-icon">
+        <i data-lucide="map-pin" style="width:20px;height:20px;color:#003153;"></i>
+      </div>
+      <p style="font-weight:600;font-size:15px;color:#001a30;margin:0 0 6px;">Expertise local</p>
+      <p style="color:#6b7a8d;font-size:14px;line-height:1.6;margin:0;">Tres barrios, a fondo. No me disperso en zonas que no conozco bien.</p>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ══════════════════════ ZONAS ══════════════════════ -->
+<section id="zonas" style="background:#f9fafb;padding:80px 20px;">
+  <div style="max-width:1024px;margin:0 auto;">
+
+    <div class="reveal" style="margin-bottom:48px;">
+      <div class="accent-line" style="margin-bottom:16px;"></div>
+      <h2 class="font-display" style="color:#001a30;font-size:clamp(28px,4vw,44px);font-weight:700;line-height:1.1;margin:0 0 12px;">
+        Zonas donde opero
+      </h2>
+      <p style="color:#6b7a8d;font-size:15px;max-width:460px;line-height:1.6;margin:0;">
+        Me especialicé en tres barrios porque conocerlos bien es lo que le da valor real a una tasación.
+      </p>
+    </div>
+
+    <div class="grid-3">
+
+      <div class="zone-card reveal">
+        <img src="https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=700&q=80&auto=format&fit=crop" alt="Palermo">
+        <div class="zone-overlay"></div>
+        <div class="zone-label">
+          <p style="color:#E8630A;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0 0 4px;">Barrio</p>
+          <h3 class="font-display" style="color:#fff;font-size:28px;font-weight:700;line-height:1.1;margin:0;">Palermo</h3>
+          <p style="color:rgba(255,255,255,.58);font-size:13px;margin:4px 0 0;">Hollywood · Soho · Chico · Botánico</p>
+        </div>
+      </div>
+
+      <div class="zone-card reveal" style="transition-delay:.1s;">
+        <img src="https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=700&q=80&auto=format&fit=crop" alt="Belgrano">
+        <div class="zone-overlay"></div>
+        <div class="zone-label">
+          <p style="color:#E8630A;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0 0 4px;">Barrio</p>
+          <h3 class="font-display" style="color:#fff;font-size:28px;font-weight:700;line-height:1.1;margin:0;">Belgrano</h3>
+          <p style="color:rgba(255,255,255,.58);font-size:13px;margin:4px 0 0;">R · C · Barrancas · Chico</p>
+        </div>
+      </div>
+
+      <div class="zone-card reveal" style="transition-delay:.2s;">
+        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=700&q=80&auto=format&fit=crop" alt="Caballito">
+        <div class="zone-overlay"></div>
+        <div class="zone-label">
+          <p style="color:#E8630A;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0 0 4px;">Barrio</p>
+          <h3 class="font-display" style="color:#fff;font-size:28px;font-weight:700;line-height:1.1;margin:0;">Caballito</h3>
+          <p style="color:rgba(255,255,255,.58);font-size:13px;margin:4px 0 0;">Norte · Sur · Parque Rivadavia</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ SOBRE MÍ ══════════════════════ -->
+<section id="sobre-mi" style="background:#fff;padding:80px 20px;">
+  <div style="max-width:1024px;margin:0 auto;">
+    <div class="grid-2">
+
+      <!-- Foto -->
+      <div class="profile-frame reveal">
+        <img src="https://nahuelim.com.ar/assets/profile.jpg"
+             alt="Nahuel Lim"
+             onerror="this.src='https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=600&q=80&auto=format&fit=crop&crop=face'">
+        <div class="profile-badge">
+          <div style="width:38px;height:38px;background:#003153;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i data-lucide="map-pin" style="width:16px;height:16px;color:#E8630A;"></i>
+          </div>
+          <div>
+            <p style="font-weight:600;font-size:13px;color:#001a30;margin:0;line-height:1.3;">Century 21 Evolución</p>
+            <p style="color:#8a95a0;font-size:12px;margin:2px 0 0;">Pedro Goyena 172, CABA</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Texto -->
+      <div class="reveal" style="transition-delay:.15s;">
+        <div class="accent-line" style="margin-bottom:16px;"></div>
+        <h2 class="font-display" style="color:#001a30;font-size:clamp(26px,3.5vw,42px);font-weight:700;line-height:1.1;margin:0 0 6px;">Nahuel Lim</h2>
+        <p style="color:#E8630A;font-weight:600;font-size:13px;letter-spacing:.04em;margin:0 0 28px;">Asesor Inmobiliario · Century 21 Evolución</p>
+
+        <div style="display:flex;flex-direction:column;gap:14px;color:#4a5568;font-size:15px;line-height:1.7;">
+          <p style="margin:0;">
+            Trabajo en la oficina de <strong style="color:#001a30;font-weight:600;">Century 21 Evolución, Pedro Goyena 172</strong>. Me especializo en Palermo, Belgrano y Caballito — los elegí porque conocerlos bien vale más que cubrir toda la ciudad a medias.
+          </p>
+          <p style="margin:0;">
+            Mi trabajo no es mostrarte propiedades. Es ayudarte a tomar la mejor decisión posible con información real: qué se está cerrando, a qué precio, en cuánto tiempo. Lo que los portales no te muestran.
+          </p>
+          <p style="margin:0;">
+            Si necesitás tasar tu propiedad, te doy una valuación seria en 24 hs, sin costo y sin compromiso.
+          </p>
+        </div>
+
+        <div style="margin-top:28px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#374151;">
+            <i data-lucide="check-circle-2" style="width:16px;height:16px;color:#E8630A;flex-shrink:0;"></i>
+            Análisis comparativo con precios reales de cierre
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#374151;">
+            <i data-lucide="check-circle-2" style="width:16px;height:16px;color:#E8630A;flex-shrink:0;"></i>
+            Acompañamiento desde la tasación hasta la escritura
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#374151;">
+            <i data-lucide="check-circle-2" style="width:16px;height:16px;color:#E8630A;flex-shrink:0;"></i>
+            Comunicación directa — hablás conmigo, no con un asistente
+          </div>
+        </div>
+
+        <a href="https://wa.me/5491178268244?text=Hola+Nahuel%2C+te+escribo+desde+tu+página" target="_blank"
+           class="btn-ember" style="margin-top:32px;font-size:14px;">
+          <i data-lucide="send" style="width:15px;height:15px;"></i>
+          Escribirme ahora
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ CTA FINAL ══════════════════════ -->
+<section id="contacto" class="cta-section" style="padding:80px 20px;">
+  <div style="max-width:540px;margin:0 auto;text-align:center;position:relative;z-index:2;">
+
+    <div class="pill reveal" style="margin-bottom:24px;">
+      <i data-lucide="zap" style="width:11px;height:11px;"></i>
+      Sin costo · Sin compromiso
+    </div>
+
+    <h2 class="font-display reveal" style="color:#fff;font-size:clamp(28px,5vw,50px);font-weight:700;line-height:1.1;margin:0 0 16px;transition-delay:.1s;">
+      Sabé lo que vale<br>tu propiedad hoy.
+    </h2>
+
+    <p class="reveal" style="color:rgba(255,255,255,.58);font-size:16px;line-height:1.6;margin:0 0 36px;transition-delay:.2s;">
+      En 24 horas te entrego una valuación seria con datos reales de mercado. Sin vueltas.
+    </p>
+
+    <a href="https://wa.me/5491178268244?text=Hola+Nahuel%2C+quiero+solicitar+mi+tasación+gratuita" target="_blank"
+       class="btn-ember reveal" style="transition-delay:.3s;font-size:15px;padding:16px 34px;">
+      <i data-lucide="home" style="width:17px;height:17px;"></i>
+      Solicitar Tasación Gratis
+    </a>
+
+    <p class="reveal" style="color:rgba(255,255,255,.25);font-size:11px;margin:20px 0 0;letter-spacing:.08em;transition-delay:.35s;">
+      PALERMO · BELGRANO · CABALLITO
+    </p>
+  </div>
+</section>
+
+
+<!-- ══════════════════════ FOOTER ══════════════════════ -->
+<footer style="background:#001a30;border-top:1px solid rgba(255,255,255,.06);padding:28px 20px;">
+  <div style="max-width:1024px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;">
+
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="https://nahuelim.com.ar/assets/nl-logo.svg" alt="NL"
+           style="height:26px;width:auto;"
+           onerror="this.outerHTML='<div style=\'width:26px;height:26px;background:rgba(255,255,255,.1);border-radius:6px;display:flex;align-items:center;justify-content:center;\'><span style=\'color:#fff;font-family:Cormorant Garamond,serif;font-weight:700;font-size:12px;\'>NL</span></div>'">
+      <div>
+        <p style="color:#fff;font-size:13px;font-weight:600;margin:0;line-height:1.2;">Nahuel Lim</p>
+        <p style="color:rgba(255,255,255,.32);font-size:11px;margin:2px 0 0;">Asesor Inmobiliario</p>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.32);font-size:12px;">
+      <i data-lucide="map-pin" style="width:12px;height:12px;"></i>
+      Pedro Goyena 172, CABA
+    </div>
+
+    <img src="https://nahuelim.com.ar/assets/c21-logo.svg" alt="Century 21"
+         style="height:18px;width:auto;filter:brightness(0) invert(1);opacity:.4;"
+         onerror="this.outerHTML='<span style=\'color:rgba(255,255,255,.28);font-size:11px;font-weight:600;\'>Century 21 Evolución</span>'">
+
+    <p style="color:rgba(255,255,255,.22);font-size:11px;margin:0;">© 2025 Nahuel Lim. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+
+<!-- ══════════════════════ WA FLOAT ══════════════════════ -->
+<a href="https://wa.me/5491178268244?text=Hola+Nahuel%2C+quiero+consultar" target="_blank" class="wa-btn" aria-label="WhatsApp">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="26" height="26">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.132.557 4.133 1.528 5.871L0 24l6.322-1.508A11.957 11.957 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.78 9.78 0 01-5.002-1.376l-.36-.213-3.724.888.938-3.613-.234-.372A9.784 9.784 0 012.182 12C2.182 6.575 6.575 2.182 12 2.182c5.424 0 9.818 4.393 9.818 9.818 0 5.424-4.394 9.818-9.818 9.818z"/>
+  </svg>
+</a>
+
+
+<script>
+  lucide.createIcons();
+
+  // Scroll reveal
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        revealObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.10 });
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+</script>
+
+</body>
+</html>
