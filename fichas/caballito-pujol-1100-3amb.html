@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Venta 3 Ambientes – Pujol 1100, Caballito</title>
+<link rel="icon" type="image/svg+xml" href="https://nahuelim.github.io/assets/favicon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#003153;--primary-dark:#00243d;
+  --orange:#E8630A;--orange-lt:#fef3eb;--orange-dk:#c4520a;
+  --bg:#f2f3f5;--white:#fff;--text:#1c1c1c;--muted:#6b7280;--border:#e2e4e8;
+  --r:10px;--bar-h:62px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.bar{background:var(--primary);height:var(--bar-h);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.35)}
+.bar-l{display:flex;align-items:center;gap:14px;min-width:0;flex:1;overflow:hidden}
+.logo-nl{height:30px;flex-shrink:0;object-fit:contain}
+.logo-c21{height:14px;flex-shrink:0;object-fit:contain;opacity:.7}
+.bar-sep{width:1px;height:22px;background:rgba(255,255,255,.2);flex-shrink:0}
+.bar-r{flex-shrink:0;margin-left:12px}
+.bwa{display:inline-flex;align-items:center;gap:7px;background:#25D366;color:#fff;padding:9px 14px;border-radius:7px;text-decoration:none;font-weight:700;font-size:13px;transition:background .15s;white-space:nowrap}
+.bwa:hover{background:#1dba57}
+@media(max-width:480px){.bar{padding:0 14px}.logo-nl{height:24px}.logo-c21{height:11px}.bar-sep{height:18px}.bwa{padding:8px 12px;font-size:12px}}
+@media(max-width:360px){.bwa span{display:none}.bwa{padding:9px 12px}}
+.mosaic{display:grid;grid-template-columns:60% 1fr;grid-template-rows:1fr;gap:3px;height:480px;background:#111}
+@media(max-width:700px){.mosaic{grid-template-columns:1fr;height:260px}.mg-right{display:none}}
+.mg-main{background-size:cover;background-position:center;cursor:pointer;position:relative;transition:filter .2s}
+.mg-main:hover{filter:brightness(.9)}
+.mg-right{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px}
+.mg-cell{background-size:cover;background-position:center;cursor:pointer;transition:filter .2s}
+.mg-cell:hover{filter:brightness(.88)}
+.mg-btn{position:absolute;bottom:14px;right:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:var(--text);padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;border:1px solid var(--border);cursor:pointer;transition:background .15s;backdrop-filter:blur(4px)}
+.mg-btn:hover{background:#fff}
+.lb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:1000;flex-direction:column;align-items:center;justify-content:center}
+.lb.open{display:flex}
+.lb-img{max-width:90vw;max-height:80vh;object-fit:contain;border-radius:3px;user-select:none}
+.lb-close{position:absolute;top:18px;right:22px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;opacity:.65;transition:opacity .15s;line-height:1}
+.lb-close:hover{opacity:1}
+.lb-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.1);border:none;color:#fff;width:48px;height:48px;border-radius:50%;font-size:26px;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.lb-arrow:hover{background:rgba(255,255,255,.22)}
+.lb-prev{left:18px}.lb-next{right:18px}
+.lb-bottom{position:absolute;bottom:0;left:0;right:0;padding:14px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.lb-thumbs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;max-width:90vw}
+.lb-thumbs::-webkit-scrollbar{display:none}
+.lb-thumbs img{width:58px;height:42px;object-fit:cover;border-radius:3px;cursor:pointer;opacity:.42;transition:opacity .15s;flex-shrink:0;border:2px solid transparent}
+.lb-thumbs img.on{opacity:1;border-color:var(--orange)}
+.lb-cnt{color:rgba(255,255,255,.5);font-size:12px;letter-spacing:.5px}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 18px 40px;display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start}
+@media(max-width:800px){.wrap{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:20px}
+.card{background:var(--white);border-radius:var(--r);box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-body{padding:24px}
+.sec-title{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.optag{display:inline-block;background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}
+.prop-address{font-size:20px;font-weight:800;color:var(--primary);line-height:1.2;margin-bottom:2px}
+.prop-barrio{font-size:12px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.price{font-size:38px;font-weight:800;color:var(--primary);letter-spacing:-.5px;line-height:1}
+.exps{color:var(--muted);font-size:13px;margin-top:7px}
+.exps b{color:var(--text)}
+.badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}
+.badge{background:#f0f4f8;color:#1a2e42;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid #dde3ea}
+.badge.grn{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.badge.org{background:var(--orange-lt);color:var(--orange-dk);border-color:#f9c89e}
+.fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:560px){.fgrid{grid-template-columns:repeat(2,1fr)}}
+.fi{background:#f8f9fb;border-radius:8px;padding:16px 8px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:7px}
+.fi-icon{width:26px;height:26px;object-fit:contain;filter:invert(17%) sepia(62%) saturate(800%) hue-rotate(185deg) brightness(85%)}
+.fi-val{font-size:17px;font-weight:800;color:var(--primary)}
+.fi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;line-height:1.3}
+.desc{font-size:14px;line-height:1.8;color:#374151}
+.desc p{margin-bottom:10px}
+.desc ul{margin:6px 0 10px 18px;display:flex;flex-direction:column;gap:6px}
+.desc-note{font-size:11px;color:#9ca3af;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);line-height:1.65}
+.scard{background:var(--primary);border-radius:var(--r);padding:26px;box-shadow:0 4px 20px rgba(0,49,83,.3)}
+.agent-photo{width:74px;height:74px;border-radius:50%;border:2.5px solid var(--orange);display:block;margin:0 auto 14px;object-fit:cover}
+.scard h3{color:#fff;font-size:17px;font-weight:700;text-align:center}
+.scard-role{color:rgba(255,255,255,.45);font-size:12px;text-align:center;margin-top:3px}
+.scard-logo{display:block;margin:16px auto 0;height:18px;object-fit:contain;opacity:.7}
+.sdivider{border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0}
+.bwa-big{display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;padding:14px;border-radius:9px;text-decoration:none;font-weight:700;font-size:15px;width:100%;transition:background .15s}
+.bwa-big:hover{background:#1dba57}
+.snote{color:rgba(255,255,255,.3);font-size:11px;text-align:center;margin-top:10px}
+.mapcard{border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,49,83,.3)}
+.mapcard iframe{width:100%;height:360px;border:none;display:block}
+.maplbl{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid #e8eaed}
+.maplbl svg{flex-shrink:0;color:var(--orange)}
+.maplbl-text b{display:block;color:#1c1c1c;font-size:13px;font-weight:600;line-height:1.3}
+.maplbl-text span{color:#6b7280;font-size:11px}
+footer{background:var(--primary-dark);color:rgba(255,255,255,.38);text-align:center;padding:24px;font-size:12px;line-height:1.9}
+footer strong{color:rgba(255,255,255,.7)}
+footer a{color:var(--orange);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="bar-l">
+    <img src="https://nahuelim.github.io/assets/nl-logo.svg" alt="Nahuel Lim" class="logo-nl">
+    <div class="bar-sep"></div>
+    <img src="https://nahuelim.github.io/assets/c21-logo.svg" alt="Century 21" class="logo-c21">
+  </div>
+  <div class="bar-r">
+    <a class="bwa" href="https://wa.me/5491178268244?text=Hola%2C%20vi%20la%20ficha%20de%20Pujol%201100%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg><span>&nbsp;Consultar</span></a>
+  </div>
+</header>
+
+<div class="mosaic">
+  <div class="mg-main" style="background-image:url('https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420268.jpg')" onclick="openLB(0)">
+    <button class="mg-btn" onclick="event.stopPropagation();openLB(0)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Ver las 30 fotos
+    </button>
+  </div>
+  <div class="mg-right">
+    <div class="mg-cell" style="background-image:url('https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420267.jpg')" onclick="openLB(1)"></div>
+    <div class="mg-cell" style="background-image:url('https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420265.jpg')" onclick="openLB(2)"></div>
+    <div class="mg-cell" style="background-image:url('https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420270.jpg')" onclick="openLB(3)"></div>
+    <div class="mg-cell" style="background-image:url('https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420255.jpg')" onclick="openLB(4)"></div>
+
+  </div>
+</div>
+
+<div class="lb" id="lb" onclick="closeLB()">
+  <button class="lb-close" onclick="closeLB()">&#x2715;</button>
+  <button class="lb-arrow lb-prev" onclick="event.stopPropagation();lbGo(-1)">&#8249;</button>
+  <img class="lb-img" id="lb-img" src="" alt="" onclick="event.stopPropagation()">
+  <button class="lb-arrow lb-next" onclick="event.stopPropagation();lbGo(1)">&#8250;</button>
+  <div class="lb-bottom" onclick="event.stopPropagation()">
+    <div class="lb-thumbs" id="lb-thumbs">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420268.jpg" onclick="lbGoTo(0)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420267.jpg" onclick="lbGoTo(1)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420265.jpg" onclick="lbGoTo(2)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420270.jpg" onclick="lbGoTo(3)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420255.jpg" onclick="lbGoTo(4)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420266.jpg" onclick="lbGoTo(5)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420247.jpg" onclick="lbGoTo(6)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420271.jpg" onclick="lbGoTo(7)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420269.jpg" onclick="lbGoTo(8)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420251.jpg" onclick="lbGoTo(9)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420253.jpg" onclick="lbGoTo(10)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420248.jpg" onclick="lbGoTo(11)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420249.jpg" onclick="lbGoTo(12)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420274.jpg" onclick="lbGoTo(13)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420261.jpg" onclick="lbGoTo(14)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420260.jpg" onclick="lbGoTo(15)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420264.jpg" onclick="lbGoTo(16)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420246.jpg" onclick="lbGoTo(17)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420254.jpg" onclick="lbGoTo(18)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420257.jpg" onclick="lbGoTo(19)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420258.jpg" onclick="lbGoTo(20)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420263.jpg" onclick="lbGoTo(21)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420262.jpg" onclick="lbGoTo(22)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420250.jpg" onclick="lbGoTo(23)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420259.jpg" onclick="lbGoTo(24)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420273.jpg" onclick="lbGoTo(25)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420252.jpg" onclick="lbGoTo(26)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420256.jpg" onclick="lbGoTo(27)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420272.jpg" onclick="lbGoTo(28)">
+      <img src="https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420275.jpg" onclick="lbGoTo(29)">
+
+    </div>
+    <div class="lb-cnt" id="lb-cnt"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="col">
+    <div class="card"><div class="card-body">
+      <div class="optag">Venta</div>
+      <div class="prop-address">Pujol 1100</div>
+      <div class="prop-barrio">Caballito · CABA</div>
+      <div class="price">USD 162.000</div>
+      <div class="exps">Expensas: <b>$ 205.000</b></div>
+      <div class="badges">
+        <span class="badge">Departamento</span>
+        <span class="badge">3 ambientes</span>
+        <span class="badge grn">Apto credito</span>
+        <span class="badge grn">Apto profesional</span>
+        <span class="badge">Muy luminoso</span>
+        <span class="badge">Full amenities</span>
+
+      </div>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+      <div class="sec-title">Características</div>
+      <div class="fgrid">
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/ambientes.9e33dd.svg" alt="Ambientes">
+          <div class="fi-val">3</div>
+          <div class="fi-lbl">Ambientes</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/dormitorio.349d35.svg" alt="Dormitorios">
+          <div class="fi-val">2</div>
+          <div class="fi-lbl">Dormitorios</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/banos.827612.svg" alt="Baños">
+          <div class="fi-val">1</div>
+          <div class="fi-lbl">Baños</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/toilete.f725dc.svg" alt="Toilette">
+          <div class="fi-val">1</div>
+          <div class="fi-lbl">Toilette</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/stotal.38e4f4.svg" alt="Sup. Total">
+          <div class="fi-val">70 m²</div>
+          <div class="fi-lbl">Sup. Total</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/scubierta.695fb2.svg" alt="Sup. Cubierta">
+          <div class="fi-val">60 m²</div>
+          <div class="fi-lbl">Sup. Cubierta</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/antiguedad.eb15bc.svg" alt="Antigüedad">
+          <div class="fi-val">4 años</div>
+          <div class="fi-lbl">Antigüedad</div>
+        </div>
+        <div class="fi">
+          <img class="fi-icon" src="https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1/orientacion.3a91e2.svg" alt="Orientación">
+          <div class="fi-val">Frente</div>
+          <div class="fi-lbl">Orientación</div>
+        </div>
+
+      </div>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+      <div class="sec-title">Descripción</div>
+      <div class="desc">
+        <p>UBICACIÓN<br>Pujol entre Gaona y Franklin<br>- Edificio sobre esquina<br>- A 450 mts de Plaza Irlanda<br>- A 450 mts del Cid Campeador<br>- A 500 mts del Cid Campeador<br>- Cerca de Av. Juan b. Justo/ Av. San Martin / Av. Honorio Pueyrredón/ Av. Diaz Vélez/ Av. Ángel Gallardo<br>- Múltiples líneas de colectivos</p>
+        <p>METRAJE:<br>Superficie cubierta: 60,8 m2<br>Balcón: 9,4 m2<br>Superficie total: 70,2 m2</p>
+        <p>DEPARTAMENTO:<br>-3 ambientes<br>-Piso 3<br>-Doble balcón al frente<br>-Living comedor con salida al balcón<br>-Cocina Integrada<br>-Toilette de recepción<br>-2 habitaciones<br>-Cuarto principal con baño completo en suite, placard de guardado y salida a balcón privado<br>-Segundo cuarto con ventanal enorme con mucha luz</p>
+        <p>DESTACABLE:<br>-Servicio individuales<br>-Piso original<br>-Ventanas nuevas<br>-instalación para Aire frio/calor en living y uno de los cuartos<br>- Cocina con mesada, bajo mesada y alacena<br>- Cocina eléctrica<br>-Vista abierta<br>-Espacio para heladera<br>-Muy luminoso<br>- APTO CREDITO<br>-APTO PROFESIONAL<br>-APTO AIR BNB</p>
+        <p>EDIFICIO:<br>-2 ascensores<br>-9 pisos Y en el piso 10 amenities<br>- Terraza de uso común<br>-Parrilla<br>- Pileta<br>- Solárium<br>-SUM<br>- Tótem de seguridad</p>
+        <p class="desc-note">Las medidas y superficies informadas son aproximadas. Las exactas surgen del título de propiedad o plano de mensura. Reservas únicamente con el matriculado en la inmobiliaria.</p>
+      </div>
+    </div></div>
+  </div>
+
+  <aside class="col">
+    <div class="scard">
+      <img src="https://nahuelim.github.io/assets/profile.jpg" alt="Nahuel Lim" class="agent-photo">
+      <h3>Nahuel Lim</h3>
+      <div class="scard-role">Asesor Inmobiliario</div>
+      <img src="https://nahuelim.github.io/assets/c21-logo.svg" alt="Century 21" class="scard-logo">
+      <hr class="sdivider">
+      <a class="bwa-big" href="https://wa.me/5491178268244?text=Hola%2C%20vi%20la%20ficha%20de%20Pujol%201100%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>&nbsp;Consultar por WhatsApp</a>
+      <div class="snote">Consultame sin compromiso</div>
+    </div>
+    <div class="mapcard">
+      <iframe src="https://www.google.com/maps?q=Pujol%201100%2C%20Caballito%2C%20Buenos%20Aires&output=embed" allowfullscreen loading="lazy" title="Ubicación"></iframe>
+      <div class="maplbl">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <div class="maplbl-text"><b>Pujol 1100</b><span>Caballito, CABA</span></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<footer>
+  Ficha preparada por <strong>Nahuel Lim</strong> · Century 21 Evolución Inmobiliaria S.A.<br>
+  CUCICBA 9135 – MN377 · <a href="https://wa.me/5491178268244">+54 9 11 7826-8244</a>
+</footer>
+
+<script>
+const photos=[
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420268.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420267.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420265.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420270.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420255.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420266.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420247.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420271.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420269.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420251.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420253.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420248.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420249.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420274.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420261.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420260.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420264.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420246.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420254.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420257.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420258.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420263.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420262.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420250.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420259.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420273.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420252.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420256.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420272.jpg",
+  "https://imgar.zonapropcdn.com/avisos/1/00/58/63/72/24/1200x1200/2040420275.jpg"
+];
+const N=photos.length;
+let lbCur=0;
+function openLB(i){lbCur=i;document.getElementById('lb').classList.add('open');document.body.style.overflow='hidden';lbUpd();}
+function closeLB(){document.getElementById('lb').classList.remove('open');document.body.style.overflow='';}
+function lbGo(d){lbCur=(lbCur+d+N)%N;lbUpd();}
+function lbGoTo(i){lbCur=i;lbUpd();}
+function lbUpd(){
+  document.getElementById('lb-img').src=photos[lbCur];
+  document.getElementById('lb-cnt').textContent=(lbCur+1)+' / '+N;
+  document.querySelectorAll('#lb-thumbs img').forEach((img,i)=>{img.className=i===lbCur?'on':'';if(i===lbCur)img.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});});
+}
+document.addEventListener('keydown',e=>{if(!document.getElementById('lb').classList.contains('open'))return;if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1);if(e.key==='Escape')closeLB();});
+</script>
+</body>
+</html>
