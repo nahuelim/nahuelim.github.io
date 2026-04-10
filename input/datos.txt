@@ -1,0 +1,49 @@
+# ─── DATOS GENERALES ───────────────────────────────────────────────────────────
+portal        = zonaprop
+operacion     = Venta
+tipo          = Departamento
+
+# ─── UBICACIÓN ─────────────────────────────────────────────────────────────────
+direccion     = Baigorria 3000
+barrio        = Villa del Parque
+
+# ─── PRECIO ────────────────────────────────────────────────────────────────────
+precio        = USD 215.000
+expensas      = $ 430.000
+
+# ─── CARACTERÍSTICAS ───────────────────────────────────────────────────────────
+ambientes     = 4
+dormitorios   = 3
+banos         = 1
+toilette      = 1
+sup_total     = 119
+sup_cubierta  = 107
+antiguedad    = 48 años
+disposicion   = Frente
+orientacion   = 
+
+# ─── BADGES ────────────────────────────────────────────────────────────────────
+badge_1       = Cochera
+badge_2       = Apto credito
+badge_3       = 
+badge_4       = 
+
+# ─── DESCRIPCIÓN ───────────────────────────────────────────────────────────────
+descripcion = """
+Excelente departamento de cuatro ambientes al frente con balcón y cochera.
+A metros del centro comercial de Villa del Parque, y a una cuadra y media del Parque Aristóbulo del Valle
+Cuenta con:
+toilette
+1 baño completo
+
+amplia cocina
+dependencia de servicio
+Lavadero independiente
+Living comedor
+3 habitaciones con amplios placares
+"""
+
+# ─── FOTOS ─────────────────────────────────────────────────────────────────────
+fotos = """
+
+"""
