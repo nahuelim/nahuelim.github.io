@@ -7,6 +7,8 @@ Uso: python generar_ficha.py datos.txt [portal.html]
 import sys
 import os
 import re
+import hashlib
+import time
 from pathlib import Path
 
 # ─── ÍCONOS CDN ────────────────────────────────────────────────────────────────
@@ -342,6 +344,16 @@ def slugify(texto):
     return texto.strip('-')
 
 
+def nombre_unico(directorio, nombre_base):
+    path = directorio / f"{nombre_base}.html"
+    if not path.exists():
+        return path
+    h = hashlib.md5(str(time.time()).encode()).hexdigest()[:4]
+    nuevo = directorio / f"{nombre_base}-{h}.html"
+    print(f"⚠️  Nombre duplicado — generando como: {nuevo.name}")
+    return nuevo
+
+
 # ─── GENERAR WA URL ────────────────────────────────────────────────────────────
 def wa_url(direccion):
     from urllib.parse import quote
@@ -493,7 +505,7 @@ def main():
     # ── Guardar ──
     out_dir = Path("fichas")
     out_dir.mkdir(exist_ok=True)
-    out_path = out_dir / nombre
+    out_path = nombre_unico(out_dir, Path(nombre).stem)
     out_path.write_text(html, encoding="utf-8")
     print(f"✓ Ficha generada: {out_path}")
 
