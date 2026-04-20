@@ -680,28 +680,37 @@ def extraer_zonaprop(url: str) -> dict:
     om = re.search(r"'operationType'\s*:\s*'([^']+)'", html)
     datos['operacion'] = om.group(1).capitalize() if om else 'Venta'
 
-    # Tipo de propiedad
-    tm = re.search(r"'name'\s*:\s*'(Departamento|PH|Casa|Local|Oficina|Terreno|Duplex|Loft)'", raw)
-    datos['tipo'] = tm.group(1) if tm else 'Departamento'
+    # Tipo de propiedad — tipoDePropiedad es el campo más confiable
+    tm = re.search(r"'tipoDePropiedad'\s*:\s*'([^']+)'", html)
+    if not tm:
+        tm = re.search(r"'realEstateType'\s*:\s*\{\"name\":\"([^\"]+)\"", raw)
+    if not tm:
+        tm = re.search(r"'propertyType'\s*:\s*'([^']+)'", html)
+    datos['tipo'] = tm.group(1).strip() if tm else 'Departamento'
 
     # Dirección
     dm = re.search(r'"name"\s*:\s*"([^"]+)","visibility"', raw)
     datos['direccion'] = dm.group(1) if dm else ''
 
-    # Barrio (location name)
+    # Barrio — múltiples fuentes de fallback
     bm = re.search(r"'terminoUbicacion'\s*:\s*'([^']+)'", html)
     if not bm:
-        bm = re.search(r'"locationId"[^}]+"name"\s*:\s*"([^"]+)"', raw)
-    datos['barrio'] = bm.group(1) if bm else ''
+        bm = re.search(r"locationName\s*=\s*\"([^\"]+)\"", html)
+    if not bm:
+        bm = re.search(r"'ciudad'\s*:\s*'([^']+)'", html)
+    datos['barrio'] = bm.group(1).strip() if bm else ''
 
-    # Descripción
-    desc_m = re.search(r"'description'\s*:\s*'(.*?)',\s*\n", raw, re.DOTALL)
+    # Descripción — el campo usa comillas dobles en el HTML de ZonaProp
+    desc_m = re.search(r"'description'\s*:\s*\"(.*?)\",\s*\n", raw, re.DOTALL)
+    if not desc_m:
+        desc_m = re.search(r"'description'\s*:\s*'(.*?)',\s*\n", raw, re.DOTALL)
     if desc_m:
         desc = desc_m.group(1)
+        desc = re.sub(r'<span[^>]*>.*?</span>', '', desc, flags=re.DOTALL)
         desc = re.sub(r'<[^>]+>', '\n', desc)
         desc = re.sub(r'\\n', '\n', desc)
-        desc = desc.strip()
-        datos['descripcion'] = desc
+        desc = re.sub(r'\n{3,}', '\n\n', desc)
+        datos['descripcion'] = desc.strip()
     else:
         datos['descripcion'] = ''
 
@@ -994,12 +1003,19 @@ def generar():
     if not fotos:
         return jsonify({'error': 'No hay fotos. Para ML/C21 copiá las imágenes a assets/fotos/slug/ antes de generar.'}), 400
 
-    # Generar nombre de archivo
-    barrio    = slugify(d.get('barrio', 'barrio'))
-    direccion = slugify(d.get('direccion', 'sin-direccion'))
+    # Generar nombre de archivo — formato: tipo-direccion-Xamb[-hash]
+    TIPO_SLUG = {
+        'Departamento': 'dto', 'PH': 'ph', 'Casa': 'casa',
+        'Local': 'local', 'Oficina': 'oficina', 'Terreno': 'terreno',
+        'Duplex': 'duplex', 'Loft': 'loft',
+    }
+    tipo_raw  = d.get('tipo', 'Departamento')
+    tipo_slug  = TIPO_SLUG.get(tipo_raw, slugify(tipo_raw))
+    barrio_slug = slugify(d.get('barrio', ''))
+    direccion  = slugify(d.get('direccion', 'sin-direccion'))
     ambientes = str(d.get('ambientes', '')).strip()
     slug_amb  = f'-{ambientes}amb' if ambientes else ''
-    nombre_base = f'{barrio}-{direccion}{slug_amb}'
+    nombre_base = f'{tipo_slug}-{barrio_slug}-{direccion}{slug_amb}'
 
     FICHAS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = nombre_unico(FICHAS_DIR, nombre_base)
