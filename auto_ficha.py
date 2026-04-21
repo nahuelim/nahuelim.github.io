@@ -271,7 +271,10 @@ HTML = r"""<!DOCTYPE html>
 </nav>
 
 <main>
-  <h1>Generador de Fichas</h1>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <h1 style="margin-bottom:0">Generador de Fichas</h1>
+    <button class="btn btn-outline btn-sm" onclick="resetTodo()">↺ Nueva ficha</button>
+  </div>
   <p class="subtitle">Pegá una URL o completá los datos manualmente para publicar una ficha en nahuelim.com.ar</p>
 
   <!-- PASO 1: URL o modo manual -->
@@ -287,7 +290,7 @@ HTML = r"""<!DOCTYPE html>
     <div id="url-section">
       <label>URL del aviso</label>
       <div class="url-row">
-        <input type="text" id="url-input" placeholder="https://www.zonaprop.com.ar/propiedades/..." />
+        <input type="text" id="url-input" id="url-input" placeholder="https://www.zonaprop.com.ar/propiedades/... o /Users/tu/archivo.html" />
         <button class="btn btn-primary" onclick="extraerDatos()">
           <span id="btn-extraer-txt">Extraer</span>
           <span id="btn-extraer-loader" class="loader" style="display:none"></span>
@@ -467,8 +470,8 @@ function setPortal(p) {
   } else {
     urlSection.style.display = 'block';
     if (p === 'zonaprop') hint.textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
-    else if (p === 'ml') hint.textContent = 'MercadoLibre: se extraen datos básicos. Copiá las fotos manualmente a la carpeta indicada.';
-    else if (p === 'c21') hint.textContent = 'Century 21: se extraen datos básicos. Copiá las fotos manualmente a la carpeta indicada.';
+    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL o el path al HTML guardado (Cmd+S en el browser). Las fotos se bajan automáticamente desde ML.';
+    else if (p === 'c21') hint.textContent = 'Century 21: guardá la página con Cmd+S y pegá el path al archivo. El precio completalo manualmente.';
   }
 }
 
@@ -648,6 +651,43 @@ function setBtnLoading(btnId, loading) {
   document.getElementById(btnId + '-txt').style.display = loading ? 'none' : '';
   document.getElementById(btnId + '-loader').style.display = loading ? 'inline-block' : 'none';
 }
+
+function resetTodo() {
+  // Reset portal
+  portalActual = 'zonaprop';
+  fotosZP = [];
+  document.querySelectorAll('.pill').forEach(el => el.classList.remove('active'));
+  document.querySelector('.pill').classList.add('active');
+  document.getElementById('url-section').style.display = 'block';
+  document.getElementById('url-hint').textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
+
+  // Limpiar URL
+  document.getElementById('url-input').value = '';
+
+  // Ocultar formulario y resultados
+  document.getElementById('form-card').style.display = 'none';
+  document.getElementById('result-box').style.display = 'none';
+  document.getElementById('status-msg').style.display = 'none';
+
+  // Limpiar todos los campos
+  ['f-direccion','f-barrio','f-precio','f-expensas',
+   'f-badge1','f-badge2','f-badge3','f-badge4','f-descripcion',
+   'f-fotos','f-fotos-manual'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['f-ambientes','f-dormitorios','f-banos','f-toilette',
+   'f-sup-total','f-sup-cubierta','f-antiguedad'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('f-operacion').selectedIndex = 0;
+  document.getElementById('f-tipo').selectedIndex = 0;
+  document.getElementById('f-disposicion').selectedIndex = 0;
+  document.getElementById('f-orientacion').selectedIndex = 0;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 </script>
 </body>
 </html>"""
@@ -743,60 +783,189 @@ def extraer_zonaprop(url: str) -> dict:
 
 
 # ─── EXTRACCIÓN ML ─────────────────────────────────────────────────────────────
-def extraer_ml(url: str) -> dict:
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
-    r = requests.get(url, headers=headers, timeout=20)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, 'html.parser')
+def extraer_ml(html_path_or_url: str) -> dict:
+    """Acepta path a HTML guardado o URL (intenta request)."""
+    from pathlib import Path as _Path
+    if _Path(html_path_or_url).exists():
+        html = _Path(html_path_or_url).read_text(encoding='utf-8', errors='ignore')
+    else:
+        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        r = requests.get(html_path_or_url, headers=headers, timeout=20)
+        r.raise_for_status()
+        html = r.text
 
-    datos = {}
+    soup = BeautifulSoup(html, 'html.parser')
+    datos = {'operacion': 'Venta', 'fotos': []}
 
-    # Título → tipo y ambientes a veces
-    title_el = soup.find('h1')
-    datos['titulo_raw'] = title_el.get_text(strip=True) if title_el else ''
+    # Título
+    h1 = soup.find('h1')
+    titulo = h1.get_text(strip=True) if h1 else ''
+
+    # Tipo desde subtitle
+    sub = soup.find(class_='ui-pdp-subtitle')
+    sub_txt = sub.get_text(strip=True) if sub else ''
+    TIPO_MAP = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa',
+                'local': 'Local', 'oficina': 'Oficina', 'terreno': 'Terreno'}
+    datos['tipo'] = 'Departamento'
+    for k, v in TIPO_MAP.items():
+        if k in sub_txt.lower() or k in titulo.lower():
+            datos['tipo'] = v
+            break
+
+    # Operación
+    if 'alquiler' in sub_txt.lower() or 'alquiler' in titulo.lower():
+        datos['operacion'] = 'Alquiler'
 
     # Precio
-    price_el = soup.find('span', class_=re.compile(r'price|Price'))
-    if not price_el:
-        price_el = soup.find('span', {'aria-label': re.compile(r'[Pp]recio')})
-    datos['precio'] = price_el.get_text(strip=True) if price_el else ''
+    moneda = soup.find(class_='andes-money-amount__currency-symbol')
+    fraccion = soup.find(class_='andes-money-amount__fraction')
+    if moneda and fraccion:
+        sym = moneda.get_text(strip=True).replace('US$','USD').replace('U$S','USD')
+        num = fraccion.get_text(strip=True)
+        datos['precio'] = f"{sym} {num}"
+    else:
+        datos['precio'] = ''
 
-    # Dirección/ubicación
-    loc_el = soup.find('p', string=re.compile(r'(Capital|Buenos Aires|CABA|Palermo|Belgrano|Caballito)', re.I))
-    datos['barrio'] = loc_el.get_text(strip=True) if loc_el else ''
-    datos['direccion'] = ''
+    # Expensas
+    datos['expensas'] = ''
+
+    # Ubicación
+    loc_el = soup.find(class_='ui-vip-location')
+    if loc_el:
+        loc_txt = re.sub(r'^Ubicaci[oó]n\s*', '', loc_el.get_text(strip=True))
+        # "Nicasio Oroño Al 1100, Caballito, Capital Federal, Capital Federal"
+        partes = [p.strip() for p in loc_txt.split(',')]
+        datos['direccion'] = partes[0] if partes else ''
+        datos['barrio']    = partes[1] if len(partes) > 1 else ''
+    else:
+        datos['direccion'] = ''
+        datos['barrio'] = ''
+
+    # Specs desde tabla th/td
+    specs = {}
+    table = soup.find(class_='ui-pdp-specs__table')
+    if table:
+        ths = [t.get_text(strip=True) for t in table.find_all('th')]
+        tds = [t.get_text(strip=True) for t in table.find_all('td')]
+        specs = dict(zip(ths, tds))
+
+    def parse_num(val):
+        m = re.search(r'[\d]+', val.replace('.','').replace(',','.'))
+        return m.group(0) if m else ''
+
+    datos['ambientes']    = parse_num(specs.get('Ambientes',''))
+    datos['dormitorios']  = parse_num(specs.get('Dormitorios',''))
+    datos['banos']        = parse_num(specs.get('Baños','').replace('ñ','n'))
+    datos['sup_total']    = parse_num(specs.get('Superficie total',''))
+    datos['sup_cubierta'] = parse_num(specs.get('Superficie cubierta',''))
+    datos['antiguedad']   = parse_num(specs.get('Antigüedad','').replace('ü','u'))
+    datos['disposicion']  = specs.get('Disposición','').replace('ó','o')
+    datos['orientacion']  = specs.get('Orientación','').replace('ó','o')
+    exp_raw = specs.get('Expensas','')
+    if exp_raw and exp_raw != '0 ARS':
+        datos['expensas'] = exp_raw
 
     # Descripción
-    desc_el = soup.find('p', class_=re.compile(r'description|Description'))
+    desc_el = soup.find(class_='ui-pdp-description__content')
     datos['descripcion'] = desc_el.get_text(strip=True) if desc_el else ''
 
-    datos['tipo'] = 'Departamento'
-    datos['operacion'] = 'Venta'
-    datos['fotos'] = []
+    # Fotos alta resolución — deduplicadas por ID de foto
+    imgs = soup.find_all('img', src=re.compile(r'mlstatic\.com/D_'))
+    seen_ids = set()
+    fotos = []
+    for img in imgs:
+        src = img.get('src','')
+        src_big = re.sub(r'-[A-Z]\.webp$', '-O.webp', src)
+        id_m = re.search(r'MLA\d+', src_big)
+        if id_m:
+            pid = id_m.group(0)
+            if pid not in seen_ids:
+                seen_ids.add(pid)
+                # Preferir NQ_NP sobre Q_NP
+                if 'D_NQ_NP' in src_big or not any('D_NQ_NP' in u for u in fotos):
+                    fotos.append(src_big)
+        elif 'mlstatic.com/D_' in src_big and src_big not in fotos:
+            fotos.append(src_big)
+    datos['fotos'] = fotos
 
     return datos
 
 
 # ─── EXTRACCIÓN C21 ────────────────────────────────────────────────────────────
-def extraer_c21(url: str) -> dict:
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
-    r = requests.get(url, headers=headers, timeout=20)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, 'html.parser')
+def extraer_c21(html_path_or_url: str) -> dict:
+    """C21 es SPA — extrae desde meta OG tags. Acepta HTML guardado o URL."""
+    from pathlib import Path as _Path
+    if _Path(html_path_or_url).exists():
+        html = _Path(html_path_or_url).read_text(encoding='utf-8', errors='ignore')
+    else:
+        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        r = requests.get(html_path_or_url, headers=headers, timeout=20)
+        r.raise_for_status()
+        html = r.text
 
-    datos = {'tipo': 'Departamento', 'operacion': 'Venta', 'fotos': []}
+    soup = BeautifulSoup(html, 'html.parser')
+    datos = {'operacion': 'Venta', 'fotos': []}
 
-    title_el = soup.find('h1')
-    datos['titulo_raw'] = title_el.get_text(strip=True) if title_el else ''
+    # Meta OG
+    og = {}
+    for meta in soup.find_all('meta'):
+        prop = meta.get('property','') or meta.get('name','')
+        content = meta.get('content','')
+        if prop and content:
+            og[prop] = content
 
-    price_el = soup.find(class_=re.compile(r'price|precio', re.I))
-    datos['precio'] = price_el.get_text(strip=True) if price_el else ''
+    titulo = og.get('og:title', '')
+    descripcion = og.get('og:description', '')
 
-    desc_el = soup.find(class_=re.compile(r'description|descripcion', re.I))
-    datos['descripcion'] = desc_el.get_text(strip=True) if desc_el else ''
+    # Tipo desde título
+    TIPO_MAP = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa',
+                'local': 'Local', 'oficina': 'Oficina', 'terreno': 'Terreno'}
+    datos['tipo'] = 'Departamento'
+    for k, v in TIPO_MAP.items():
+        if k in titulo.lower():
+            datos['tipo'] = v
+            break
 
-    datos['barrio'] = ''
+    # Operación desde título
+    datos['operacion'] = 'Alquiler' if 'alquiler' in titulo.lower() else 'Venta'
+
+    # Barrio desde título — último token antes de "Argentina"
+    barrio_m = re.search(r'en\s+([\w\s]+?)(?:\s+\w+)?\s+Argentina', titulo, re.I)
+    datos['barrio'] = barrio_m.group(1).strip() if barrio_m else ''
+
+    # Dirección desde descripción — primera línea suele tenerla
     datos['direccion'] = ''
+    dir_m = re.search(r'(?:calle|av[.]|avenida|entre)\s+([^.\n]+)', descripcion, re.I)
+    if dir_m:
+        datos['direccion'] = dir_m.group(1).strip()
+
+    # Precio — C21 SPA no lo incluye en el HTML estático, dejamos vacío para completar
+    datos['precio'] = ''
+
+    # Descripción limpia
+    datos['descripcion'] = descripcion.strip()
+
+    # Dormitorios desde título
+    dorm_m = re.search(r'(\d+)\s+[Dd]ormitorios?', titulo)
+    datos['dormitorios'] = dorm_m.group(1) if dorm_m else ''
+
+    # Fotos desde meta og:image (solo las que hay — resto manual)
+    fotos = []
+    for meta in soup.find_all('meta', property='og:image:secure_url'):
+        url = meta.get('content','')
+        if url and url not in fotos:
+            fotos.append(url)
+    if not fotos:
+        for meta in soup.find_all('meta', property='og:image'):
+            url = meta.get('content','')
+            if url and url.startswith('http') and url not in fotos:
+                fotos.append(url)
+    # También buscar en CDN
+    cdn_urls = re.findall(r"https://cdn\.21online\.lat[^\s\"'<>]+\.(?:jpg|jpeg|png|webp)", html, re.I)
+    for u in cdn_urls:
+        if u not in fotos:
+            fotos.append(u)
+    datos['fotos'] = fotos
 
     return datos
 
