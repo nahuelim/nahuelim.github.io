@@ -435,7 +435,7 @@ def main():
         badges_html += f'        <span class="badge">{tipo}</span>\n'
     if ambientes:
         badges_html += f'        <span class="badge">{ambientes} ambientes</span>\n'
-    for i in range(1, 5):
+    for i in range(1, 7):
         b = datos.get(f"badge_{i}", "").strip()
         if b:
             cls = badge_clases.get(b.lower(), "")

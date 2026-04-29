@@ -296,7 +296,7 @@ HTML = r"""<!DOCTYPE html>
           <span id="btn-extraer-loader" class="loader" style="display:none"></span>
         </button>
       </div>
-      <p class="field-hint" id="url-hint">ZonaProp: extracción automática completa. ML/C21: se extraen datos básicos, las fotos se cargan manualmente.</p>
+      <p class="field-hint" id="url-hint">ZonaProp: extracción automática completa. ML: pegá la URL del aviso, extracción automática vía API. C21: guardá con Cmd+S y pegá el path.</p>
     </div>
   </div>
 
@@ -394,12 +394,14 @@ HTML = r"""<!DOCTYPE html>
       </div>
 
       <div class="full">
-        <label>Badges / Amenities</label>
+        <label>Badges / Amenities (hasta 6 — se detectan automáticamente)</label>
         <div class="badges-row">
           <input type="text" id="f-badge1" placeholder="Cochera">
           <input type="text" id="f-badge2" placeholder="Apto mascota">
           <input type="text" id="f-badge3" placeholder="Parrilla">
           <input type="text" id="f-badge4" placeholder="">
+          <input type="text" id="f-badge5" placeholder="">
+          <input type="text" id="f-badge6" placeholder="">
         </div>
       </div>
 
@@ -470,7 +472,7 @@ function setPortal(p) {
   } else {
     urlSection.style.display = 'block';
     if (p === 'zonaprop') hint.textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
-    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL o el path al HTML guardado (Cmd+S en el browser). Las fotos se bajan automáticamente desde ML.';
+    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL del aviso directamente. Extracción automática completa vía API (datos + fotos).';
     else if (p === 'c21') hint.textContent = 'Century 21: guardá la página con Cmd+S y pegá el path al archivo. El precio completalo manualmente.';
   }
 }
@@ -522,7 +524,7 @@ function mostrarFormulario(d) {
 
   // Badges
   const badges = d.badges || [];
-  ['f-badge1','f-badge2','f-badge3','f-badge4'].forEach((id, i) => {
+  ['f-badge1','f-badge2','f-badge3','f-badge4','f-badge5','f-badge6'].forEach((id, i) => {
     document.getElementById(id).value = badges[i] || '';
   });
 
@@ -530,7 +532,7 @@ function mostrarFormulario(d) {
   const zpSec = document.getElementById('fotos-zp-section');
   const manSec = document.getElementById('fotos-manual-section');
 
-  if (portalActual === 'zonaprop' && d.fotos && d.fotos.length) {
+  if ((portalActual === 'zonaprop' || portalActual === 'ml') && d.fotos && d.fotos.length) {
     zpSec.style.display = 'block';
     manSec.style.display = 'none';
     document.getElementById('f-fotos').value = d.fotos.join('\n');
@@ -583,6 +585,7 @@ async function generarFicha() {
 
   const payload = {
     portal: portalActual,
+    url_original: portalActual !== 'manual' ? document.getElementById('url-input').value.trim() : '',
     operacion: document.getElementById('f-operacion').value,
     tipo: document.getElementById('f-tipo').value,
     direccion: dir,
@@ -603,6 +606,8 @@ async function generarFicha() {
       document.getElementById('f-badge2').value,
       document.getElementById('f-badge3').value,
       document.getElementById('f-badge4').value,
+      document.getElementById('f-badge5').value,
+      document.getElementById('f-badge6').value,
     ].filter(b => b.trim()),
     descripcion: document.getElementById('f-descripcion').value,
     fotos: fotos,
@@ -671,7 +676,7 @@ function resetTodo() {
 
   // Limpiar todos los campos
   ['f-direccion','f-barrio','f-precio','f-expensas',
-   'f-badge1','f-badge2','f-badge3','f-badge4','f-descripcion',
+   'f-badge1','f-badge2','f-badge3','f-badge4','f-badge5','f-badge6','f-descripcion',
    'f-fotos','f-fotos-manual'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -691,6 +696,57 @@ function resetTodo() {
 </script>
 </body>
 </html>"""
+
+# ─── DETECCIÓN AUTOMÁTICA DE BADGES ───────────────────────────────────────────
+BADGE_RULES = [
+    # (lista de keywords, badge a mostrar, clase css)
+    (['apto crédito', 'apto credito', 'apto al crédito', 'apto al credito'], 'Apto crédito', 'grn'),
+    (['apto mascota', 'apto mascotas', 'mascotas permitidas'], 'Apto mascota', ''),
+    (['apto profesional'], 'Apto profesional', ''),
+    (['parrilla'], 'Parrilla', ''),
+    (['quincho'], 'Quincho', ''),
+    (['cochera', 'garage', 'garaje', 'guarda coche', 'guardacoche', 'coche'], 'Cochera', ''),
+    (['amenities', 'sum ', ' sum,', 'pileta', 'gimnasio', 'piscina'], 'Amenities', ''),
+    (['muy luminoso', 'luminoso', 'mucha luz', 'excelente luminosidad'], 'Luminoso', ''),
+    (['terraza'], 'Terraza', ''),
+    (['jardín', 'jardin'], 'Jardín', ''),
+    (['seguridad 24', 'vigilancia', 'seguridad las 24'], 'Seguridad 24hs', ''),
+    (['a estrenar', 'estrenar'], 'A estrenar', 'org'),
+]
+MAX_BADGES = 6
+
+def detectar_badges(datos: dict) -> list:
+    """
+    Detecta badges automáticamente desde descripción + título + atributos.
+    Devuelve lista de strings, máximo MAX_BADGES.
+    Respeta badges ya seteados manualmente si vienen en datos['badges'].
+    """
+    # Texto base para buscar
+    texto = ' '.join([
+        datos.get('descripcion', ''),
+        datos.get('titulo', ''),
+        datos.get('tipo', ''),
+        datos.get('disposicion', ''),
+        str(datos.get('ambientes', '')),
+    ]).lower()
+
+    encontrados = []
+    for keywords, badge, _ in BADGE_RULES:
+        for kw in keywords:
+            if kw in texto:
+                encontrados.append(badge)
+                break  # no duplicar si hay múltiples keywords del mismo badge
+
+    # Respetar badges manuales existentes, agregar detectados sin duplicar
+    manuales = [b for b in datos.get('badges', []) if b and b.strip()]
+    vistos = set(b.lower() for b in manuales)
+    for b in encontrados:
+        if b.lower() not in vistos and len(manuales) < MAX_BADGES:
+            manuales.append(b)
+            vistos.add(b.lower())
+
+    return manuales[:MAX_BADGES]
+
 
 # ─── EXTRACCIÓN ZONAPROP ────────────────────────────────────────────────────────
 def extraer_zonaprop(url: str) -> dict:
@@ -771,6 +827,21 @@ def extraer_zonaprop(url: str) -> dict:
         datos['disposicion']  = feat('1000019')
         datos['orientacion']  = feat('1000027') or ''
 
+    # Expensas
+    exp_m = re.search(r"'expenses'\s*:\s*'([^']+)'", raw)
+    if not exp_m:
+        exp_m = re.search(r'"expenses"\s*:\s*"([^"]+)"', raw)
+    if not exp_m:
+        exp_m = re.search(r"'expenses'\s*:\s*(\d+)", raw)
+    if exp_m:
+        exp_val = exp_m.group(1).strip()
+        if exp_val and exp_val != '0':
+            datos['expensas'] = f"$ {exp_val}" if exp_val.isdigit() else exp_val
+        else:
+            datos['expensas'] = ''
+    else:
+        datos['expensas'] = ''
+
     # Fotos (pictures array)
     pics_m = re.search(r"'pictures'\s*:\s*(\[.*?\]),\s*\n\s*\n", raw, re.DOTALL)
     fotos = []
@@ -779,115 +850,104 @@ def extraer_zonaprop(url: str) -> dict:
         fotos = [u for u in urls if u]
     datos['fotos'] = fotos
 
+    datos['badges'] = detectar_badges(datos)
     return datos
+def extraer_ml(url: str) -> dict:
+    """
+    Llama a la API pública de MercadoLibre.
+    Acepta cualquier URL de ML (ej: https://inmuebles.mercadolibre.com.ar/...MLA123456789-...)
+    Extrae el item ID y consulta api.mercadolibre.com/items/{ID}
+    Gratis, sin auth, sin Cmd+S.
+    """
+    # Extraer ID del item de la URL (formato MLA + dígitos)
+    id_m = re.search(r'MLA-?(\d+)', url)
+    if not id_m:
+        raise ValueError("No se encontró un ID de MercadoLibre en la URL. Asegurate de pegar la URL completa del aviso (debe contener MLAxxxxxxxx).")
+    item_id = f"MLA{id_m.group(1)}"
 
+    # Llamar API pública — no requiere auth para datos básicos
+    api_url = f"https://api.mercadolibre.com/items/{item_id}"
+    r = requests.get(api_url, timeout=20)
+    r.raise_for_status()
+    item = r.json()
 
-# ─── EXTRACCIÓN ML ─────────────────────────────────────────────────────────────
-def extraer_ml(html_path_or_url: str) -> dict:
-    """Acepta path a HTML guardado o URL (intenta request)."""
-    from pathlib import Path as _Path
-    if _Path(html_path_or_url).exists():
-        html = _Path(html_path_or_url).read_text(encoding='utf-8', errors='ignore')
-    else:
-        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        r = requests.get(html_path_or_url, headers=headers, timeout=20)
-        r.raise_for_status()
-        html = r.text
+    # También traer descripción desde endpoint separado
+    desc_r = requests.get(f"{api_url}/description", timeout=20)
+    descripcion = ''
+    if desc_r.status_code == 200:
+        descripcion = desc_r.json().get('plain_text', '')
 
-    soup = BeautifulSoup(html, 'html.parser')
     datos = {'operacion': 'Venta', 'fotos': []}
 
-    # Título
-    h1 = soup.find('h1')
-    titulo = h1.get_text(strip=True) if h1 else ''
-
-    # Tipo desde subtitle
-    sub = soup.find(class_='ui-pdp-subtitle')
-    sub_txt = sub.get_text(strip=True) if sub else ''
+    # Tipo y operación desde título / categoría
+    titulo = item.get('title', '')
     TIPO_MAP = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa',
-                'local': 'Local', 'oficina': 'Oficina', 'terreno': 'Terreno'}
+                'local': 'Local', 'oficina': 'Oficina', 'terreno': 'Terreno',
+                'duplex': 'Duplex', 'loft': 'Loft'}
     datos['tipo'] = 'Departamento'
     for k, v in TIPO_MAP.items():
-        if k in sub_txt.lower() or k in titulo.lower():
+        if k in titulo.lower():
             datos['tipo'] = v
             break
 
-    # Operación
-    if 'alquiler' in sub_txt.lower() or 'alquiler' in titulo.lower():
-        datos['operacion'] = 'Alquiler'
-
     # Precio
-    moneda = soup.find(class_='andes-money-amount__currency-symbol')
-    fraccion = soup.find(class_='andes-money-amount__fraction')
-    if moneda and fraccion:
-        sym = moneda.get_text(strip=True).replace('US$','USD').replace('U$S','USD')
-        num = fraccion.get_text(strip=True)
-        datos['precio'] = f"{sym} {num}"
+    precio_val = item.get('price', '')
+    moneda = item.get('currency_id', '')
+    sym = 'USD' if moneda in ('USD', 'U$S', 'US$') else '$'
+    if precio_val:
+        datos['precio'] = f"{sym} {int(precio_val):,}".replace(',', '.')
     else:
         datos['precio'] = ''
 
-    # Expensas
-    datos['expensas'] = ''
-
     # Ubicación
-    loc_el = soup.find(class_='ui-vip-location')
-    if loc_el:
-        loc_txt = re.sub(r'^Ubicaci[oó]n\s*', '', loc_el.get_text(strip=True))
-        # "Nicasio Oroño Al 1100, Caballito, Capital Federal, Capital Federal"
-        partes = [p.strip() for p in loc_txt.split(',')]
-        datos['direccion'] = partes[0] if partes else ''
-        datos['barrio']    = partes[1] if len(partes) > 1 else ''
-    else:
-        datos['direccion'] = ''
-        datos['barrio'] = ''
+    loc = item.get('location', {})
+    calle = loc.get('address_line', '')
+    barrio = (loc.get('neighborhood', {}) or {}).get('name', '')
+    if not barrio:
+        barrio = (loc.get('city', {}) or {}).get('name', '')
+    datos['direccion'] = calle
+    datos['barrio'] = barrio
 
-    # Specs desde tabla th/td
-    specs = {}
-    table = soup.find(class_='ui-pdp-specs__table')
-    if table:
-        ths = [t.get_text(strip=True) for t in table.find_all('th')]
-        tds = [t.get_text(strip=True) for t in table.find_all('td')]
-        specs = dict(zip(ths, tds))
+    # Atributos (ambientes, dorms, baños, sup, antigüedad, expensas, etc.)
+    attrs = {a['id']: a.get('value_name', '') or str(a.get('value_struct', {}).get('number', '')) 
+             for a in item.get('attributes', []) if a.get('value_name') or a.get('value_struct')}
 
-    def parse_num(val):
-        m = re.search(r'[\d]+', val.replace('.','').replace(',','.'))
+    def num(val):
+        m = re.search(r'\d+', str(val).replace('.',''))
         return m.group(0) if m else ''
 
-    datos['ambientes']    = parse_num(specs.get('Ambientes',''))
-    datos['dormitorios']  = parse_num(specs.get('Dormitorios',''))
-    datos['banos']        = parse_num(specs.get('Baños','').replace('ñ','n'))
-    datos['sup_total']    = parse_num(specs.get('Superficie total',''))
-    datos['sup_cubierta'] = parse_num(specs.get('Superficie cubierta',''))
-    datos['antiguedad']   = parse_num(specs.get('Antigüedad','').replace('ü','u'))
-    datos['disposicion']  = specs.get('Disposición','').replace('ó','o')
-    datos['orientacion']  = specs.get('Orientación','').replace('ó','o')
-    exp_raw = specs.get('Expensas','')
-    if exp_raw and exp_raw != '0 ARS':
-        datos['expensas'] = exp_raw
+    datos['ambientes']    = num(attrs.get('ROOMS', ''))
+    datos['dormitorios']  = num(attrs.get('BEDROOMS', ''))
+    datos['banos']        = num(attrs.get('FULL_BATHROOMS', '') or attrs.get('BATHROOMS', ''))
+    datos['toilette']     = num(attrs.get('HALF_BATHROOMS', ''))
+    datos['sup_total']    = num(attrs.get('TOTAL_AREA', ''))
+    datos['sup_cubierta'] = num(attrs.get('COVERED_AREA', ''))
+    datos['antiguedad']   = num(attrs.get('PROPERTY_AGE', ''))
+    datos['disposicion']  = attrs.get('DISPOSITION', '')
+    datos['orientacion']  = attrs.get('ORIENTATION', '')
+
+    # Expensas
+    exp_raw = attrs.get('EXPENSES', '') or attrs.get('MAINTENANCE_FEE', '')
+    if exp_raw and exp_raw not in ('0', '0 ARS', ''):
+        datos['expensas'] = f"$ {num(exp_raw)}" if num(exp_raw) else exp_raw
+    else:
+        datos['expensas'] = ''
 
     # Descripción
-    desc_el = soup.find(class_='ui-pdp-description__content')
-    datos['descripcion'] = desc_el.get_text(strip=True) if desc_el else ''
+    datos['descripcion'] = descripcion.strip()
 
-    # Fotos alta resolución — deduplicadas por ID de foto
-    imgs = soup.find_all('img', src=re.compile(r'mlstatic\.com/D_'))
-    seen_ids = set()
+    # Fotos en alta resolución
+    pictures = item.get('pictures', [])
     fotos = []
-    for img in imgs:
-        src = img.get('src','')
-        src_big = re.sub(r'-[A-Z]\.webp$', '-O.webp', src)
-        id_m = re.search(r'MLA\d+', src_big)
-        if id_m:
-            pid = id_m.group(0)
-            if pid not in seen_ids:
-                seen_ids.add(pid)
-                # Preferir NQ_NP sobre Q_NP
-                if 'D_NQ_NP' in src_big or not any('D_NQ_NP' in u for u in fotos):
-                    fotos.append(src_big)
-        elif 'mlstatic.com/D_' in src_big and src_big not in fotos:
-            fotos.append(src_big)
+    for pic in pictures:
+        url_foto = pic.get('url', '') or pic.get('secure_url', '')
+        if url_foto:
+            # ML API devuelve URLs con sufijo -F (full) o -O (original)
+            url_big = re.sub(r'-[A-Z]\.(?:jpg|webp|jpeg)$', '-O.jpg', url_foto, flags=re.IGNORECASE)
+            fotos.append(url_big)
     datos['fotos'] = fotos
 
+    datos['badges'] = detectar_badges(datos)
     return datos
 
 
@@ -967,10 +1027,8 @@ def extraer_c21(html_path_or_url: str) -> dict:
             fotos.append(u)
     datos['fotos'] = fotos
 
+    datos['badges'] = detectar_badges(datos)
     return datos
-
-
-# ─── GENERADOR HTML (reutiliza lógica de generate.py) ─────────────────────────
 CDN = "https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1"
 ICONOS = {
     "ambientes":    f"{CDN}/ambientes.9e33dd.svg",
@@ -1129,6 +1187,60 @@ def git_push(repo: Path, mensaje: str):
     subprocess.run(['git', 'push'], cwd=repo, check=True, capture_output=True)
 
 
+# ─── GOOGLE SHEETS ─────────────────────────────────────────────────────────────
+SHEET_ID   = '1LEBztjtgGCj0PzpRnpcZezQaM0rmdycHVCHr4aZTjmw'
+CREDS_PATH = Path.home() / 'Documents' / 'zonaprop_scraper' / 'google_credentials.json'
+SHEETS_SCOPES = [
+    'https://spreadsheets.google.com/feeds',
+    'https://www.googleapis.com/auth/drive',
+]
+
+def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
+    """
+    Agrega una fila en la solapa 'Fichas' del Google Sheet.
+    Si falla la conexión, logea el error pero NO interrumpe el flujo.
+    """
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        from datetime import date
+
+        creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SHEETS_SCOPES)
+        gc = gspread.authorize(creds)
+        ws = gc.open_by_key(SHEET_ID).worksheet('Fichas')
+
+        fecha = date.today().strftime('%d/%m/%Y')
+
+        precio_raw = d.get('precio', '')
+        precio_usd = re.sub(r'^(USD|U\$S|US\$|\$)\s*', '', precio_raw, flags=re.IGNORECASE).strip()
+
+        badges_lower = [b.lower() for b in d.get('badges', [])]
+        cochera = 'Sí' if any('cochera' in b for b in badges_lower) else ''
+
+        fila = [
+            fecha,                   # FECHA
+            d.get('direccion', ''),  # DIRECCIÓN
+            d.get('barrio', ''),     # BARRIO
+            d.get('tipo', ''),       # TIPO
+            d.get('ambientes', ''),  # AMB
+            precio_usd,              # PRECIO USD
+            d.get('expensas', ''),   # EXPENSAS
+            cochera,                 # COCHERA
+            link_nl,                 # LINK NL
+            link_og,                 # LINK OG
+            '',                      # CLIENTE
+            '',                      # ESTADO
+            '',                      # COMENTARIOS
+            ficha_id,                # ID
+        ]
+
+        ws.append_row(fila, value_input_option='USER_ENTERED')
+        print(f'[Sheets] Fila agregada: {ficha_id}')
+
+    except Exception as e:
+        print(f'[Sheets] Error al agregar fila (la ficha ya fue publicada): {e}')
+
+
 # ─── ROUTES ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
@@ -1160,9 +1272,9 @@ def generar():
     d = request.get_json()
     fotos = d.get('fotos', [])
 
-    # Para ML/C21 sin fotos externas: buscar fotos locales en la carpeta
+    # Para C21 sin fotos externas: buscar fotos locales en la carpeta
     portal = d.get('portal', 'zonaprop')
-    if portal in ('ml', 'c21') and not fotos:
+    if portal == 'c21' and not fotos:
         slug_dir = slugify(d.get('barrio','') + '-' + d.get('direccion',''))
         carpeta = FOTOS_DIR / slug_dir
         if carpeta.exists():
@@ -1170,7 +1282,8 @@ def generar():
             fotos = [f'{GITHUB_BASE}/assets/fotos/{slug_dir}/{f.name}' for f in fotos_locales]
 
     if not fotos:
-        return jsonify({'error': 'No hay fotos. Para ML/C21 copiá las imágenes a assets/fotos/slug/ antes de generar.'}), 400
+        error_msg = 'No hay fotos. Para C21 copiá las imágenes a assets/fotos/slug/ antes de generar.' if portal == 'c21' else 'No hay fotos disponibles.'
+        return jsonify({'error': error_msg}), 400
 
     # Generar nombre de archivo — formato: tipo-direccion-Xamb[-hash]
     TIPO_SLUG = {
@@ -1207,6 +1320,7 @@ def generar():
         return jsonify({'error': f'Error en git push: {e.stderr.decode() if e.stderr else str(e)}'}), 500
 
     url_publica = f'{GITHUB_BASE}/fichas/{out_path.name}'
+    agregar_ficha_a_sheets(d, url_publica, d.get('url_original', ''), out_path.stem)
     return jsonify({'url': url_publica, 'archivo': out_path.name})
 
 
