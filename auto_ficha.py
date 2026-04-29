@@ -836,7 +836,10 @@ def extraer_zonaprop(url: str) -> dict:
     if exp_m:
         exp_val = exp_m.group(1).strip()
         if exp_val and exp_val != '0':
-            datos['expensas'] = f"$ {exp_val}" if exp_val.isdigit() else exp_val
+            if exp_val.isdigit():
+                datos['expensas'] = f"$ {int(exp_val):,}".replace(',', '.')
+            else:
+                datos['expensas'] = exp_val
         else:
             datos['expensas'] = ''
     else:
@@ -1188,8 +1191,8 @@ def git_push(repo: Path, mensaje: str):
 
 
 # ─── GOOGLE SHEETS ─────────────────────────────────────────────────────────────
-SHEET_ID   = '1LEBztjtgGCj0PzpRnpcZezQaM0rmdycHVCHr4aZTjmw'
-CREDS_PATH = Path.home() / 'Documents' / 'zonaprop_scraper' / 'google_credentials.json'
+SHEET_ID      = '1LEBztjtgGCj0PzpRnpcZezQaM0rmdycHVCHr4aZTjmw'
+CREDS_PATH    = Path.home() / 'Documents' / 'zonaprop_scraper' / 'google_credentials.json'
 SHEETS_SCOPES = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive',
@@ -1201,25 +1204,23 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
     Si falla la conexión, logea el error pero NO interrumpe el flujo.
     """
     import traceback
-    print(f'[Sheets] Iniciando — ficha_id={ficha_id!r}')
-    print(f'[Sheets] CREDS_PATH={CREDS_PATH} exists={CREDS_PATH.exists()}')
-    print(f'[Sheets] SHEET_ID={SHEET_ID}')
+    print(f'[Sheets] Iniciando — ficha_id={ficha_id!r}', flush=True)
+    print(f'[Sheets] CREDS_PATH={CREDS_PATH} exists={CREDS_PATH.exists()}', flush=True)
     try:
         import gspread
         from google.oauth2.service_account import Credentials
         from datetime import date
 
-        print('[Sheets] Cargando credenciales...')
+        print('[Sheets] Cargando credenciales...', flush=True)
         creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SHEETS_SCOPES)
-        print(f'[Sheets] Service account: {creds.service_account_email}')
+        print(f'[Sheets] Service account: {creds.service_account_email}', flush=True)
 
         gc = gspread.authorize(creds)
-        print('[Sheets] Abriendo spreadsheet...')
         sh = gc.open_by_key(SHEET_ID)
-        print(f'[Sheets] Spreadsheet: {sh.title!r}')
+        print(f'[Sheets] Spreadsheet: {sh.title!r}', flush=True)
 
         ws = sh.worksheet('Fichas')
-        print(f'[Sheets] Worksheet: {ws.title!r} — filas actuales: {ws.row_count}')
+        print(f'[Sheets] Worksheet: {ws.title!r}', flush=True)
 
         fecha = date.today().strftime('%d/%m/%Y')
 
@@ -1246,14 +1247,14 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
             ficha_id,                # ID
         ]
 
-        print(f'[Sheets] Fila a escribir: {fila}')
+        print(f'[Sheets] Fila a escribir: {fila}', flush=True)
         resultado = ws.append_row(fila, value_input_option='USER_ENTERED')
-        print(f'[Sheets] Respuesta de la API: {resultado}')
-        print(f'[Sheets] OK — fila agregada: {ficha_id}')
+        print(f'[Sheets] Respuesta de la API: {resultado}', flush=True)
+        print(f'[Sheets] OK — fila agregada: {ficha_id}', flush=True)
 
     except Exception as e:
-        print(f'[Sheets] EXCEPCIÓN: {type(e).__name__}: {e}')
-        print(traceback.format_exc())
+        print(f'[Sheets] EXCEPCIÓN: {type(e).__name__}: {e}', flush=True)
+        print(traceback.format_exc(), flush=True)
 
 
 # ─── ROUTES ────────────────────────────────────────────────────────────────────
