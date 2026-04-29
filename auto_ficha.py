@@ -270,7 +270,11 @@ HTML = r"""<!DOCTYPE html>
 
 <nav>
   <span class="brand">NL · Generador de Fichas</span>
-  <span class="badge">Internal Tool</span>
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="/" style="color:rgba(255,255,255,.75);font-size:13px;font-weight:500;text-decoration:none">Fichas</a>
+    <a href="/leads" style="color:rgba(255,255,255,.75);font-size:13px;font-weight:500;text-decoration:none">Leads</a>
+    <span class="badge">Internal Tool</span>
+  </div>
 </nav>
 
 <main>
@@ -1260,10 +1264,342 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
         print(traceback.format_exc(), flush=True)
 
 
+# ─── LEADS ─────────────────────────────────────────────────────────────────────
+
+_LEADS_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{--primary:#003153;--orange:#E8630A;--bg:#f0f2f5;--white:#fff;--muted:#6b7280;--border:#dde1e7;--red:#dc2626;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:#111;min-height:100vh;}
+nav{background:var(--primary);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;}
+.brand{color:#fff;font-weight:600;font-size:14px;letter-spacing:.04em;}
+.nav-links{display:flex;align-items:center;gap:16px;}
+.nav-link{color:rgba(255,255,255,.7);font-size:13px;font-weight:500;text-decoration:none;}
+.nav-link:hover{color:#fff;}
+.nav-link.active{color:var(--orange);}
+.nav-badge{background:var(--orange);color:#fff;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;}
+main{max-width:1400px;margin:36px auto;padding:0 20px;}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+h1{font-size:22px;font-weight:600;color:var(--primary);}
+.subtitle{color:var(--muted);font-size:13px;margin-top:4px;}
+.refresh-btn{color:var(--primary);font-size:13px;font-weight:500;text-decoration:none;padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;white-space:nowrap;}
+.refresh-btn:hover{background:var(--bg);}
+.table-wrap{background:var(--white);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+.leads-tbl{min-width:1100px;}
+thead th{background:var(--primary);color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:12px 14px;text-align:left;white-space:nowrap;}
+thead th:first-child{border-radius:12px 0 0 0;}
+thead th:last-child{border-radius:0 12px 0 0;text-align:center;}
+tbody tr{border-bottom:1px solid var(--border);}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+td{padding:11px 14px;font-size:13px;vertical-align:top;}
+.td-nombre{font-weight:600;white-space:nowrap;vertical-align:middle;}
+.tc-c{text-align:center;vertical-align:middle;}
+.tc-r{text-align:right;font-family:'DM Mono',monospace;font-size:12px;vertical-align:middle;}
+.tc-m{color:var(--muted);font-size:12px;vertical-align:middle;}
+.tc-red{color:var(--red);vertical-align:middle;}
+.tc-org{color:var(--orange);vertical-align:middle;}
+.td-wrap{white-space:normal;min-width:160px;max-width:280px;word-break:break-word;line-height:1.45;font-size:12px;}
+.seg-b{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;display:inline-block;}
+.fichas-n{display:inline-block;background:var(--primary);color:#fff;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600;}
+.section-ov{margin-top:32px;}
+.section-h{font-size:12px;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;}
+.err-box{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:24px;color:var(--red);margin-top:40px;}
+.err-box h2{font-size:16px;margin-bottom:10px;}
+.err-box pre{font-family:'DM Mono',monospace;font-size:12px;background:#fff;padding:12px;border-radius:6px;overflow-x:auto;color:#374151;margin-top:10px;}
+"""
+
+def _leads_nav(active):
+    fichas_cls = ' active' if active == 'fichas' else ''
+    leads_cls  = ' active' if active == 'leads'  else ''
+    return (
+        '<nav><span class="brand">NL · Generador de Fichas</span>'
+        '<div class="nav-links">'
+        f'<a href="/" class="nav-link{fichas_cls}">Fichas</a>'
+        f'<a href="/leads" class="nav-link{leads_cls}">Leads</a>'
+        '<span class="nav-badge">Internal Tool</span>'
+        '</div></nav>'
+    )
+
+def _parse_fecha_lead(s):
+    s = (s or '').strip()
+    if not s:
+        return None
+    for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y'):
+        try:
+            return _datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+    return None
+
+def _sort_key_lead(row):
+    today = _date.today()
+    prox  = _parse_fecha_lead(row.get('PROX FOLLOWUP', ''))
+    seg   = row.get('SEGUIMIENTO', '')
+    seg_n = 0 if 'P0' in seg else 1 if 'P1' in seg else 2 if 'P2' in seg else 3 if 'P3' in seg else 9
+    if prox is None:
+        return (3, _date.max, seg_n)
+    if prox < today:
+        return (0, prox, seg_n)   # vencidos: los más viejos primero
+    if prox == today:
+        return (1, prox, seg_n)
+    return (2, prox, seg_n)
+
+def _badge_seg(seg):
+    if 'P0' in seg:
+        bg, fg = '#fef2f2', '#dc2626'
+    elif 'P1' in seg:
+        bg, fg = '#fff7ed', '#c2410c'
+    elif 'P2' in seg:
+        bg, fg = '#fefce8', '#a16207'
+    elif 'P3' in seg:
+        bg, fg = '#f9fafb', '#6b7280'
+    else:
+        bg, fg = '#f3f4f6', '#374151'
+    return (
+        f'<span class="seg-b" style="background:{bg};color:{fg};border-color:{fg}44">'
+        f'{_html_esc.escape(seg)}</span>'
+    )
+
+def _cell_followup(s):
+    prox  = _parse_fecha_lead(s)
+    today = _date.today()
+    val   = _html_esc.escape(s) if s else '—'
+    if prox is None:
+        return f'<td class="tc-m">{val}</td>'
+    if prox < today:
+        return f'<td class="tc-red"><b>{val}</b> ⚠</td>'
+    if prox == today:
+        return f'<td class="tc-org"><b>{val}</b> ●</td>'
+    return f'<td>{val}</td>'
+
+def _parse_usd(s):
+    try:
+        return int(re.sub(r'[^0-9]', '', str(s or '')))
+    except (ValueError, TypeError):
+        return None
+
+def _find_overlaps(leads):
+    n = len(leads)
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(x, y):
+        parent[find(x)] = find(y)
+
+    def barrios_of(r):
+        return {b.strip() for b in (r.get('BARRIOS') or '').replace(';', ',').split(',') if b.strip()}
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            a, b = leads[i], leads[j]
+            tipo_a = (a.get('TIPO') or '').strip().upper()
+            tipo_b = (b.get('TIPO') or '').strip().upper()
+            if not tipo_a or tipo_a != tipo_b:
+                continue
+            amb_a = str(a.get('AMB') or '').strip()
+            amb_b = str(b.get('AMB') or '').strip()
+            if not amb_a or amb_a != amb_b:
+                continue
+            if not (barrios_of(a) & barrios_of(b)):
+                continue
+            p_a = _parse_usd(a.get('HASTA USD', ''))
+            p_b = _parse_usd(b.get('HASTA USD', ''))
+            if p_a and p_b and abs(p_a - p_b) > 20000:
+                continue
+            union(i, j)
+
+    from collections import defaultdict as _dd
+    groups = _dd(list)
+    for i in range(n):
+        groups[find(i)].append(i)
+
+    results = []
+    for root, indices in groups.items():
+        if len(indices) < 2:
+            continue
+        gl = [leads[i] for i in indices]
+
+        all_barrios = set()
+        for lead in gl:
+            for b in (lead.get('BARRIOS') or '').replace(';', ',').split(','):
+                b = b.strip()
+                if b:
+                    all_barrios.add(b)
+
+        prices = [p for p in (_parse_usd(l.get('HASTA USD', '')) for l in gl) if p]
+        if prices:
+            p_min, p_max = min(prices), max(prices)
+            p_str = 'USD ' + f'{p_min:,}'.replace(',', '.')
+            if p_min != p_max:
+                p_str += ' – ' + f'{p_max:,}'.replace(',', '.')
+        else:
+            p_str = '—'
+
+        results.append({
+            'tipo':    gl[0].get('TIPO', ''),
+            'barrios': sorted(all_barrios),
+            'amb':     str(gl[0].get('AMB', '')),
+            'precio':  p_str,
+            'nombres': [l.get('NOMBRE', '') for l in gl],
+        })
+
+    return results
+
+def leer_leads_data():
+    import gspread
+    from google.oauth2.service_account import Credentials
+    creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SHEETS_SCOPES)
+    gc    = gspread.authorize(creds)
+    sh    = gc.open_by_key(SHEET_ID)
+    return sh.worksheet('Leads').get_all_records(), sh.worksheet('Fichas').get_all_records()
+
+def _render_leads_html(leads, fichas):
+    sorted_leads  = sorted(leads, key=_sort_key_lead)
+    fichas_count  = _Counter(
+        r.get('CLIENTE', '').strip().lower()
+        for r in fichas if r.get('CLIENTE', '').strip()
+    )
+
+    rows = []
+    for row in sorted_leads:
+        nombre    = _html_esc.escape(str(row.get('NOMBRE', '')))
+        seg       = str(row.get('SEGUIMIENTO', ''))
+        tipo      = _html_esc.escape(str(row.get('TIPO', '')))
+        barrios   = _html_esc.escape(str(row.get('BARRIOS', '')))
+        amb       = _html_esc.escape(str(row.get('AMB', '')))
+        hasta_usd = _html_esc.escape(str(row.get('HASTA USD', '')))
+        lc        = _html_esc.escape(str(row.get('LAST CONTACT', '') or '—'))
+        prox_raw  = str(row.get('PROX FOLLOWUP', ''))
+        res_raw   = str(row.get('RESULTADO LAST CONTACT', '') or '')
+        next_raw  = str(row.get('NEXT STEP', '') or '')
+        fichas_n  = fichas_count.get(str(row.get('NOMBRE', '')).strip().lower(), 0)
+
+        fichas_cell = (f'<span class="fichas-n">{fichas_n}</span>'
+                       if fichas_n else '<span class="tc-m">—</span>')
+
+        rows.append(
+            '<tr>'
+            + f'<td class="td-nombre">{nombre}</td>'
+            + f'<td style="vertical-align:middle">{_badge_seg(seg)}</td>'
+            + f'<td style="vertical-align:middle">{tipo}</td>'
+            + f'<td style="vertical-align:middle">{barrios}</td>'
+            + f'<td class="tc-c">{amb}</td>'
+            + f'<td class="tc-r">{hasta_usd}</td>'
+            + f'<td class="tc-m">{lc}</td>'
+            + _cell_followup(prox_raw)
+            + f'<td class="td-wrap">{_html_esc.escape(res_raw) or "—"}</td>'
+            + f'<td class="td-wrap">{_html_esc.escape(next_raw) or "—"}</td>'
+            + f'<td class="tc-c">{fichas_cell}</td>'
+            + '</tr>'
+        )
+
+    overlaps = _find_overlaps(leads)
+    if overlaps:
+        ov_rows = []
+        for g in overlaps:
+            tipo_s    = _html_esc.escape(g['tipo'])
+            barrios_s = ', '.join(_html_esc.escape(b) for b in g['barrios'])
+            amb_s     = _html_esc.escape(g['amb'])
+            precio_s  = _html_esc.escape(g['precio'])
+            clientes_s = ' · '.join(_html_esc.escape(nm) for nm in g['nombres'])
+            ov_rows.append(
+                '<tr>'
+                + f'<td style="vertical-align:middle">{tipo_s}</td>'
+                + f'<td style="vertical-align:middle">{barrios_s}</td>'
+                + f'<td class="tc-c">{amb_s}</td>'
+                + f'<td class="tc-r" style="vertical-align:middle">{precio_s}</td>'
+                + f'<td style="font-weight:500;vertical-align:middle">{clientes_s}</td>'
+                + '</tr>'
+            )
+        overlap_section = (
+            '<section class="section-ov">'
+            '<div class="section-h">Búsquedas similares</div>'
+            '<div class="table-wrap">'
+            '<table><thead><tr>'
+            '<th>Tipo</th><th>Barrios</th><th style="text-align:center">Amb</th>'
+            '<th style="text-align:right">Presupuesto</th><th>Clientes</th>'
+            '</tr></thead>'
+            '<tbody>' + '\n'.join(ov_rows) + '</tbody>'
+            '</table></div>'
+            '</section>'
+        )
+    else:
+        overlap_section = ''
+
+    updated_at = _datetime.now().strftime('%d/%m/%Y %H:%M')
+    n = len(sorted_leads)
+
+    return (
+        '<!DOCTYPE html><html lang="es"><head>'
+        '<meta charset="UTF-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<meta http-equiv="refresh" content="300">'
+        '<title>Leads · NL</title>'
+        '<style>' + _LEADS_CSS + '</style>'
+        '</head><body>'
+        + _leads_nav('leads') +
+        '<main>'
+        '<div class="page-hdr">'
+        f'<div><h1>CRM Leads <span style="font-size:15px;font-weight:400;color:var(--muted)">({n})</span></h1>'
+        f'<div class="subtitle">Actualizado {updated_at}'
+        f' &nbsp;·&nbsp; <span id="cd">auto-refresh en 5:00</span></div></div>'
+        '<a href="/leads" class="refresh-btn">↺ Refrescar</a>'
+        '</div>'
+        '<div class="table-wrap"><table class="leads-tbl">'
+        '<thead><tr>'
+        '<th>Nombre</th><th>Seguimiento</th><th>Tipo</th><th>Barrios</th>'
+        '<th>Amb</th><th>Hasta USD</th><th>Last Contact</th><th>Prox Followup</th>'
+        '<th>Resultado</th><th>Next Step</th><th>Fichas</th>'
+        '</tr></thead>'
+        '<tbody>' + '\n'.join(rows) + '</tbody>'
+        '</table></div>'
+        + overlap_section +
+        '</main>'
+        '<script>'
+        'var s=300,cd=document.getElementById("cd");'
+        'setInterval(function(){if(--s<=0)return;'
+        'var m=Math.floor(s/60),ss=String(s%60).padStart(2,"0");'
+        'cd.textContent="auto-refresh en "+m+":"+ss;},1000);'
+        '</script>'
+        '</body></html>'
+    )
+
+def _render_leads_error(msg):
+    return (
+        '<!DOCTYPE html><html lang="es"><head>'
+        '<meta charset="UTF-8"><title>Error · Leads</title>'
+        '<style>' + _LEADS_CSS + '</style>'
+        '</head><body>'
+        + _leads_nav('leads') +
+        '<main><div class="err-box">'
+        '<h2>⚠ Error al conectar con Google Sheets</h2>'
+        f'<pre>{_html_esc.escape(msg)}</pre>'
+        '<p style="margin-top:14px">'
+        '<a href="/leads" style="color:var(--red);font-weight:500">↺ Reintentar</a>'
+        '</p></div></main></body></html>'
+    )
+
+
 # ─── ROUTES ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return render_template_string(HTML)
+
+
+@app.route('/leads')
+def leads():
+    try:
+        leads_data, fichas_data = leer_leads_data()
+    except Exception as e:
+        return _render_leads_error(str(e)), 500
+    return _render_leads_html(leads_data, fichas_data)
 
 
 @app.route('/extraer', methods=['POST'])
