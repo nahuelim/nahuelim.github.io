@@ -1200,14 +1200,26 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
     Agrega una fila en la solapa 'Fichas' del Google Sheet.
     Si falla la conexión, logea el error pero NO interrumpe el flujo.
     """
+    import traceback
+    print(f'[Sheets] Iniciando — ficha_id={ficha_id!r}')
+    print(f'[Sheets] CREDS_PATH={CREDS_PATH} exists={CREDS_PATH.exists()}')
+    print(f'[Sheets] SHEET_ID={SHEET_ID}')
     try:
         import gspread
         from google.oauth2.service_account import Credentials
         from datetime import date
 
+        print('[Sheets] Cargando credenciales...')
         creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SHEETS_SCOPES)
+        print(f'[Sheets] Service account: {creds.service_account_email}')
+
         gc = gspread.authorize(creds)
-        ws = gc.open_by_key(SHEET_ID).worksheet('Fichas')
+        print('[Sheets] Abriendo spreadsheet...')
+        sh = gc.open_by_key(SHEET_ID)
+        print(f'[Sheets] Spreadsheet: {sh.title!r}')
+
+        ws = sh.worksheet('Fichas')
+        print(f'[Sheets] Worksheet: {ws.title!r} — filas actuales: {ws.row_count}')
 
         fecha = date.today().strftime('%d/%m/%Y')
 
@@ -1234,11 +1246,14 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
             ficha_id,                # ID
         ]
 
-        ws.append_row(fila, value_input_option='USER_ENTERED')
-        print(f'[Sheets] Fila agregada: {ficha_id}')
+        print(f'[Sheets] Fila a escribir: {fila}')
+        resultado = ws.append_row(fila, value_input_option='USER_ENTERED')
+        print(f'[Sheets] Respuesta de la API: {resultado}')
+        print(f'[Sheets] OK — fila agregada: {ficha_id}')
 
     except Exception as e:
-        print(f'[Sheets] Error al agregar fila (la ficha ya fue publicada): {e}')
+        print(f'[Sheets] EXCEPCIÓN: {type(e).__name__}: {e}')
+        print(traceback.format_exc())
 
 
 # ─── ROUTES ────────────────────────────────────────────────────────────────────
