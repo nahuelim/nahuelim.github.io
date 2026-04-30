@@ -1,9 +1,9 @@
 #!/bin/bash
-cd ~/Documents/nahuelim.github.io
+cd "$HOME/Documents/2. Inmobiliaria/nahuelim.github.io"
 
 # Buscar Python con requests disponible
-if [ -f ~/Documents/zonaprop_scraper/venv/bin/python ]; then
-  PYTHON=~/Documents/zonaprop_scraper/venv/bin/python
+if [ -f "$HOME/Documents/2. Inmobiliaria/zonaprop_scraper/venv/bin/python" ]; then
+  PYTHON="$HOME/Documents/2. Inmobiliaria/zonaprop_scraper/venv/bin/python"
 elif command -v python3 &>/dev/null; then
   PYTHON=python3
 else

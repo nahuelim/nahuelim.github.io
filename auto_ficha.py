@@ -25,7 +25,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
-REPO_PATH = Path.home() / "Documents" / "nahuelim.github.io"
+REPO_PATH = Path.home() / "Documents" / "2. Inmobiliaria" / "nahuelim.github.io"
 FICHAS_DIR = REPO_PATH / "fichas"
 FOTOS_DIR  = REPO_PATH / "assets" / "fotos"
 GITHUB_BASE = "https://nahuelim.github.io"
@@ -1197,9 +1197,107 @@ def git_push(repo: Path, mensaje: str):
     subprocess.run(['git', 'push'], cwd=repo, check=True, capture_output=True)
 
 
+# ─── BÚSQUEDA EN DB LOCAL ──────────────────────────────────────────────────────
+DB_PATH = Path.home() / 'Documents' / '2. Inmobiliaria' / 'zonaprop_scraper' / 'propiedades.db'
+
+def _parse_amb_min(val):
+    """Extrae el mínimo de un campo AMB. '3' -> 3, '2-3' -> 2, '3+' -> 3."""
+    s = str(val or '').strip()
+    m = re.search(r'\d+', s)
+    return int(m.group()) if m else None
+
+def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd):
+    """
+    Busca en propiedades.db activos que matcheen el perfil del lead.
+    Retorna lista de dicts ordenada por barrio de prioridad, luego precio asc.
+    """
+    import sqlite3 as _sqlite3
+
+    amb_n    = _parse_amb_min(amb)
+    precio_n = _parse_usd(hasta_usd)
+    barrios_l = [b.strip() for b in str(barrios or '').replace(';',',').split(',') if b.strip()]
+
+    if not barrios_l:
+        return []
+
+    barrio_orden = {b.lower(): i for i, b in enumerate(barrios_l)}
+    placeholders = ','.join('?' for _ in barrios_l)
+    params = [b.lower() for b in barrios_l]
+
+    wheres = [f'LOWER(barrio) IN ({placeholders})']
+    if tipo:
+        wheres.append('LOWER(tipo_propiedad) = LOWER(?)')
+        params.append(tipo)
+    if amb_n is not None:
+        wheres.append('ambientes = ?')
+        params.append(amb_n)
+    if precio_n:
+        wheres.append('precio <= ?')
+        params.append(precio_n)
+    wheres.append("estado_aviso = 'activo'")
+    wheres.append("operacion = 'venta'")
+
+    sql = (
+        'SELECT url, direccion, barrio, tipo_propiedad, ambientes, '
+        'precio, moneda_precio, sup_cubierta, expensas, moneda_expensas, '
+        'cochera, fecha_detectado, fecha_publicacion_portal '
+        f'FROM propiedades WHERE {" AND ".join(wheres)} '
+        'ORDER BY precio ASC LIMIT 50'
+    )
+
+    try:
+        con = _sqlite3.connect(str(DB_PATH))
+        con.row_factory = _sqlite3.Row
+        rows = con.execute(sql, params).fetchall()
+        con.close()
+    except Exception as e:
+        raise RuntimeError(f'Error DB: {e}')
+
+    today = _date.today()
+    results = []
+    for r in rows:
+        barrio_key = (r['barrio'] or '').strip().lower()
+        pri = barrio_orden.get(barrio_key, 99)
+
+        fecha_s = r['fecha_publicacion_portal'] or r['fecha_detectado'] or ''
+        try:
+            fecha_d = _datetime.fromisoformat(fecha_s[:10]).date()
+            dias = (today - fecha_d).days
+        except Exception:
+            dias = None
+
+        precio_fmt = ''
+        if r['precio']:
+            moneda = r['moneda_precio'] or 'USD'
+            precio_fmt = f"{moneda} {int(r['precio']):,}".replace(',', '.')
+
+        exp_fmt = ''
+        if r['expensas']:
+            m_exp = r['moneda_expensas'] or '$'
+            exp_fmt = f"{m_exp} {int(r['expensas']):,}".replace(',', '.')
+
+        results.append({
+            'barrio_pri': pri,
+            'barrio':     r['barrio'] or '',
+            'url':        r['url'] or '',
+            'direccion':  r['direccion'] or '',
+            'tipo':       r['tipo_propiedad'] or '',
+            'amb':        r['ambientes'],
+            'sup':        int(r['sup_cubierta']) if r['sup_cubierta'] else None,
+            'precio':     precio_fmt,
+            'precio_raw': int(r['precio']) if r['precio'] else 0,
+            'expensas':   exp_fmt,
+            'cochera':    bool(r['cochera']),
+            'dias':       dias,
+        })
+
+    results.sort(key=lambda x: (x['barrio_pri'], x.get('dias') if x.get('dias') is not None else 9999, -(x.get('precio_raw') or 0)))
+    return results
+
+
 # ─── GOOGLE SHEETS ─────────────────────────────────────────────────────────────
 SHEET_ID      = '1LEBztjtgGCj0PzpRnpcZezQaM0rmdycHVCHr4aZTjmw'
-CREDS_PATH    = Path.home() / 'Documents' / 'zonaprop_scraper' / 'google_credentials.json'
+CREDS_PATH    = Path.home() / 'Documents' / '2. Inmobiliaria' / 'zonaprop_scraper' / 'google_credentials.json'
 SHEETS_SCOPES = [
     'https://spreadsheets.google.com/feeds',
     'https://www.googleapis.com/auth/drive',
@@ -1278,12 +1376,20 @@ nav{background:var(--primary);padding:0 28px;height:54px;display:flex;align-item
 .nav-link:hover{color:#fff;}
 .nav-link.active{color:var(--orange);}
 .nav-badge{background:var(--orange);color:#fff;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;}
-main{max-width:1400px;margin:36px auto;padding:0 20px;}
-.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+main{max-width:1500px;margin:36px auto;padding:0 20px;}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
 h1{font-size:22px;font-weight:600;color:var(--primary);}
 .subtitle{color:var(--muted);font-size:13px;margin-top:4px;}
 .refresh-btn{color:var(--primary);font-size:13px;font-weight:500;text-decoration:none;padding:8px 14px;border:1.5px solid var(--border);border-radius:8px;background:#fff;white-space:nowrap;}
 .refresh-btn:hover{background:var(--bg);}
+.filters-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.filter-sel{border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:#111;outline:none;cursor:pointer;transition:border-color .15s;}
+.filter-sel:focus{border-color:var(--primary);}
+.filter-sep{width:1px;height:24px;background:var(--border);flex-shrink:0;}
+.sort-btn{display:inline-flex;align-items:center;gap:5px;border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:#111;cursor:pointer;transition:border-color .15s;white-space:nowrap;}
+.sort-btn:hover{border-color:var(--primary);}
+.sort-btn.active{border-color:var(--primary);color:var(--primary);font-weight:600;}
+.filter-count{margin-left:auto;font-size:12px;color:var(--muted);}
 .table-wrap{background:var(--white);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);overflow-x:auto;}
 table{width:100%;border-collapse:collapse;}
 .leads-tbl{min-width:1100px;}
@@ -1293,6 +1399,7 @@ thead th:last-child{border-radius:0 12px 0 0;text-align:center;}
 tbody tr{border-bottom:1px solid var(--border);}
 tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:#f8fafc;}
+tbody tr.hidden{display:none;}
 td{padding:11px 14px;font-size:13px;vertical-align:top;}
 .td-nombre{font-weight:600;white-space:nowrap;vertical-align:middle;}
 .tc-c{text-align:center;vertical-align:middle;}
@@ -1300,9 +1407,47 @@ td{padding:11px 14px;font-size:13px;vertical-align:top;}
 .tc-m{color:var(--muted);font-size:12px;vertical-align:middle;}
 .tc-red{color:var(--red);vertical-align:middle;}
 .tc-org{color:var(--orange);vertical-align:middle;}
-.td-wrap{white-space:normal;min-width:160px;max-width:280px;word-break:break-word;line-height:1.45;font-size:12px;}
+.td-wrap{white-space:normal;min-width:160px;max-width:260px;word-break:break-word;line-height:1.45;font-size:12px;}
 .seg-b{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;border:1px solid transparent;display:inline-block;}
-.fichas-n{display:inline-block;background:var(--primary);color:#fff;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:600;}
+.fichas-cell{text-align:center;vertical-align:middle;}
+.fichas-toggle{display:inline-flex;align-items:center;gap:5px;background:var(--primary);color:#fff;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:background .15s;}
+.fichas-toggle:hover{background:#00243d;}
+.fichas-toggle .arr{font-size:9px;transition:transform .2s;}
+.fichas-toggle.open .arr{transform:rotate(180deg);}
+.fichas-drop{display:none;margin-top:6px;text-align:left;}
+.fichas-drop.open{display:block;}
+.ficha-item{padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;line-height:1.5;}
+.ficha-item:last-child{border-bottom:none;}
+.ficha-item a{color:var(--orange);text-decoration:none;font-weight:500;}
+.ficha-item a:hover{text-decoration:underline;}
+.fichas-empty{display:inline-block;color:var(--muted);font-size:12px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:900px;box-shadow:0 8px 40px rgba(0,0,0,.22);overflow:hidden;}
+.modal-hdr{background:var(--primary);padding:18px 24px;display:flex;align-items:center;justify-content:space-between;}
+.modal-hdr h2{color:#fff;font-size:16px;font-weight:600;}
+.modal-hdr .modal-sub{color:rgba(255,255,255,.55);font-size:12px;margin-top:2px;}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;line-height:1;padding:0;}
+.modal-close:hover{color:#fff;}
+.modal-body{padding:20px 24px;max-height:70vh;overflow-y:auto;}
+.modal-loading{text-align:center;padding:40px;color:var(--muted);font-size:14px;}
+.modal-empty{text-align:center;padding:40px;color:var(--muted);}
+.modal-barrio-hdr{font-size:11px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.07em;padding:10px 0 6px;border-bottom:2px solid var(--primary);margin-bottom:8px;margin-top:16px;}
+.modal-barrio-hdr:first-child{margin-top:0;}
+.opt-card{border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:grid;grid-template-columns:1fr auto;gap:6px;align-items:start;}
+.opt-card:hover{border-color:var(--primary);background:#f8fafc;}
+.opt-dir{font-weight:600;font-size:13px;color:#111;}
+.opt-meta{font-size:12px;color:var(--muted);margin-top:2px;display:flex;flex-wrap:wrap;gap:6px;}
+.opt-tag{background:#f0f4f8;color:#374151;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;}
+.opt-tag.coch{background:#ecfdf5;color:#065f46;}
+.opt-precio{font-size:16px;font-weight:800;color:var(--primary);text-align:right;white-space:nowrap;}
+.opt-exp{font-size:11px;color:var(--muted);text-align:right;}
+.opt-dias{font-size:11px;margin-top:4px;text-align:right;}
+.opt-dias.fresh{color:#15803d;} .opt-dias.mid{color:#a16207;} .opt-dias.old{color:var(--red);}
+.opt-link{display:inline-block;margin-top:6px;font-size:12px;color:var(--orange);text-decoration:none;font-weight:500;}
+.opt-link:hover{text-decoration:underline;}
+.buscar-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;color:var(--primary);cursor:pointer;transition:border-color .15s;white-space:nowrap;}
+.buscar-btn:hover{border-color:var(--primary);background:#f0f4f8;}
 .section-ov{margin-top:32px;}
 .section-h{font-size:12px;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;}
 .err-box{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:24px;color:var(--red);margin-top:40px;}
@@ -1333,33 +1478,37 @@ def _parse_fecha_lead(s):
             pass
     return None
 
-def _sort_key_lead(row):
-    today = _date.today()
-    prox  = _parse_fecha_lead(row.get('PROX FOLLOWUP', ''))
-    seg   = row.get('SEGUIMIENTO', '')
-    seg_n = 0 if 'P0' in seg else 1 if 'P1' in seg else 2 if 'P2' in seg else 3 if 'P3' in seg else 9
-    if prox is None:
-        return (3, _date.max, seg_n)
-    if prox < today:
-        return (0, prox, seg_n)   # vencidos: los más viejos primero
-    if prox == today:
-        return (1, prox, seg_n)
-    return (2, prox, seg_n)
+_PRIORIDAD_ORD = {
+    'VENDE PARA COMPRAR': 0,
+    'CRÉDITO APROBADO':   1,
+    'EFECTIVO':           2,
+    'CRÉDITO EN TRÁMITE': 3,
+    'INVERSIÓN/MIRANDO':  4,
+}
 
-def _badge_seg(seg):
-    if 'P0' in seg:
-        bg, fg = '#fef2f2', '#dc2626'
-    elif 'P1' in seg:
-        bg, fg = '#fff7ed', '#c2410c'
-    elif 'P2' in seg:
-        bg, fg = '#fefce8', '#a16207'
-    elif 'P3' in seg:
-        bg, fg = '#f9fafb', '#6b7280'
-    else:
-        bg, fg = '#f3f4f6', '#374151'
+def _prioridad_n(row):
+    p = str(row.get('PRIORIDAD', '')).strip().upper()
+    # normalizar tildes para mayor robustez
+    p = p.replace('CREDITO', 'CRÉDITO').replace('TRAMITE', 'TRÁMITE').replace('INVERSION', 'INVERSIÓN')
+    return _PRIORIDAD_ORD.get(p, 9)
+
+
+_PRIORIDAD_STYLE = {
+    'VENDE PARA COMPRAR': ('#fef2f2', '#dc2626'),
+    'CRÉDITO APROBADO':   ('#fff7ed', '#c2410c'),
+    'EFECTIVO':           ('#fefce8', '#a16207'),
+    'CRÉDITO EN TRÁMITE': ('#f3f4f6', '#6b7280'),
+    'INVERSIÓN/MIRANDO':  ('#f3f4f6', '#6b7280'),
+}
+
+def _badge_prioridad(pri):
+    pri_key = str(pri).strip().upper()
+    pri_key = pri_key.replace('CREDITO', 'CRÉDITO').replace('TRAMITE', 'TRÁMITE').replace('INVERSION', 'INVERSIÓN')
+    bg, fg = _PRIORIDAD_STYLE.get(pri_key, ('#f3f4f6', '#374151'))
+    label  = pri if pri else '—'
     return (
         f'<span class="seg-b" style="background:{bg};color:{fg};border-color:{fg}44">'
-        f'{_html_esc.escape(seg)}</span>'
+        f'{_html_esc.escape(label)}</span>'
     )
 
 def _cell_followup(s):
@@ -1458,36 +1607,113 @@ def leer_leads_data():
     creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SHEETS_SCOPES)
     gc    = gspread.authorize(creds)
     sh    = gc.open_by_key(SHEET_ID)
-    return sh.worksheet('Leads').get_all_records(), sh.worksheet('Fichas').get_all_records()
+    # numericise_ignore=['all'] evita que "200.000" se convierta a float 200.0
+    kw = dict(numericise_ignore=['all'])
+    return sh.worksheet('Leads').get_all_records(**kw), sh.worksheet('Fichas').get_all_records(**kw)
 
 def _render_leads_html(leads, fichas):
-    sorted_leads  = sorted(leads, key=_sort_key_lead)
-    fichas_count  = _Counter(
-        r.get('CLIENTE', '').strip().lower()
-        for r in fichas if r.get('CLIENTE', '').strip()
+    # Sort default: prioridad asc, luego fecha ingreso asc (más antiguo primero)
+    def _default_sort(row):
+        pri_n = _prioridad_n(row)
+        fecha = _parse_fecha_lead(row.get('FECHA', '')) or _date.max
+        return (pri_n, fecha)
+
+    sorted_leads = sorted(leads, key=_default_sort)
+
+    # Mapear fichas por cliente (nombre lower → lista de {dir, link_og})
+    fichas_map = {}
+    for f in fichas:
+        clientes_raw = str(f.get('CLIENTE', '')).strip()
+        if not clientes_raw:
+            continue
+        for cliente in clientes_raw.replace(';', ',').split(','):
+            key = cliente.strip().lower()
+            if not key:
+                continue
+            if key not in fichas_map:
+                fichas_map[key] = []
+            fichas_map[key].append({
+                'dir':     str(f.get('DIRECCIÓN', f.get('DIRECCION', ''))).strip(),
+                'link_og': str(f.get('LINK OG', '')).strip(),
+            })
+
+    # Valores únicos para dropdowns
+    prioridades_vals = ['VENDE PARA COMPRAR','CRÉDITO APROBADO','EFECTIVO','CRÉDITO EN TRÁMITE','INVERSIÓN/MIRANDO']
+    tipos_set = sorted({str(r.get('TIPO','')).strip() for r in leads if str(r.get('TIPO','')).strip()})
+    lc_set    = sorted({str(r.get('LAST CONTACT','')).strip() for r in leads if str(r.get('LAST CONTACT','')).strip()})
+
+    def _opts(vals, label):
+        opts = f'<option value="">Todos — {label}</option>'
+        for v in vals:
+            opts += f'<option value="{_html_esc.escape(v)}">{_html_esc.escape(v)}</option>'
+        return opts
+
+    filters_html = (
+        '<div class="filters-bar">'
+        f'<select class="filter-sel" id="f-prioridad" onchange="applyFilters()">'
+        f'{_opts(prioridades_vals, "Prioridad")}</select>'
+        f'<select class="filter-sel" id="f-tipo" onchange="applyFilters()">'
+        f'{_opts(tipos_set, "Tipo")}</select>'
+        f'<select class="filter-sel" id="f-lc" onchange="applyFilters()">'
+        f'{_opts(lc_set, "Last Contact")}</select>'
+        '<div class="filter-sep"></div>'
+        '<button class="sort-btn active" id="btn-asc" onclick="setSortDir(\'asc\')">↑ Más antiguos</button>'
+        '<button class="sort-btn" id="btn-desc" onclick="setSortDir(\'desc\')">↓ Más recientes</button>'
+        '<span class="filter-count" id="filter-count"></span>'
+        '</div>'
     )
 
     rows = []
     for row in sorted_leads:
         nombre    = _html_esc.escape(str(row.get('NOMBRE', '')))
-        seg       = str(row.get('SEGUIMIENTO', ''))
+        pri       = str(row.get('PRIORIDAD', ''))
         tipo      = _html_esc.escape(str(row.get('TIPO', '')))
         barrios   = _html_esc.escape(str(row.get('BARRIOS', '')))
         amb       = _html_esc.escape(str(row.get('AMB', '')))
-        hasta_usd = _html_esc.escape(str(row.get('HASTA USD', '')))
+        _p_usd    = _parse_usd(row.get('HASTA USD', ''))
+        hasta_usd = f'{_p_usd:,}'.replace(',', '.') if _p_usd else '—'
         lc        = _html_esc.escape(str(row.get('LAST CONTACT', '') or '—'))
         prox_raw  = str(row.get('PROX FOLLOWUP', ''))
         res_raw   = str(row.get('RESULTADO LAST CONTACT', '') or '')
         next_raw  = str(row.get('NEXT STEP', '') or '')
-        fichas_n  = fichas_count.get(str(row.get('NOMBRE', '')).strip().lower(), 0)
+        fecha_raw = str(row.get('FECHA', '') or '')
+        pri_n     = _prioridad_n(row)
 
-        fichas_cell = (f'<span class="fichas-n">{fichas_n}</span>'
-                       if fichas_n else '<span class="tc-m">—</span>')
+        # Fichas del cliente — desplegable
+        cliente_key    = str(row.get('NOMBRE', '')).strip().lower()
+        fichas_cliente = fichas_map.get(cliente_key, [])
+        if fichas_cliente:
+            ficha_items = ''.join(
+                '<div class="ficha-item">'
+                + _html_esc.escape(f['dir'] or 'Sin dirección')
+                + (f' — <a href="{_html_esc.escape(f["link_og"])}" target="_blank">Ver portal ↗</a>' if f['link_og'] else '')
+                + '</div>'
+                for f in fichas_cliente
+            )
+            fichas_cell = (
+                '<div class="fichas-cell">'
+                f'<button class="fichas-toggle" onclick="toggleFichas(this)">'
+                f'{len(fichas_cliente)} <span class="arr">▼</span></button>'
+                f'<div class="fichas-drop">{ficha_items}</div>'
+                '</div>'
+            )
+        else:
+            fichas_cell = '<span class="fichas-empty">—</span>'
 
         rows.append(
-            '<tr>'
-            + f'<td class="td-nombre">{nombre}</td>'
-            + f'<td style="vertical-align:middle">{_badge_seg(seg)}</td>'
+            f'<tr data-pri="{pri_n}" data-fecha="{_html_esc.escape(fecha_raw)}"'
+            f' data-prioridad="{_html_esc.escape(pri)}"'
+            f' data-tipo="{_html_esc.escape(str(row.get("TIPO","")).strip())}"'
+            f' data-lc="{_html_esc.escape(str(row.get("LAST CONTACT","")).strip())}">'
+            + f'<td class="td-nombre">'
+            + f'{nombre} '
+            + f'<button class="buscar-btn" onclick="abrirBuscar(this)"'
+              f' data-nombre="{nombre}"'
+              f' data-tipo="{tipo}"'
+              f' data-barrios="{barrios}"'
+              f' data-amb="{amb}"'
+              f' data-usd="{hasta_usd}">&#128269;</button></td>'
+            + f'<td style="vertical-align:middle">{_badge_prioridad(pri)}</td>'
             + f'<td style="vertical-align:middle">{tipo}</td>'
             + f'<td style="vertical-align:middle">{barrios}</td>'
             + f'<td class="tc-c">{amb}</td>'
@@ -1496,7 +1722,7 @@ def _render_leads_html(leads, fichas):
             + _cell_followup(prox_raw)
             + f'<td class="td-wrap">{_html_esc.escape(res_raw) or "—"}</td>'
             + f'<td class="td-wrap">{_html_esc.escape(next_raw) or "—"}</td>'
-            + f'<td class="tc-c">{fichas_cell}</td>'
+            + f'<td class="fichas-cell">{fichas_cell}</td>'
             + '</tr>'
         )
 
@@ -1504,10 +1730,10 @@ def _render_leads_html(leads, fichas):
     if overlaps:
         ov_rows = []
         for g in overlaps:
-            tipo_s    = _html_esc.escape(g['tipo'])
-            barrios_s = ', '.join(_html_esc.escape(b) for b in g['barrios'])
-            amb_s     = _html_esc.escape(g['amb'])
-            precio_s  = _html_esc.escape(g['precio'])
+            tipo_s     = _html_esc.escape(g['tipo'])
+            barrios_s  = ', '.join(_html_esc.escape(b) for b in g['barrios'])
+            amb_s      = _html_esc.escape(g['amb'])
+            precio_s   = _html_esc.escape(g['precio'])
             clientes_s = ' · '.join(_html_esc.escape(nm) for nm in g['nombres'])
             ov_rows.append(
                 '<tr>'
@@ -1536,6 +1762,84 @@ def _render_leads_html(leads, fichas):
     updated_at = _datetime.now().strftime('%d/%m/%Y %H:%M')
     n = len(sorted_leads)
 
+    js = (
+        "var sortDir='asc';"
+        "function applyFilters(){"
+        "var fPri=document.getElementById('f-prioridad').value.toLowerCase();"
+        "var fTipo=document.getElementById('f-tipo').value.toLowerCase();"
+        "var fLc=document.getElementById('f-lc').value.toLowerCase();"
+        "var rows=document.querySelectorAll('.leads-tbl tbody tr');"
+        "var vis=0;"
+        "rows.forEach(function(tr){"
+        "var pri=(tr.dataset.prioridad||'').toLowerCase();"
+        "var tipo=(tr.dataset.tipo||'').toLowerCase();"
+        "var lc=(tr.dataset.lc||'').toLowerCase();"
+        "var ok=(!fPri||pri===fPri)&&(!fTipo||tipo===fTipo)&&(!fLc||lc===fLc);"
+        "tr.classList.toggle('hidden',!ok);"
+        "if(ok)vis++;});"
+        f"document.getElementById('filter-count').textContent=vis+' de {n} leads';}}"
+        "function setSortDir(dir){"
+        "sortDir=dir;"
+        "document.getElementById('btn-asc').classList.toggle('active',dir==='asc');"
+        "document.getElementById('btn-desc').classList.toggle('active',dir==='desc');"
+        "var tbody=document.querySelector('.leads-tbl tbody');"
+        "var rows=Array.from(tbody.querySelectorAll('tr'));"
+        "rows.sort(function(a,b){"
+        "var pa=parseInt(a.dataset.pri||9),pb=parseInt(b.dataset.pri||9);"
+        "if(pa!==pb)return dir==='asc'?pa-pb:pb-pa;"
+        "var fa=a.dataset.fecha||'',fb=b.dataset.fecha||'';"
+        "if(fa<fb)return dir==='asc'?-1:1;"
+        "if(fa>fb)return dir==='asc'?1:-1;"
+        "return 0;});"
+        "rows.forEach(function(r){tbody.appendChild(r);});}"
+        "function toggleFichas(btn){"
+        "btn.classList.toggle('open');"
+        "btn.nextElementSibling.classList.toggle('open');}"
+        "function abrirBuscar(btn){"
+        "var n=btn.dataset.nombre,t=btn.dataset.tipo,"
+        "b=btn.dataset.barrios,a=btn.dataset.amb,u=btn.dataset.usd;"
+        "document.getElementById('modal-titulo').textContent='Opciones para '+n;"
+        "document.getElementById('modal-sub').textContent=t+' \u00b7 '+a+' amb \u00b7 hasta USD '+u+' \u00b7 '+b;"
+        "document.getElementById('modal-body').innerHTML='<div class=\"modal-loading\">Buscando...</div>';"
+        "document.getElementById('modal-overlay').classList.add('open');"
+        "fetch('/buscar-opciones',{method:'POST',"
+        "headers:{'Content-Type':'application/json'},"
+        "body:JSON.stringify({tipo:t,barrios:b,amb:a,hasta_usd:u})})"
+        ".then(function(r){return r.json();})"
+        ".then(function(d){renderModal(d);})"
+        ".catch(function(){document.getElementById('modal-body').innerHTML='<div class=\"modal-empty\">Error al buscar.</div>';});}"
+        "function cerrarModal(e){"
+        "if(!e||e.target===document.getElementById('modal-overlay'))"
+        "document.getElementById('modal-overlay').classList.remove('open');}"
+        "function renderModal(items){"
+        "var body=document.getElementById('modal-body');"
+        "if(!items||!items.length){body.innerHTML='<div class=\"modal-empty\">Sin resultados para este perfil.</div>';return;}"
+        "var html='',last=null;"
+        "items.forEach(function(p){"
+        "if(p.barrio!==last){html+='<div class=\"modal-barrio-hdr\">'+p.barrio+'</div>';last=p.barrio;}"
+        "var dc=p.dias===null?'':p.dias<=30?'fresh':p.dias<=90?'mid':'old';"
+        "var dt=p.dias===null?'':'Publicado hace '+p.dias+' d\u00edas';"
+        "var tags='<span class=\"opt-tag\">'+p.tipo+'</span>';"
+        "if(p.amb)tags+='<span class=\"opt-tag\">'+p.amb+' amb</span>';"
+        "if(p.sup)tags+='<span class=\"opt-tag\">'+p.sup+' m\u00b2</span>';"
+        "if(p.cochera)tags+='<span class=\"opt-tag coch\">Cochera</span>';"
+        "var lnk=p.url?'<a class=\"opt-link\" href=\"'+p.url+'\" target=\"_blank\">Ver portal \u2197</a>':'';"
+        "var exp=p.expensas?'<div class=\"opt-exp\">Expensas: '+p.expensas+'</div>':'';"
+        "var dd=dt?'<div class=\"opt-dias '+dc+'\">'+dt+'</div>':'';"
+        "html+='<div class=\"opt-card\">';"
+        "html+='<div><div class=\"opt-dir\">'+p.direccion+'</div>';"
+        "html+='<div class=\"opt-meta\">'+tags+'</div>'+dd+lnk+'</div>';"
+        "html+='<div><div class=\"opt-precio\">'+p.precio+'</div>'+exp+'</div>';"
+        "html+='</div>';"
+        "});"
+        "body.innerHTML=html;}"
+        "var s=300,cd=document.getElementById('cd');"
+        "setInterval(function(){if(--s<=0)return;"
+        "var m=Math.floor(s/60),ss=String(s%60).padStart(2,'0');"
+        "cd.textContent='auto-refresh en '+m+':'+ss;},1000);"
+        "applyFilters();"
+    )
+
     return (
         '<!DOCTYPE html><html lang="es"><head>'
         '<meta charset="UTF-8">'
@@ -1552,9 +1856,10 @@ def _render_leads_html(leads, fichas):
         f' &nbsp;·&nbsp; <span id="cd">auto-refresh en 5:00</span></div></div>'
         '<a href="/leads" class="refresh-btn">↺ Refrescar</a>'
         '</div>'
+        + filters_html +
         '<div class="table-wrap"><table class="leads-tbl">'
         '<thead><tr>'
-        '<th>Nombre</th><th>Seguimiento</th><th>Tipo</th><th>Barrios</th>'
+        '<th>Nombre</th><th>Prioridad</th><th>Tipo</th><th>Barrios</th>'
         '<th>Amb</th><th>Hasta USD</th><th>Last Contact</th><th>Prox Followup</th>'
         '<th>Resultado</th><th>Next Step</th><th>Fichas</th>'
         '</tr></thead>'
@@ -1562,12 +1867,19 @@ def _render_leads_html(leads, fichas):
         '</table></div>'
         + overlap_section +
         '</main>'
-        '<script>'
-        'var s=300,cd=document.getElementById("cd");'
-        'setInterval(function(){if(--s<=0)return;'
-        'var m=Math.floor(s/60),ss=String(s%60).padStart(2,"0");'
-        'cd.textContent="auto-refresh en "+m+":"+ss;},1000);'
-        '</script>'
+
+        '<div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">'
+        '<div class="modal" onclick="event.stopPropagation()">'
+        '<div class="modal-hdr">'
+        '<div><h2 id="modal-titulo">Opciones para cliente</h2>'
+        '<div class="modal-sub" id="modal-sub"></div></div>'
+        '<button class="modal-close" onclick="cerrarModal()">&#x2715;</button>'
+        '</div>'
+        '<div class="modal-body" id="modal-body">'
+        '<div class="modal-loading">Buscando...</div>'
+        '</div></div></div>'
+
+        '<script>' + js + '</script>'
         '</body></html>'
     )
 
@@ -1600,6 +1912,20 @@ def leads():
     except Exception as e:
         return _render_leads_error(str(e)), 500
     return _render_leads_html(leads_data, fichas_data)
+
+
+@app.route('/buscar-opciones', methods=['POST'])
+def buscar_opciones():
+    d         = request.get_json()
+    tipo      = d.get('tipo', '').strip()
+    barrios   = d.get('barrios', '').strip()
+    amb       = d.get('amb', '').strip()
+    hasta_usd = d.get('hasta_usd', '').strip()
+    try:
+        results = buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/extraer', methods=['POST'])
@@ -1675,7 +2001,8 @@ def generar():
         return jsonify({'error': f'Error en git push: {e.stderr.decode() if e.stderr else str(e)}'}), 500
 
     url_publica = f'{GITHUB_BASE}/fichas/{out_path.name}'
-    agregar_ficha_a_sheets(d, url_publica, d.get('url_original', ''), out_path.stem)
+    ficha_id = hashlib.md5(nombre_base.encode()).hexdigest()[:5]
+    agregar_ficha_a_sheets(d, url_publica, d.get('url_original', ''), ficha_id)
     return jsonify({'url': url_publica, 'archivo': out_path.name})
 
 

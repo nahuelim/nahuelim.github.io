@@ -4,7 +4,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 SHEET_ID   = '1LEBztjtgGCj0PzpRnpcZezQaM0rmdycHVCHr4aZTjmw'
-CREDS_PATH = Path.home() / 'Documents' / 'zonaprop_scraper' / 'google_credentials.json'
+CREDS_PATH = Path.home() / 'Documents' / '2. Inmobiliaria' / 'zonaprop_scraper' / 'google_credentials.json'
 SCOPES     = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 
 creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SCOPES)
