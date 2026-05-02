@@ -1215,7 +1215,7 @@ def _parse_amb_min(val):
     m = re.search(r'\d+', s)
     return int(m.group()) if m else None
 
-def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd, offset=0):
+def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd, offset=0, solo_credito=False):
     """
     Busca en propiedades.db activos que matcheen el perfil del lead.
     Retorna lista de dicts ordenada por barrio de prioridad, luego precio asc.
@@ -1245,13 +1245,15 @@ def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd, offset=0):
         params.append(precio_n)
     wheres.append("estado_aviso = 'activo'")
     wheres.append("operacion = 'venta'")
+    if solo_credito:
+        wheres.append("(LOWER(tags) LIKE '%apto cr%' OR LOWER(descripcion) LIKE '%apto cr%')")
 
     sql = (
         'SELECT url, direccion, barrio, tipo_propiedad, ambientes, '
         'precio, moneda_precio, sup_cubierta, expensas, moneda_expensas, '
         'cochera, fecha_detectado, fecha_publicacion_portal '
         f'FROM propiedades WHERE {" AND ".join(wheres)} '
-        f'ORDER BY precio ASC, id ASC LIMIT 50 OFFSET {offset}'
+        f'ORDER BY precio DESC, id DESC LIMIT 50 OFFSET {offset}'
     )
 
     try:
@@ -1300,7 +1302,7 @@ def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd, offset=0):
             'dias':       dias,
         })
 
-    results.sort(key=lambda x: (x['barrio_pri'], x.get('dias') if x.get('dias') is not None else 9999, -(x.get('precio_raw') or 0)))
+    results.sort(key=lambda x: (x['barrio_pri'], -(x.get('precio_raw') or 0)))
     return results
 
 
@@ -1748,7 +1750,8 @@ def _render_leads_html(leads, fichas):
               f' data-tipo="{tipo}"'
               f' data-barrios="{barrios}"'
               f' data-amb="{amb}"'
-              f' data-usd="{hasta_usd}">&#128269;</button></td>'
+              f' data-usd="{hasta_usd}"'
+              f' data-prioridad="{_html_esc.escape(pri)}">&#128269;</button></td>'
             + f'<td style="vertical-align:middle">{_badge_prioridad(pri)}</td>'
             + f'<td style="vertical-align:middle">{tipo}</td>'
             + f'<td style="vertical-align:middle">{barrios}</td>'
@@ -1839,8 +1842,8 @@ def _render_leads_html(leads, fichas):
         "var _fichasOG={};"
         "function _cargarFichasOG(cb){fetch('/fichas-generadas').then(function(r){return r.json();}).then(function(d){_fichasOG=d.links_nl||{};cb();}).catch(function(){_fichasOG={};cb();});}"
         "function abrirBuscar(btn){"
-        "var n=btn.dataset.nombre,t=btn.dataset.tipo,b=btn.dataset.barrios,a=btn.dataset.amb,u=btn.dataset.usd;"
-        "_modalParams={tipo:t,barrios:b,amb:a,hasta_usd:u};"
+        "var n=btn.dataset.nombre,t=btn.dataset.tipo,b=btn.dataset.barrios,a=btn.dataset.amb,u=btn.dataset.usd,pr=(btn.dataset.prioridad||'').toUpperCase();var sc=pr.indexOf('CRÉDITO')!==-1||pr.indexOf('CREDITO')!==-1;"
+        "_modalParams={tipo:t,barrios:b,amb:a,hasta_usd:u,solo_credito:sc};"
         "_modalOffset=0;"
         "document.getElementById('modal-titulo').textContent='Opciones para '+n;"
         "document.getElementById('modal-sub').textContent=t+' · '+a+' amb · hasta USD '+u+' · '+b;"
@@ -2029,13 +2032,15 @@ def marcar_bajado_leads():
 
 @app.route('/buscar-opciones', methods=['POST'])
 def buscar_opciones():
-    d         = request.get_json()
-    tipo      = d.get('tipo', '').strip()
-    barrios   = d.get('barrios', '').strip()
-    amb       = d.get('amb', '').strip()
-    hasta_usd = d.get('hasta_usd', '').strip()
+    d            = request.get_json()
+    tipo         = d.get('tipo', '').strip()
+    barrios      = d.get('barrios', '').strip()
+    amb          = d.get('amb', '').strip()
+    hasta_usd    = d.get('hasta_usd', '').strip()
+    offset       = int(d.get('offset', 0))
+    solo_credito = bool(d.get('solo_credito', False))
     try:
-        results = buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd)
+        results = buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd, offset, solo_credito)
         return jsonify(results)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -2132,8 +2137,9 @@ def generar():
         return jsonify({'error': f'Error en git push: {e.stderr.decode() if e.stderr else str(e)}'}), 500
 
     url_publica = f'{GITHUB_BASE}/fichas/{out_path.name}'
+    url_sheets  = f'https://nahuelim.com.ar/fichas/{out_path.name}'
     ficha_id = hashlib.md5(nombre_base.encode()).hexdigest()[:5]
-    agregar_ficha_a_sheets(d, url_publica, d.get('url_original', ''), ficha_id)
+    agregar_ficha_a_sheets(d, url_sheets, d.get('url_original', ''), ficha_id)
     return jsonify({'url': url_publica, 'archivo': out_path.name})
 
 
