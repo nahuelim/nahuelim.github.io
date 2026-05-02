@@ -292,6 +292,10 @@ function lbUpd(){
   document.querySelectorAll('#lb-thumbs img').forEach((img,i)=>{img.className=i===lbCur?'on':'';if(i===lbCur)img.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});});
 }
 document.addEventListener('keydown',e=>{if(!document.getElementById('lb').classList.contains('open'))return;if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1);if(e.key==='Escape')closeLB();});
+/* Touch swipe — slider principal */
+(function(){let x0=null;const el=document.getElementById('slider');el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)sGo(dx<0?1:-1);x0=null;},{passive:true});})();
+/* Touch swipe — lightbox */
+(function(){let x0=null;const el=document.getElementById('lb');el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;},{passive:true});el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)lbGo(dx<0?1:-1);x0=null;},{passive:true});})();
 </script>
 </body>
 </html>

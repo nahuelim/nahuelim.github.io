@@ -264,6 +264,15 @@ HTML = r"""<!DOCTYPE html>
   /* BADGES INPUT */
   .badges-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .badges-row input { flex: 1; min-width: 140px; }
+
+  /* MacBook Pro 14" */
+  @media screen and (max-width: 1400px) {
+    nav { padding: 0 18px; height: 48px; }
+    main { margin: 28px auto; }
+    h1 { font-size: 19px; }
+    .card { padding: 18px; }
+    .btn { padding: 9px 16px; font-size: 13px; }
+  }
 </style>
 </head>
 <body>
@@ -1206,7 +1215,7 @@ def _parse_amb_min(val):
     m = re.search(r'\d+', s)
     return int(m.group()) if m else None
 
-def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd):
+def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd, offset=0):
     """
     Busca en propiedades.db activos que matcheen el perfil del lead.
     Retorna lista de dicts ordenada por barrio de prioridad, luego precio asc.
@@ -1242,7 +1251,7 @@ def buscar_opciones_para_lead(tipo, barrios, amb, hasta_usd):
         'precio, moneda_precio, sup_cubierta, expensas, moneda_expensas, '
         'cochera, fecha_detectado, fecha_publicacion_portal '
         f'FROM propiedades WHERE {" AND ".join(wheres)} '
-        'ORDER BY precio ASC LIMIT 50'
+        f'ORDER BY precio ASC, id ASC LIMIT 50 OFFSET {offset}'
     )
 
     try:
@@ -1446,6 +1455,13 @@ td{padding:11px 14px;font-size:13px;vertical-align:top;}
 .opt-dias.fresh{color:#15803d;} .opt-dias.mid{color:#a16207;} .opt-dias.old{color:var(--red);}
 .opt-link{display:inline-block;margin-top:6px;font-size:12px;color:var(--orange);text-decoration:none;font-weight:500;}
 .opt-link:hover{text-decoration:underline;}
+.opt-tag-ficha{display:inline-block;margin-top:6px;font-size:12px;color:#fff;background:#15803d;padding:2px 10px;border-radius:12px;text-decoration:none;font-weight:600;}
+.opt-tag-ficha:hover{background:#166534;}
+.opt-card-done{background:#f0fdf4;border-color:#86efac;}
+.opt-card-done .opt-dir{color:#15803d;}
+.opt-baja{display:inline-block;margin-top:6px;font-size:11px;color:var(--red);background:none;border:1px solid var(--red);border-radius:6px;padding:2px 8px;cursor:pointer;font-family:inherit;font-weight:500;}
+.opt-baja:hover{background:#fef2f2;}
+.opt-baja:disabled{opacity:.4;cursor:default;}
 .buscar-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;color:var(--primary);cursor:pointer;transition:border-color .15s;white-space:nowrap;}
 .buscar-btn:hover{border-color:var(--primary);background:#f0f4f8;}
 .section-ov{margin-top:32px;}
@@ -1453,6 +1469,26 @@ td{padding:11px 14px;font-size:13px;vertical-align:top;}
 .err-box{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:24px;color:var(--red);margin-top:40px;}
 .err-box h2{font-size:16px;margin-bottom:10px;}
 .err-box pre{font-family:'DM Mono',monospace;font-size:12px;background:#fff;padding:12px;border-radius:6px;overflow-x:auto;color:#374151;margin-top:10px;}
+/* MacBook Pro 14" */
+@media screen and (max-width:1400px){
+nav{padding:0 18px;height:48px;}
+main{margin:24px auto;padding:0 14px;}
+h1{font-size:19px;}
+.page-hdr{margin-bottom:12px;}
+.filters-bar{gap:7px;margin-bottom:10px;}
+.filter-sel{font-size:12px;padding:6px 10px;}
+.sort-btn{font-size:12px;padding:6px 10px;}
+thead th{padding:9px 10px;font-size:10px;}
+td{padding:8px 10px;font-size:12px;}
+.td-wrap{max-width:200px;}
+.seg-b{font-size:10px;padding:2px 8px;}
+.modal{max-width:800px;}
+.modal-hdr{padding:14px 18px;}
+.modal-body{padding:14px 18px;}
+}
+@media screen and (max-width:1100px){
+.leads-tbl{min-width:900px;}
+}
 """
 
 def _leads_nav(active):
@@ -1795,44 +1831,99 @@ def _render_leads_html(leads, fichas):
         "function toggleFichas(btn){"
         "btn.classList.toggle('open');"
         "btn.nextElementSibling.classList.toggle('open');}"
+        "var _modalItems=[];"
+        "var _modalPage=1;"
+        "var _MODAL_PER_PAGE=10;"
+        "var _modalOffset=0;"
+        "var _modalParams={};"
+        "var _fichasOG={};"
+        "function _cargarFichasOG(cb){fetch('/fichas-generadas').then(function(r){return r.json();}).then(function(d){_fichasOG=d.links_nl||{};cb();}).catch(function(){_fichasOG={};cb();});}"
         "function abrirBuscar(btn){"
-        "var n=btn.dataset.nombre,t=btn.dataset.tipo,"
-        "b=btn.dataset.barrios,a=btn.dataset.amb,u=btn.dataset.usd;"
+        "var n=btn.dataset.nombre,t=btn.dataset.tipo,b=btn.dataset.barrios,a=btn.dataset.amb,u=btn.dataset.usd;"
+        "_modalParams={tipo:t,barrios:b,amb:a,hasta_usd:u};"
+        "_modalOffset=0;"
         "document.getElementById('modal-titulo').textContent='Opciones para '+n;"
-        "document.getElementById('modal-sub').textContent=t+' \u00b7 '+a+' amb \u00b7 hasta USD '+u+' \u00b7 '+b;"
+        "document.getElementById('modal-sub').textContent=t+' · '+a+' amb · hasta USD '+u+' · '+b;"
         "document.getElementById('modal-body').innerHTML='<div class=\"modal-loading\">Buscando...</div>';"
         "document.getElementById('modal-overlay').classList.add('open');"
-        "fetch('/buscar-opciones',{method:'POST',"
-        "headers:{'Content-Type':'application/json'},"
-        "body:JSON.stringify({tipo:t,barrios:b,amb:a,hasta_usd:u})})"
+        "_cargarFichasOG(function(){_fetchOpciones(0,true);});}"
+        "function _fetchOpciones(offset,reset){"
+        "var p=Object.assign({},_modalParams,{offset:offset});"
+        "fetch('/buscar-opciones',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)})"
         ".then(function(r){return r.json();})"
-        ".then(function(d){renderModal(d);})"
+        ".then(function(d){"
+        "if(reset){_modalItems=d||[];_modalPage=1;_modalOffset=50;"
+        "if(!_modalItems.length){document.getElementById('modal-body').innerHTML='<div class=\"modal-empty\">Sin resultados para este perfil.</div>';return;}"
+        "_renderModalPage();}else{"
+        "if(!d||!d.length){"
+        "var ag=document.createElement('div');"
+        "ag.style.cssText='text-align:center;padding:20px;border-top:1px solid var(--border);margin-top:8px';"
+        "ag.innerHTML='<p style=\"font-size:13px;color:var(--muted);margin-bottom:10px\">Ya revisaste todas las opciones disponibles.</p>'"
+        "+'<button onclick=\"_fetchOpciones(0,true)\" style=\"font-family:inherit;font-size:12px;padding:6px 16px;border:1.5px solid var(--primary);border-radius:6px;background:#fff;color:var(--primary);cursor:pointer;font-weight:600\">↻ Reiniciar búsqueda</button>';"
+        "document.getElementById('modal-body').appendChild(ag);return;}"
+        "_modalItems=_modalItems.concat(d);"
+        "_modalOffset=offset+50;"
+        "_renderModalPage();}})"
         ".catch(function(){document.getElementById('modal-body').innerHTML='<div class=\"modal-empty\">Error al buscar.</div>';});}"
         "function cerrarModal(e){"
         "if(!e||e.target===document.getElementById('modal-overlay'))"
         "document.getElementById('modal-overlay').classList.remove('open');}"
-        "function renderModal(items){"
+        "function _renderModalPage(){"
         "var body=document.getElementById('modal-body');"
-        "if(!items||!items.length){body.innerHTML='<div class=\"modal-empty\">Sin resultados para este perfil.</div>';return;}"
+        "var total=_modalItems.length;"
+        "var pages=Math.ceil(total/_MODAL_PER_PAGE);"
+        "var start=(_modalPage-1)*_MODAL_PER_PAGE;"
+        "var page=_modalItems.slice(start,start+_MODAL_PER_PAGE);"
         "var html='',last=null;"
-        "items.forEach(function(p){"
+        "page.forEach(function(p){"
         "if(p.barrio!==last){html+='<div class=\"modal-barrio-hdr\">'+p.barrio+'</div>';last=p.barrio;}"
         "var dc=p.dias===null?'':p.dias<=30?'fresh':p.dias<=90?'mid':'old';"
-        "var dt=p.dias===null?'':'Publicado hace '+p.dias+' d\u00edas';"
+        "var dt=p.dias===null?'':'Publicado hace '+p.dias+' días';"
         "var tags='<span class=\"opt-tag\">'+p.tipo+'</span>';"
         "if(p.amb)tags+='<span class=\"opt-tag\">'+p.amb+' amb</span>';"
-        "if(p.sup)tags+='<span class=\"opt-tag\">'+p.sup+' m\u00b2</span>';"
+        "if(p.sup)tags+='<span class=\"opt-tag\">'+p.sup+' m²</span>';"
         "if(p.cochera)tags+='<span class=\"opt-tag coch\">Cochera</span>';"
-        "var lnk=p.url?'<a class=\"opt-link\" href=\"'+p.url+'\" target=\"_blank\">Ver portal \u2197</a>':'';"
+        "var fichaLink=_fichasOG[p.url]||'';"
+        "var fichaTag=fichaLink?'<a class=\"opt-tag-ficha\" href=\"'+fichaLink+'\" target=\"_blank\">✔ Ficha generada ↗</a>':'';"
+        "var lnk=p.url?'<a class=\"opt-link\" href=\"'+p.url+'\" target=\"_blank\">Ver portal ↗</a>':'';"
         "var exp=p.expensas?'<div class=\"opt-exp\">Expensas: '+p.expensas+'</div>':'';"
-        "var dd=dt?'<div class=\"opt-dias '+dc+'\">'+dt+'</div>':'';"
-        "html+='<div class=\"opt-card\">';"
+        "var dd=dt?'<div class=\"opt-dias '+dc+'\">'+ dt+'</div>':'';"
+        "var bajaBtn=p.url?'<button class=\"opt-baja\" data-url=\"'+p.url+'\" onclick=\"_darDeBaja(this)\">Dar de baja</button>':'';"
+        "html+='<div class=\"opt-card'+(fichaLink?' opt-card-done':'')+'\">';"
         "html+='<div><div class=\"opt-dir\">'+p.direccion+'</div>';"
-        "html+='<div class=\"opt-meta\">'+tags+'</div>'+dd+lnk+'</div>';"
-        "html+='<div><div class=\"opt-precio\">'+p.precio+'</div>'+exp+'</div>';"
+        "html+='<div class=\"opt-meta\">'+tags+'</div>'+dd+lnk+fichaTag+'</div>';"
+        "html+='<div><div class=\"opt-precio\">'+p.precio+'</div>'+exp+bajaBtn+'</div>';"
         "html+='</div>';"
         "});"
+        "html+='<div style=\"display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;border-top:1px solid var(--border);margin-top:8px\">';"
+        "html+='<button onclick=\"_modalGoPage(_modalPage-1)\" '+((_modalPage===1)?'disabled':'')+' style=\"font-family:inherit;font-size:12px;padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer\">&#8592; Ant</button>';"
+        "html+='<span style=\"font-size:12px;color:var(--muted)\">'+_modalPage+' / '+pages+' &nbsp;('+total+' cargados)</span>';"
+        "html+='<button onclick=\"_modalGoPage(_modalPage+1)\" '+((_modalPage===pages)?'disabled':'')+' style=\"font-family:inherit;font-size:12px;padding:5px 12px;border:1.5px solid var(--border);border-radius:6px;background:#fff;cursor:pointer\">Sig &#8594;</button>';"
+        "html+='</div>';"
+        "if(_modalPage===pages){"
+        "html+='<div style=\"text-align:center;padding:10px 0 2px\">';"
+        "html+='<button onclick=\"_fetchOpciones(_modalOffset,false)\" style=\"font-family:inherit;font-size:12px;padding:6px 16px;border:1.5px solid var(--primary);border-radius:6px;background:#fff;color:var(--primary);cursor:pointer;font-weight:600\">Ver 50 más</button>';"
+        "if(_modalOffset>50)html+=' <button onclick=\"_modalPage=1;_renderModalPage()\" style=\"font-family:inherit;font-size:12px;padding:6px 16px;border:1.5px solid var(--border);border-radius:6px;background:#fff;color:var(--muted);cursor:pointer\">&#8593; Volver al inicio</button>';"
+        "html+='</div>';"
+        "}"
         "body.innerHTML=html;}"
+        "function _modalGoPage(p){"
+        "var pages=Math.ceil(_modalItems.length/_MODAL_PER_PAGE);"
+        "if(p<1||p>pages)return;"
+        "_modalPage=p;"
+        "_renderModalPage();"
+        "document.getElementById('modal-body').scrollTop=0;}"
+        "function _darDeBaja(btn){"
+        "var url=btn.dataset.url;"
+        "if(!confirm('\u00bfMarcar esta propiedad como bajada?'))return;"
+        "btn.disabled=true;btn.textContent='Bajando...';"
+        "fetch('/marcar-bajado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})})"
+        ".then(function(r){return r.json();})"
+        ".then(function(d){"
+        "if(d.ok){btn.textContent='✓ Bajada';btn.style.color='var(--muted)';btn.style.borderColor='var(--muted)';"
+        "btn.closest('.opt-card').style.opacity='0.45';}"
+        "else{btn.disabled=false;btn.textContent='Dar de baja';alert('Error: '+d.error);}})"
+        ".catch(function(){btn.disabled=false;btn.textContent='Dar de baja';});}"
         "var s=300,cd=document.getElementById('cd');"
         "setInterval(function(){if(--s<=0)return;"
         "var m=Math.floor(s/60),ss=String(s%60).padStart(2,'0');"
@@ -1914,6 +2005,28 @@ def leads():
     return _render_leads_html(leads_data, fichas_data)
 
 
+
+@app.route('/marcar-bajado', methods=['POST'])
+def marcar_bajado_leads():
+    import sqlite3 as _sq3
+    from datetime import datetime as _dt2
+    data = request.get_json()
+    url  = (data or {}).get('url', '').strip()
+    if not url:
+        return jsonify({'ok': False, 'error': 'Sin URL'}), 400
+    try:
+        con = _sq3.connect(str(DB_PATH))
+        con.execute(
+            "UPDATE propiedades SET estado_aviso='bajado', fecha_bajada=? WHERE url=?",
+            (_dt2.now().isoformat(), url)
+        )
+        con.commit()
+        con.close()
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @app.route('/buscar-opciones', methods=['POST'])
 def buscar_opciones():
     d         = request.get_json()
@@ -1926,6 +2039,24 @@ def buscar_opciones():
         return jsonify(results)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/fichas-generadas', methods=['GET'])
+def fichas_generadas():
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        creds = Credentials.from_service_account_file(str(CREDS_PATH), scopes=SHEETS_SCOPES)
+        gc = gspread.authorize(creds)
+        sh = gc.open_by_key(SHEET_ID)
+        ws = sh.worksheet('Fichas')
+        records = ws.get_all_records(numericise_ignore=['all'])
+        links_nl = {str(r.get('LINK OG', '')).strip(): str(r.get('LINK NL', '')).strip()
+                    for r in records if str(r.get('LINK OG', '')).strip()}
+        return jsonify({'links_nl': links_nl})
+    except Exception as e:
+        return jsonify({'links_nl': {}, 'error': str(e)})
 
 
 @app.route('/extraer', methods=['POST'])
