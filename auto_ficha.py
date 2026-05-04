@@ -744,6 +744,7 @@ def detectar_badges(datos: dict) -> list:
         datos.get('tipo', ''),
         datos.get('disposicion', ''),
         str(datos.get('ambientes', '')),
+        datos.get('tags', ''),
     ]).lower()
 
     encontrados = []
@@ -868,6 +869,14 @@ def extraer_zonaprop(url: str) -> dict:
         urls = re.findall(r'"url1200x1200"\s*:\s*"([^"]+)"', pics_m.group(1))
         fotos = [u for u in urls if u]
     datos['fotos'] = fotos
+
+    # Tags/flags de ZonaProp (flagsFeatures) — incluye "Apto crédito", etc.
+    flags_m = re.search(r"'flagsFeatures'\s*:\s*(\[.*?\])", raw, re.DOTALL)
+    if flags_m:
+        labels = re.findall(r'"label"\s*:\s*"([^"]+)"', flags_m.group(1))
+        datos['tags'] = ' '.join(labels).lower()
+    else:
+        datos['tags'] = ''
 
     datos['badges'] = detectar_badges(datos)
     return datos
@@ -1344,7 +1353,15 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
         precio_usd = re.sub(r'^(USD|U\$S|US\$|\$)\s*', '', precio_raw, flags=re.IGNORECASE).strip()
 
         badges_lower = [b.lower() for b in d.get('badges', [])]
-        cochera = 'Sí' if any('cochera' in b for b in badges_lower) else ''
+        descripcion_lower = d.get('descripcion', '').lower()
+
+        cochera_keywords = ['cochera', 'garage', 'garaje', 'guarda coche', 'guardacoche', 'coche']
+        cochera = 'SI' if (any('cochera' in b for b in badges_lower) or
+                           any(k in descripcion_lower for k in cochera_keywords)) else 'NO'
+
+        credito_keywords = ['apto crédito', 'apto credito', 'apto al crédito', 'apto al credito', 'crédito', 'credito']
+        apto_credito = 'SI' if (any('apto cr' in b for b in badges_lower) or
+                                any(k in descripcion_lower for k in credito_keywords)) else 'NO'
 
         fila = [
             fecha,                   # FECHA
@@ -1355,6 +1372,7 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
             precio_usd,              # PRECIO USD
             d.get('expensas', ''),   # EXPENSAS
             cochera,                 # COCHERA
+            apto_credito,            # APTO CREDITO
             link_nl,                 # LINK NL
             link_og,                 # LINK OG
             '',                      # CLIENTE
