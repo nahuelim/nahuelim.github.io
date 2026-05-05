@@ -311,11 +311,11 @@ function lbUpd(){
   document.getElementById('lb-cnt').textContent=(lbCur+1)+' / '+N;
   document.querySelectorAll('#lb-thumbs img').forEach((img,i)=>{img.className=i===lbCur?'on':'';if(i===lbCur)img.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});});
 }
-document.addEventListener('keydown',e=>{if(!document.getElementById('lb').classList.contains('open'))return;
+document.addEventListener('keydown',e=>{if(!document.getElementById('lb').classList.contains('open'))return;if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1);if(e.key==='Escape')closeLB();});
 /* Touch swipe — mosaico principal (abre lightbox) */
 (function(){let x0=null,y0=null;const el=document.querySelector('.mosaic');if(!el)return;el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){if(!document.getElementById('lb').classList.contains('open'))openLB(dx<0?1:0);}x0=null;y0=null;},{passive:true});})();
 /* Touch swipe — lightbox */
-(function(){let x0=null,y0=null;const el=document.getElementById('lb');if(!el)return;el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40)lbGo(dx<0?1:-1);x0=null;y0=null;},{passive:true});})();if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1);if(e.key==='Escape')closeLB();});
+(function(){let x0=null,y0=null;const el=document.getElementById('lb');if(!el)return;el.addEventListener('touchstart',e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});el.addEventListener('touchend',e=>{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40)lbGo(dx<0?1:-1);x0=null;y0=null;},{passive:true});})();
 
 </script>
 </body>
