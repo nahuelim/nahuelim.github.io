@@ -241,10 +241,10 @@ function lbUpd(){{
   document.querySelectorAll('#lb-thumbs img').forEach((img,i)=>{{img.className=i===lbCur?'on':'';if(i===lbCur)img.scrollIntoView({{behavior:'smooth',block:'nearest',inline:'center'}});}});
 }}
 document.addEventListener('keydown',e=>{{if(!document.getElementById('lb').classList.contains('open'))return;if(e.key==='ArrowLeft')lbGo(-1);if(e.key==='ArrowRight')lbGo(1);if(e.key==='Escape')closeLB();}});
-/* Touch swipe — slider principal */
-(function(){{let x0=null;const el=document.getElementById('slider');el.addEventListener('touchstart',e=>{{x0=e.touches[0].clientX;}},{{passive:true}});el.addEventListener('touchend',e=>{{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)sGo(dx<0?1:-1);x0=null;}},{{passive:true}});}})();
+/* Touch swipe — mosaico principal (abre lightbox) */
+(function(){{let x0=null,y0=null;const el=document.querySelector('.mosaic');if(!el)return;el.addEventListener('touchstart',e=>{{x0=e.touches[0].clientX;y0=e.touches[0].clientY;}},{{passive:true}});el.addEventListener('touchend',e=>{{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){{if(!document.getElementById('lb').classList.contains('open'))openLB(dx<0?1:0);}}x0=null;y0=null;}},{{passive:true}});}})();
 /* Touch swipe — lightbox */
-(function(){{let x0=null;const el=document.getElementById('lb');el.addEventListener('touchstart',e=>{{x0=e.touches[0].clientX;}},{{passive:true}});el.addEventListener('touchend',e=>{{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)lbGo(dx<0?1:-1);x0=null;}},{{passive:true}});}})();
+(function(){{let x0=null,y0=null;const el=document.getElementById('lb');if(!el)return;el.addEventListener('touchstart',e=>{{x0=e.touches[0].clientX;y0=e.touches[0].clientY;}},{{passive:true}});el.addEventListener('touchend',e=>{{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40)lbGo(dx<0?1:-1);x0=null;y0=null;}},{{passive:true}});}})();
 </script>
 </body>
 </html>'''
@@ -366,10 +366,22 @@ def wa_url(direccion):
 
 
 # ─── GENERAR MAPA URL ──────────────────────────────────────────────────────────
+
+def _cargar_maps_key() -> str:
+    from pathlib import Path
+    key_file = Path.home() / "Documents" / "2. Inmobiliaria" / ".maps_api_key"
+    if key_file.exists():
+        return key_file.read_text().strip()
+    raise RuntimeError(f"No encontré la Google Maps API key en {key_file}")
+
+MAPS_API_KEY = _cargar_maps_key()
+
 def mapa_url(direccion, barrio):
     from urllib.parse import quote
-    q = quote(f"{direccion}, {barrio}, Buenos Aires, Argentina")
-    return f"https://maps.google.com/maps?q={q}&t=m&z=16&output=embed&iwloc=near"
+    import re
+    dir_limpia = re.sub(r'\bal\s+(\d+)', r'\1', direccion, flags=re.IGNORECASE).strip()
+    q = quote(f"{dir_limpia}, {barrio}, Buenos Aires, Argentina")
+    return f"https://www.google.com/maps/embed/v1/place?key={MAPS_API_KEY}&q={q}&zoom=17"
 
 
 # ─── MAIN ──────────────────────────────────────────────────────────────────────
