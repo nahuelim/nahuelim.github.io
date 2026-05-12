@@ -1402,6 +1402,34 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
         print(f'[Sheets] Respuesta de la API: {resultado}', flush=True)
         print(f'[Sheets] OK — fila agregada: {ficha_id}', flush=True)
 
+        # ── Dedup check: marcar en amarillo si la dirección ya existía ──────
+        try:
+            nueva_fila_idx = ws.row_count  # fila recién agregada
+            dir_nueva = str(d.get('direccion', '')).strip().lower()
+            if dir_nueva:
+                todas = ws.get_all_values()
+                headers = todas[0] if todas else []
+                col_dir = next((i for i, h in enumerate(headers) if 'DIRECCI' in h.upper()), None)
+                if col_dir is not None:
+                    # Buscar dirección igual en filas anteriores (excluir la recién agregada)
+                    duplicados = [
+                        i + 2  # +1 por header, +1 por base-1
+                        for i, row in enumerate(todas[1:-1])  # excluir última fila (la nueva)
+                        if len(row) > col_dir and row[col_dir].strip().lower() == dir_nueva
+                    ]
+                    if duplicados:
+                        # Pintar DIRECCIÓN de la fila nueva en amarillo
+                        ultima_fila = len(todas)
+                        ws.format(
+                            f'{chr(65 + col_dir)}{ultima_fila}',
+                            {'backgroundColor': {'red': 1.0, 'green': 0.95, 'blue': 0.0}}
+                        )
+                        print(f'[Sheets] ⚠️  Posible duplicado — dirección ya existe en fila(s): {duplicados}', flush=True)
+                    else:
+                        print(f'[Sheets] ✅ Sin duplicados detectados', flush=True)
+        except Exception as dedup_err:
+            print(f'[Sheets] Dedup check falló (no crítico): {dedup_err}', flush=True)
+
     except Exception as e:
         print(f'[Sheets] EXCEPCIÓN: {type(e).__name__}: {e}', flush=True)
         print(traceback.format_exc(), flush=True)
