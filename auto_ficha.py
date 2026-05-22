@@ -2291,17 +2291,39 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
     )
 
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PATCH ACM v2 — reemplaza las rutas ACM en auto_ficha.py
+#
+# Cómo aplicar:
+#   1. Abrí auto_ficha.py en VS Code
+#   2. Buscá la línea:  # ─── ACM ──────────
+#   3. Seleccioná todo desde esa línea hasta el final del archivo
+#   4. Reemplazá con este bloque completo
+#   5. Guardá
+# ═══════════════════════════════════════════════════════════════════════════════
+
 # ─── ACM ───────────────────────────────────────────────────────────────────────
 
 _ACM_BARRIOS = [
-    "Palermo", "Belgrano", "Recoleta", "Caballito", "Almagro",
-    "Villa Crespo", "Villa Urquiza", "Saavedra", "Núñez",
-    "Villa Devoto", "Colegiales", "Coghlan", "Chacarita",
+    "Agronomía", "Almagro", "Balvanera", "Barracas", "Belgrano",
+    "Boedo", "Caballito", "Chacarita", "Coghlan", "Colegiales",
+    "Constitución", "Flores", "Floresta", "La Boca", "La Paternal",
+    "Liniers", "Mataderos", "Monte Castro", "Monserrat", "Nueva Pompeya",
+    "Núñez", "Palermo", "Parque Avellaneda", "Parque Chacabuco",
+    "Parque Chas", "Parque Patricios", "Puerto Madero", "Recoleta",
+    "Retiro", "Saavedra", "San Cristóbal", "San Nicolás", "San Telmo",
+    "Vélez Sársfield", "Versalles", "Villa Crespo", "Villa del Parque",
+    "Villa Devoto", "Villa General Mitre", "Villa Lugano", "Villa Luro",
+    "Villa Ortúzar", "Villa Pueyrredón", "Villa Real", "Villa Riachuelo",
+    "Villa Santa Rita", "Villa Soldati", "Villa Urquiza", "Barrio Norte",
+    "Las Cañitas", "Palermo Soho", "Palermo Hollywood",
 ]
 
 _SCRAPER_ACM = Path(__file__).parent / 'acm_scraper.py'
 _PYTHON_VENV = (
-    Path.home() / 'Documents' / '2. Inmobiliaria' / 'zonaprop_scraper' / 'venv' / 'bin' / 'python3.11'
+    Path.home() / 'Documents' / '2. Inmobiliaria' / 'zonaprop_scraper'
+    / 'venv' / 'bin' / 'python3.11'
 )
 
 _ACM_ESTADO_COEFS = {
@@ -2312,11 +2334,11 @@ _ACM_ESTADO_COEFS = {
     'necesita_restauracion': -0.20,
 }
 _ACM_ESTADO_LABELS = {
-    'a_estrenar':             'A estrenar / En pozo',
-    'impecable':              'Impecable',
-    'buen_estado':            'Buen estado',
-    'a_refaccionar':          'A refaccionar',
-    'necesita_restauracion':  'Necesita restauración',
+    'a_estrenar':            'A estrenar / En pozo',
+    'impecable':             'Impecable',
+    'buen_estado':           'Buen estado',
+    'a_refaccionar':         'A refaccionar',
+    'necesita_restauracion': 'Necesita restauración',
 }
 
 _ACM_CSS = """
@@ -2331,16 +2353,17 @@ nav{background:var(--primary);padding:0 28px;height:54px;display:flex;align-item
 .nav-link:hover{color:#fff;}
 .nav-link.active{color:var(--orange);}
 .nav-badge{background:var(--orange);color:#fff;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;}
-main{max-width:960px;margin:40px auto;padding:0 20px;}
+main{max-width:980px;margin:36px auto;padding:0 20px;}
 h1{font-size:22px;font-weight:600;color:var(--primary);margin-bottom:4px;}
 .subtitle{color:var(--muted);font-size:14px;margin-bottom:28px;}
 .card{background:var(--white);border-radius:12px;padding:24px;box-shadow:0 1px 6px rgba(0,0,0,.07);margin-bottom:20px;}
 label{display:block;font-size:12px;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
-input[type=text],input[type=number],select{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;background:#fff;}
-input:focus,select:focus{border-color:var(--primary);}
+input[type=text],input[type=number],select,textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;background:#fff;}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);}
+textarea{resize:vertical;min-height:60px;font-family:'DM Mono',monospace;font-size:13px;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .form-grid .full{grid-column:1/-1;}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;white-space:nowrap;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:11px 22px;border-radius:8px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;white-space:nowrap;font-family:'DM Sans',sans-serif;}
 .btn:hover{opacity:.88;transform:translateY(-1px);}
 .btn-orange{background:var(--orange);color:#fff;}
 .btn-primary{background:var(--primary);color:#fff;}
@@ -2352,41 +2375,35 @@ input:focus,select:focus{border-color:var(--primary);}
 .alert-info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
 .alert-error{background:#fef2f2;color:var(--red);border:1px solid #fecaca;}
 .alert-warn{background:#fffbeb;color:#92400e;border:1px solid #fde68a;}
-.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px;}
-.metric-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px;}
-.metric-card{background:var(--white);border-radius:10px;padding:16px 18px;box-shadow:0 1px 5px rgba(0,0,0,.07);}
-.metric-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
-.metric-value{font-size:20px;font-weight:700;color:var(--primary);}
-.metric-value.orange{color:var(--orange);font-size:22px;}
-.comp-card{border:2px solid var(--orange);border-radius:10px;padding:16px 18px;background:#fff;margin-bottom:12px;}
-.comp-card-dir{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:4px;}
-.comp-card-price{font-size:18px;font-weight:800;color:var(--orange);margin-bottom:6px;}
-.comp-card-meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
-.comp-card-meta span{background:#f0f4f8;padding:2px 8px;border-radius:4px;}
-.comp-card-m2{font-size:13px;font-weight:600;color:#111;}
-.badge-top{display:inline-block;background:var(--orange);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;}
-.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
-table.comp-tbl{width:100%;border-collapse:collapse;font-size:13px;}
-.comp-tbl th{background:var(--primary);color:#fff;padding:9px 10px;font-size:11px;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:.05em;}
-.comp-tbl th:first-child{border-radius:8px 0 0 0;}
-.comp-tbl th:last-child{border-radius:0 8px 0 0;}
-.comp-tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
-.comp-tbl tr:hover td{background:#f8fafc;}
-.comp-tbl tr.top3 td{background:#eff6ff;}
-.star{color:var(--orange);font-weight:700;}
-.link-zp{color:var(--orange);font-size:12px;font-weight:600;text-decoration:none;}
+.alert-success{background:#f0fdf4;color:var(--green);border:1px solid #bbf7d0;}
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.metric-card{background:#f8fafc;border-radius:10px;padding:14px 16px;border:1px solid var(--border);}
+.metric-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.metric-value{font-size:19px;font-weight:700;color:var(--primary);}
+.metric-value.orange{color:var(--orange);}
+.metric-value.sm{font-size:14px;}
+table.cand-tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.cand-tbl th{background:var(--primary);color:#fff;padding:9px 10px;font-size:11px;font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:.04em;}
+.cand-tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.cand-tbl tr:hover td{background:#f8fafc;}
+.cand-tbl tr.confirmado td{background:#f0fdf4;}
+.link-zp{color:var(--orange);font-weight:600;font-size:12px;text-decoration:none;}
 .link-zp:hover{text-decoration:underline;}
+.dias-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;}
+.dias-fresh{background:#dcfce7;color:#15803d;}
+.dias-mid{background:#fef3c7;color:#92400e;}
+.dias-old{background:#fee2e2;color:#b91c1c;}
+.chk-cell{text-align:center;width:44px;}
+input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--orange);}
+.score-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;width:70px;display:inline-block;vertical-align:middle;}
+.score-fill{height:100%;background:var(--orange);border-radius:3px;}
 .price-adj-card{background:var(--white);border-radius:12px;padding:24px;box-shadow:0 1px 6px rgba(0,0,0,.07);border-left:4px solid var(--orange);}
-.price-input-big{font-size:20px;font-weight:700;padding:14px 18px;border:2px solid var(--orange);border-radius:8px;width:260px;color:var(--primary);}
-.prop-table{width:100%;border-collapse:collapse;font-size:13px;}
-.prop-table td{padding:7px 10px;border-bottom:1px solid var(--border);}
-.prop-table td:first-child{font-weight:600;color:var(--primary);width:160px;}
-@media(max-width:1400px){nav{padding:0 18px;height:48px;}main{margin:26px auto;}.metric-grid{grid-template-columns:repeat(3,1fr);}}.comp-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));}
+.price-input-big{font-size:20px;font-weight:700;padding:14px 18px;border:2px solid var(--orange) !important;border-radius:8px;width:260px;color:var(--primary);}
+@media(max-width:1400px){nav{padding:0 18px;height:48px;}main{margin:24px auto;}.metric-row{grid-template-columns:repeat(2,1fr);}}
 """
 
 
 def _acm_fmt(n) -> str:
-    """Formato argentino: USD 2.334"""
     if n is None:
         return '—'
     try:
@@ -2415,59 +2432,49 @@ def _acm_html_page(title: str, body: str) -> str:
     )
 
 
+# ── /acm — Formulario ─────────────────────────────────────────────────────────
+
 @app.route('/acm')
 def acm():
     import html as _he
     barrio_opts = ''.join(
         f'<option value="{_he.escape(b)}">{_he.escape(b)}</option>'
-        for b in _ACM_BARRIOS
+        for b in sorted(_ACM_BARRIOS)
     )
     body = f'''
 <h1>Análisis Comparativo de Mercado</h1>
-<p class="subtitle">Completá los datos de la propiedad para analizar el mercado y generar el informe.</p>
+<p class="subtitle">
+  Buscá en ZonaProp con los filtros que quieras, copiá la URL de resultados y pegala acá.
+  El scraper analiza el universo completo y te trae los 24 mejores candidatos para que valides los 6 testigos.
+</p>
 
 <div class="alert alert-info">
-  <b>Importante:</b> Al hacer clic en "Analizar mercado" se abrirá una ventana del browser
-  que navega ZonaProp automáticamente. El proceso toma entre 3 y 5 minutos.
+  Al hacer clic en <b>Analizar</b> se abre una ventana del browser que navega ZonaProp automáticamente.
+  Tarda entre 10 y 20 minutos según el volumen de resultados.
 </div>
 
 <div class="card">
-  <div class="section-hdr">Datos de la propiedad</div>
+  <div class="section-hdr">URL de búsqueda y datos del inmueble</div>
   <form id="acm-form" action="/acm/analizar" method="POST">
     <div class="form-grid">
+
       <div class="full">
-        <label>Dirección *</label>
-        <input type="text" name="direccion" placeholder="Ej: Av. Corrientes 4676, Piso 3 B" required>
+        <label>URL de búsqueda de ZonaProp *</label>
+        <textarea name="search_url" rows="2"
+          placeholder="https://www.zonaprop.com.ar/departamentos-venta-palermo-2-ambientes.html"
+          required style="font-size:13px"></textarea>
+        <p style="font-size:11px;color:var(--muted);margin-top:5px">
+          Filtrá en ZonaProp por barrio, tipo, ambientes, precio — lo que quieras. Copiá la URL y pegala acá.
+        </p>
+      </div>
+
+      <div>
+        <label>M² cubiertos del inmueble *</label>
+        <input type="number" name="sup_cubierta" placeholder="Ej: 55" min="1" max="2000" required>
       </div>
       <div>
-        <label>Barrio *</label>
-        <select name="barrio" required>
-          <option value="" disabled selected>Seleccioná un barrio</option>
-          {barrio_opts}
-        </select>
-      </div>
-      <div>
-        <label>Tipo *</label>
-        <select name="tipo">
-          <option value="departamento">Departamento</option>
-          <option value="ph">PH</option>
-          <option value="casa">Casa</option>
-        </select>
-      </div>
-      <div>
-        <label>Ambientes *</label>
-        <select name="ambientes">
-          <option value="0">Sin filtro</option>
-          <option value="1">1 ambiente</option>
-          <option value="2">2 ambientes</option>
-          <option value="3">3 ambientes</option>
-          <option value="4">4 ambientes</option>
-          <option value="5">5+ ambientes</option>
-        </select>
-      </div>
-      <div>
-        <label>M² cubiertos *</label>
-        <input type="number" name="sup_cubierta" placeholder="Ej: 65" min="1" max="2000" required>
+        <label>Ambientes</label>
+        <input type="number" name="ambientes" placeholder="Ej: 2" min="1" max="10">
       </div>
       <div>
         <label>Antigüedad (años)</label>
@@ -2476,6 +2483,10 @@ def acm():
       <div>
         <label>Piso</label>
         <input type="number" name="piso" placeholder="Ej: 4" min="1" max="50">
+      </div>
+      <div>
+        <label>Baños</label>
+        <input type="number" name="banos" placeholder="Ej: 1" min="1" max="10">
       </div>
       <div>
         <label>Disposición</label>
@@ -2499,15 +2510,36 @@ def acm():
         <input type="number" name="sup_semi" placeholder="Ej: 8" min="0" max="500" value="0">
       </div>
       <div>
+        <label>Expensas est. ($)</label>
+        <input type="number" name="expensas" placeholder="Ej: 45000" min="0">
+      </div>
+      <div>
         <label>Apto crédito</label>
         <select name="apto_credito">
           <option value="false">No</option>
           <option value="true">Sí</option>
         </select>
       </div>
+
+      <!-- Datos para el informe (barrio + dirección + tipo + estado) -->
       <div>
-        <label>Expensas est. ($)</label>
-        <input type="number" name="expensas" placeholder="Ej: 45000" min="0">
+        <label>Barrio del inmueble *</label>
+        <select name="barrio" required>
+          <option value="" disabled selected>Seleccioná</option>
+          {barrio_opts}
+        </select>
+      </div>
+      <div>
+        <label>Tipo</label>
+        <select name="tipo">
+          <option value="Departamento">Departamento</option>
+          <option value="PH">PH</option>
+          <option value="Casa">Casa</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>Dirección *</label>
+        <input type="text" name="direccion" placeholder="Ej: Gurruchaga 1800, Piso 3 B" required>
       </div>
       <div class="full">
         <label>Estado del inmueble *</label>
@@ -2519,15 +2551,18 @@ def acm():
           <option value="necesita_restauracion">Necesita restauración (-20%)</option>
         </select>
       </div>
+
     </div>
     <div style="margin-top:20px;display:flex;align-items:center;gap:16px;">
       <button type="submit" class="btn btn-orange" id="acm-btn">
         <span id="acm-btn-txt">Analizar mercado</span>
         <span class="loader" id="acm-loader" style="display:none"></span>
       </button>
-      <span style="font-size:13px;color:var(--muted)">El análisis tarda entre 3 y 5 minutos.<br>El navegador se abrirá automáticamente.</span>
+      <span style="font-size:13px;color:var(--muted)">
+        El browser se abre automáticamente.<br>
+        Tarda 10–20 min según el volumen.
+      </span>
     </div>
-    <div id="acm-error" class="alert alert-error" style="display:none;margin-top:14px"></div>
   </form>
 </div>
 
@@ -2535,7 +2570,7 @@ def acm():
 document.getElementById('acm-form').addEventListener('submit', function() {{
   var btn = document.getElementById('acm-btn');
   btn.disabled = true;
-  document.getElementById('acm-btn-txt').textContent = 'Analizando... (3–5 min)';
+  document.getElementById('acm-btn-txt').textContent = 'Analizando...';
   document.getElementById('acm-loader').style.display = 'inline-block';
 }});
 </script>
@@ -2543,352 +2578,662 @@ document.getElementById('acm-form').addEventListener('submit', function() {{
     return _acm_html_page('Formulario', body)
 
 
+# ── /acm/analizar ─────────────────────────────────────────────────────────────
+
 @app.route('/acm/analizar', methods=['POST'])
 def acm_analizar():
     import html as _he
 
-    # ── Defaults seguros — evitan UnboundLocalError si algo falla en el medio ──
-    coef_estado     = 0.0
-    precio_ajustado = 0
-    rmin_ajustado   = 0
-    rmax_ajustado   = 0
-    ps              = 0
-    m_m2            = 0
-    p25             = 0
-    p75             = 0
-    r_min           = 0
-    r_max           = 0
-    n_tot           = 0
-    n_us            = 0
-    radio           = 800
-    stock           = 0
-    comparables     = []
-    top3_indices    = []
-    stats           = {}
-
-    # Recoger campos del formulario
-    direccion    = request.form.get('direccion', '').strip()
-    barrio       = request.form.get('barrio', '').strip()
-    tipo         = request.form.get('tipo', 'departamento').strip().lower()
-    amb_str      = request.form.get('ambientes', '0').strip()
+    search_url   = request.form.get('search_url', '').strip()
     sup_cubierta = request.form.get('sup_cubierta', '').strip()
+    ambientes    = request.form.get('ambientes', '').strip()
     antiguedad   = request.form.get('antiguedad', '').strip()
     piso         = request.form.get('piso', '').strip()
     disposicion  = request.form.get('disposicion', '').strip()
     cochera      = request.form.get('cochera', 'false').strip()
     sup_semi     = request.form.get('sup_semi', '0').strip()
-    apto_credito = request.form.get('apto_credito', 'false').strip()
     expensas     = request.form.get('expensas', '').strip()
+    apto_credito = request.form.get('apto_credito', 'false').strip()
+    barrio       = request.form.get('barrio', '').strip()
+    tipo         = request.form.get('tipo', 'Departamento').strip()
+    direccion    = request.form.get('direccion', '').strip()
     estado_slug  = request.form.get('estado', 'buen_estado').strip()
-    coef_estado  = _ACM_ESTADO_COEFS.get(estado_slug, 0.0)
-    estado       = _ACM_ESTADO_LABELS.get(estado_slug, 'Buen estado')
 
-    if not barrio or not direccion:
-        return _acm_html_page('Error', '<div class="alert alert-error">Completá dirección y barrio.</div>')
-
+    if not search_url or not search_url.startswith('http'):
+        return _acm_html_page('Error', '<div class="alert alert-error">Pegá una URL válida de ZonaProp.</div>')
+    if not sup_cubierta:
+        return _acm_html_page('Error', '<div class="alert alert-error">Los m² cubiertos son obligatorios.</div>')
     if not _SCRAPER_ACM.exists():
         return _acm_html_page('Error', f'<div class="alert alert-error">No se encontró acm_scraper.py en {_SCRAPER_ACM}</div>')
     if not _PYTHON_VENV.exists():
-        return _acm_html_page('Error', f'<div class="alert alert-error">No se encontró el venv Python en {_PYTHON_VENV}</div>')
+        return _acm_html_page('Error', f'<div class="alert alert-error">No se encontró el venv en {_PYTHON_VENV}</div>')
 
-    # Construir comando subprocess
     cmd = [
         str(_PYTHON_VENV), str(_SCRAPER_ACM),
-        '--direccion', direccion,
-        '--barrio', barrio,
-        '--tipo', tipo,
-        '--ambientes', amb_str or '0',
-        '--sup', sup_cubierta or '0',
+        '--url',     search_url,
+        '--sup',     sup_cubierta,
         '--cochera', cochera,
-        '--sup-semi', sup_semi or '0',
-        '--apto-credito', apto_credito,
     ]
+    if ambientes:
+        cmd += ['--ambientes', ambientes]
     if antiguedad:
         cmd += ['--antiguedad', antiguedad]
     if piso:
         cmd += ['--piso', piso]
     if disposicion:
         cmd += ['--disposicion', disposicion]
+    banos_form = request.form.get('banos', '').strip()
+    if banos_form:
+        cmd += ['--banos', banos_form]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         if result.returncode != 0:
-            err = _he.escape((result.stderr or '')[-800:])
-            return _acm_html_page('Error', f'<div class="alert alert-error"><b>Error en el scraper:</b><br><pre style="margin-top:8px;font-size:12px">{err}</pre></div>')
-
+            err = _he.escape((result.stderr or '')[-1200:])
+            return _acm_html_page('Error', f'<div class="alert alert-error"><b>Error en el scraper:</b><pre style="margin-top:8px;font-size:12px;white-space:pre-wrap">{err}</pre></div>')
         stdout = (result.stdout or '').strip()
         if not stdout:
-            return _acm_html_page('Error', '<div class="alert alert-error">El scraper no devolvió datos. Revisá la ventana del browser.</div>')
-
-        data         = json.loads(stdout)
-        comparables  = data.get('comparables', [])
-        top3_indices = data.get('top3_indices', [])
-        stats        = data.get('stats', {})
-
-        if len(comparables) < 3:
-            return _acm_html_page('Sin datos', f'<div class="alert alert-warn">Solo se encontraron {len(comparables)} comparables. Probá sin filtro de ambientes o con otro barrio.</div>')
-
+            return _acm_html_page('Error', '<div class="alert alert-error">El scraper no devolvió datos.</div>')
+        data = json.loads(stdout)
     except subprocess.TimeoutExpired:
-        return _acm_html_page('Error', '<div class="alert alert-error">El scraper tardó demasiado (&gt;10 min). Intentá de nuevo.</div>')
+        return _acm_html_page('Error', '<div class="alert alert-error">Timeout (&gt;30 min). Intentá de nuevo.</div>')
     except Exception as e:
-        return _acm_html_page('Error', f'<div class="alert alert-error"><b>Error inesperado:</b><br><pre style="margin-top:8px;font-size:12px">{_he.escape(str(e))}</pre></div>')
+        return _acm_html_page('Error', f'<div class="alert alert-error">{_he.escape(str(e))}</div>')
 
-    # ── Métricas principales (antes de datos_prop para que precio_ajustado exista) ──
-    m_m2   = stats.get('mediana_m2', 0)
-    p25    = stats.get('p25', 0)
-    p75    = stats.get('p75', 0)
-    radio  = stats.get('radio_metros', 0)
-    stock  = stats.get('stock_barrio', 0)
-    n_us   = stats.get('n_usados', 0)
-    n_tot  = stats.get('n_total', 0)
-    ps     = stats.get('precio_sugerido', 0)
-    r_min  = stats.get('rango_min', 0)
-    r_max  = stats.get('rango_max', 0)
+    candidatos = data.get('candidatos', [])
+    if len(candidatos) < 6:
+        return _acm_html_page('Sin datos',
+            f'<div class="alert alert-warn">Solo se encontraron {len(candidatos)} candidatos. '
+            'Ampliá los filtros en ZonaProp (más ambientes, mayor rango de m², barrios limítrofes).</div>')
 
-    rango_mkt = (
-        f"USD {p25:,.0f} – USD {p75:,.0f}".replace(',', '.')
-        if p25 and p75 else '—'
-    )
-    precio_sugerido_fmt = _acm_fmt(ps) if ps else '—'
-    rango_est = f"{_acm_fmt(r_min)} – {_acm_fmt(r_max)}" if r_min and r_max else '—'
-
-    # Ajuste por estado del inmueble
-    precio_ajustado  = round(ps * (1 + coef_estado)) if ps else 0
-    rmin_ajustado    = round(r_min * (1 + coef_estado)) if r_min else 0
-    rmax_ajustado    = round(r_max * (1 + coef_estado)) if r_max else 0
-    precio_adj_fmt   = _acm_fmt(precio_ajustado) if precio_ajustado else '—'
-    rango_adj_est    = (
-        f"{_acm_fmt(rmin_ajustado)} – {_acm_fmt(rmax_ajustado)}"
-        if rmin_ajustado and rmax_ajustado else '—'
-    )
-    coef_pct = (
-        f"+{int(round(coef_estado * 100))}%"
-        if coef_estado > 0
-        else (f"{int(round(coef_estado * 100))}%" if coef_estado < 0 else "0%")
-    )
-
-    # ── Datos de propiedad para mostrar y pasar al siguiente paso ──
-    datos_prop = {
-        'direccion':       direccion,
-        'barrio':          barrio,
-        'tipo':            tipo.capitalize(),
-        'ambientes':       amb_str if amb_str != '0' else '',
-        'sup_cubierta':    sup_cubierta,
-        'antiguedad':      antiguedad,
-        'piso':            piso,
-        'disposicion':     disposicion,
-        'cochera':         cochera,
-        'sup_semi':        sup_semi if sup_semi and sup_semi != '0' else '',
-        'apto_credito':    apto_credito,
-        'expensas':        expensas,
-        'estado':          estado,
-        'coef_estado':     coef_estado,
-        'precio_ajustado': precio_ajustado,
+    session = {
+        'universo_stats':       data.get('universo_stats', {}),
+        'outliers':             data.get('outliers', []),
+        'candidatos':           candidatos,
+        'candidatos_restantes': data.get('candidatos_restantes', []),
+        'datos_prop': {
+            'direccion':       direccion,
+            'barrio':          barrio,
+            'tipo':            tipo,
+            'ambientes':       ambientes,
+            'sup_cubierta':    sup_cubierta,
+            'sup_semicubierta':sup_semi if sup_semi and sup_semi != '0' else '',
+            'antiguedad':      antiguedad,
+            'piso':            piso,
+            'disposicion':     disposicion,
+            'cochera':         cochera,
+            'apto_credito':    apto_credito,
+            'expensas':        expensas,
+            'estado':          _ACM_ESTADO_LABELS.get(estado_slug, 'Buen estado'),
+            'estado_slug':     estado_slug,
+            'coef_estado':     _ACM_ESTADO_COEFS.get(estado_slug, 0.0),
+        },
     }
+    return _render_acm_preview(session)
 
-    # ── Tabla propiedad analizada ──
-    def _tr(label, value):
-        return f'<tr><td>{_he.escape(label)}</td><td>{_he.escape(str(value) if value else "—")}</td></tr>'
 
-    prop_rows = (
-        _tr('Dirección', direccion) +
-        _tr('Barrio', barrio) +
-        _tr('Tipo', tipo.capitalize()) +
-        _tr('Ambientes', amb_str if amb_str != '0' else 'Sin filtro') +
-        _tr('M² cubiertos', f'{sup_cubierta} m²' if sup_cubierta else '—') +
-        (_tr('M² semicubiertos', f'{sup_semi} m²') if sup_semi and sup_semi != '0' else '') +
-        (_tr('Antigüedad', f'{antiguedad} años') if antiguedad else '') +
-        (_tr('Piso', piso) if piso else '') +
-        (_tr('Disposición', disposicion) if disposicion else '') +
-        _tr('Cochera', 'Sí' if cochera == 'true' else 'No') +
-        _tr('Apto crédito', 'Sí' if apto_credito == 'true' else 'No') +
-        (_tr('Expensas est.', f'$ {int(expensas):,}'.replace(",", ".")) if expensas else '') +
-        _tr('Estado del inmueble', estado)
-    )
+# ── Render preview ────────────────────────────────────────────────────────────
 
-    # ── Cards Top 3 ──
-    top3_cards_html = ''
-    for idx in top3_indices:
-        if idx >= len(comparables):
-            continue
-        c = comparables[idx]
-        meta_parts = []
-        if c.get('ambientes'):
-            meta_parts.append(f"{c['ambientes']} amb")
-        if c.get('sup_cubierta'):
-            meta_parts.append(f"{int(c['sup_cubierta'])} m²")
-        if c.get('piso') is not None:
-            meta_parts.append(f"Piso {c['piso']}")
-        if c.get('disposicion'):
-            meta_parts.append(c['disposicion'])
-        if c.get('antiguedad'):
-            meta_parts.append(f"{c['antiguedad']} años")
-        if c.get('cochera'):
-            meta_parts.append('✓ Cochera')
+def _render_acm_preview(session: dict) -> str:
+    import html as _he
 
-        meta_spans = ''.join(f'<span>{_he.escape(p)}</span>' for p in meta_parts)
-        exp_html = f'<div style="font-size:12px;color:var(--muted)">Expensas: {_acm_fmt_ars(c.get("expensas"))}/mes</div>' if c.get('expensas') else ''
-        link_html = f'<a href="{_he.escape(c["url"])}" target="_blank" class="link-zp">Ver en ZonaProp →</a>' if c.get('url') else ''
+    stats               = session.get('universo_stats', {})
+    outliers            = session.get('outliers', [])
+    candidatos          = session.get('candidatos', [])
+    candidatos_rest     = session.get('candidatos_restantes', [])
+    dp                  = session.get('datos_prop', {})
 
-        top3_cards_html += f'''
-<div class="comp-card">
-  <div class="badge-top">Alta similitud</div>
-  <div class="comp-card-dir">{_he.escape(c.get("direccion") or c.get("barrio") or "—")}</div>
-  <div class="comp-card-price">{_acm_fmt(c.get("precio"))}</div>
-  <div class="comp-card-meta">{meta_spans}</div>
-  <div class="comp-card-m2">USD/m²: {_acm_fmt(c.get("precio_por_m2"))}</div>
-  {exp_html}
-  <div style="margin-top:8px">{link_html}</div>
+    señal_cls = 'alert-info'
+    if stats.get('dias_pct_mas90', 0) >= 50:
+        señal_cls = 'alert-warn'
+    elif stats.get('dias_pct_30', 0) >= 40:
+        señal_cls = 'alert-success'
+
+    dias_html = ''
+    if stats.get('dias_mediana') is not None:
+        dias_html = f'''
+<div class="metric-row" style="margin-top:12px">
+  <div class="metric-card">
+    <div class="metric-label">Mediana días en mercado</div>
+    <div class="metric-value sm">{stats["dias_mediana"]} días</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">≤ 30 días</div>
+    <div class="metric-value sm" style="color:var(--green)">{stats.get("dias_pct_30",0)}%</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">31–90 días</div>
+    <div class="metric-value sm" style="color:#92400e">{stats.get("dias_pct_90",0)}%</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">&gt; 90 días</div>
+    <div class="metric-value sm" style="color:var(--red)">{stats.get("dias_pct_mas90",0)}%</div>
+  </div>
+</div>
+<div class="alert {señal_cls}" style="margin-top:8px">📊 {_he.escape(stats.get("señal_mercado",""))}</div>
+'''
+
+    outliers_html = ''
+    if outliers:
+        rows_out = ''.join(
+            f'<tr>'
+            f'<td>{_he.escape(o.get("direccion","") or o.get("barrio",""))}</td>'
+            f'<td style="text-align:right;font-family:monospace">{_acm_fmt(o.get("precio_m2"))}</td>'
+            f'<td style="text-align:center">{"⬆ alto" if o.get("motivo")=="alto" else "⬇ bajo"}</td>'
+            f'<td style="text-align:center">'
+            + (f'<a href="{_he.escape(o["url"])}" target="_blank" class="link-zp">Ver →</a>' if o.get('url') else '—')
+            + '</td></tr>'
+            for o in outliers[:10]
+        )
+        outliers_html = f'''
+<div class="card">
+  <div class="section-hdr">Outliers — {len(outliers)} propiedades fuera del IQR (excluidas del ranking)</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Abrí los links para confirmar si son datos reales o errores de carga.</p>
+  <div style="overflow-x:auto">
+  <table class="cand-tbl">
+    <thead><tr><th>Dirección</th><th style="text-align:right">USD/m²</th><th style="text-align:center">Motivo</th><th style="text-align:center">Link</th></tr></thead>
+    <tbody>{rows_out}</tbody>
+  </table></div>
 </div>'''
 
-    # ── Tabla de comparables ──
-    top3_set = set(top3_indices)
-    comp_rows = ''
-    for j, c in enumerate(comparables):
-        cls = 'top3' if j in top3_set else ''
-        star = '<span class="star">★</span>' if j in top3_set else ''
-        dir_txt = _he.escape((c.get('direccion') or c.get('barrio') or '—')[:45])
-        dist_txt = f"{c['distancia_metros']}m" if c.get('distancia_metros') else '—'
-        link_html = f'<a href="{_he.escape(c["url"])}" target="_blank" class="link-zp">↗</a>' if c.get('url') else ''
-        comp_rows += (
-            f'<tr class="{cls}">'
-            f'<td>{star}</td>'
-            f'<td>{dir_txt}</td>'
-            f'<td style="text-align:center">{dist_txt}</td>'
-            f'<td style="text-align:center">{c.get("ambientes") or "—"}</td>'
-            f'<td style="text-align:center">{int(c["sup_cubierta"]) if c.get("sup_cubierta") else "—"}</td>'
-            f'<td style="text-align:center">{c.get("piso") if c.get("piso") is not None else "—"}</td>'
-            f'<td style="text-align:center">{c.get("disposicion") or "—"}</td>'
-            f'<td style="text-align:right;font-family:monospace">{_acm_fmt(c.get("precio_por_m2"))}</td>'
-            f'<td style="text-align:right;font-family:monospace">{_acm_fmt(c.get("precio"))}</td>'
-            f'<td style="text-align:right;font-family:monospace">{_acm_fmt_ars(c.get("expensas")) if c.get("expensas") else "—"}</td>'
-            f'<td style="text-align:center">{"✓" if c.get("cochera") else "—"}</td>'
-            f'<td style="text-align:center">{link_html}</td>'
-            f'</tr>'
+    max_score = max((c.get('_score', 0) for c in candidatos), default=1) or 1
+
+    rows_cand = ''
+    for i, c in enumerate(candidatos):
+        score     = c.get('_score', 0)
+        score_pct = int(score / max_score * 100)
+        dias      = c.get('dias_publicado')
+        if dias is None:
+            dias_cell = '<span class="dias-badge" style="background:#f3f4f6;color:var(--muted)">—</span>'
+        elif dias <= 30:
+            dias_cell = f'<span class="dias-badge dias-fresh">{dias}d</span>'
+        elif dias <= 90:
+            dias_cell = f'<span class="dias-badge dias-mid">{dias}d</span>'
+        else:
+            dias_cell = f'<span class="dias-badge dias-old">{dias}d</span>'
+
+        link_html = (
+            f'<a href="{_he.escape(c["url"])}" target="_blank" class="link-zp">Ver ↗</a>'
+            if c.get('url') else '—'
         )
 
-    # ── Datos JSON para el form hidden del paso 2 (todo en un campo) ──
-    acm_data_json = _he.escape(json.dumps({
-        'comparables':  comparables,
-        'stats':        stats,
-        'top3_indices': top3_indices,
-        'datos_prop':   datos_prop,
-    }, ensure_ascii=False))
+        rows_cand += f'''<tr id="row-{i}">
+  <td class="chk-cell"><input type="checkbox" name="confirmados" value="{i}" onchange="onCheck(this)" id="chk-{i}"></td>
+  <td style="font-weight:600;color:var(--primary)">{i+1}</td>
+  <td>{_he.escape((c.get("direccion") or c.get("barrio") or "—")[:45])}</td>
+  <td style="text-align:center">{c.get("ambientes") or "—"}</td>
+  <td style="text-align:center">{f"{int(c['sup_cubierta'])} m²" if c.get("sup_cubierta") else "—"}</td>
+  <td style="text-align:center">{str(c.get("piso")) if c.get("piso") is not None else "—"}</td>
+  <td style="text-align:center">{_he.escape(c.get("disposicion") or "—")}</td>
+  <td style="text-align:center">{"✓" if c.get("cochera") else "—"}</td>
+  <td style="text-align:right;font-family:monospace">{_acm_fmt(c.get("precio_por_m2"))}</td>
+  <td style="text-align:right;font-family:monospace">{_acm_fmt(c.get("precio"))}</td>
+  <td style="text-align:right;font-family:monospace">{_acm_fmt_ars(c.get("expensas")) if c.get("expensas") else "—"}</td>
+  <td>{dias_cell}</td>
+  <td><div class="score-bar"><div class="score-fill" style="width:{score_pct}%"></div></div></td>
+  <td style="text-align:center">{link_html}</td>
+</tr>'''
+
+    cands_json      = _he.escape(json.dumps(candidatos, ensure_ascii=False))
+    dp_json         = _he.escape(json.dumps(dp, ensure_ascii=False))
+    stats_json      = _he.escape(json.dumps(stats, ensure_ascii=False))
+    restantes_json  = _he.escape(json.dumps(candidatos_rest, ensure_ascii=False))
+    restantes_display = ';display:none' if not candidatos_rest else ''
+    len_candidatos  = len(candidatos)
+    dp_json_inline  = json.dumps(dp, ensure_ascii=False)
 
     body = f'''
 <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
   <h1>Resultado del Análisis</h1>
   <a href="/acm" style="font-size:13px;color:var(--muted);text-decoration:none">← Nueva búsqueda</a>
 </div>
-<p class="subtitle">{_he.escape(barrio)} · {_he.escape(tipo.capitalize())} · {_he.escape(sup_cubierta)} m²</p>
+<p class="subtitle">{_he.escape(dp.get("barrio",""))} · {_he.escape(dp.get("tipo",""))} · {_he.escape(dp.get("sup_cubierta",""))} m² · {_he.escape(dp.get("direccion",""))}</p>
 
 <div class="card">
-  <div class="section-hdr">Propiedad Analizada</div>
-  <table class="prop-table">{prop_rows}</table>
-</div>
-
-<div class="card">
-  <div class="section-hdr">Resultado del Análisis</div>
-  <div class="metric-grid">
+  <div class="section-hdr">Universo de mercado analizado</div>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="metric-label">Propiedades analizadas</div>
+      <div class="metric-value">{stats.get("n_validos",0)} <span style="font-size:13px;color:var(--muted)">de {stats.get("n_total",0)}</span></div>
+    </div>
     <div class="metric-card">
       <div class="metric-label">Mediana USD/m²</div>
-      <div class="metric-value">{_acm_fmt(m_m2)}</div>
+      <div class="metric-value orange">{_acm_fmt(stats.get("mediana_m2"))}</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Precio sugerido (mediana pura)</div>
-      <div class="metric-value" style="color:var(--muted);text-decoration:line-through;font-size:16px">{precio_sugerido_fmt}</div>
+      <div class="metric-label">Rango Q1–Q3</div>
+      <div class="metric-value sm">{_acm_fmt(stats.get("p25"))} – {_acm_fmt(stats.get("p75"))}</div>
     </div>
-    <div class="metric-card" style="border:2px solid var(--orange)">
-      <div class="metric-label">Precio ajustado — {_he.escape(estado)} ({_he.escape(coef_pct)})</div>
-      <div class="metric-value orange">{precio_adj_fmt}</div>
+    <div class="metric-card">
+      <div class="metric-label">Outliers excluidos</div>
+      <div class="metric-value sm">{stats.get("n_outliers",0)}</div>
     </div>
   </div>
-  <div class="metric-grid-2">
-    <div class="metric-card">
-      <div class="metric-label">Rango ajustado por estado</div>
-      <div class="metric-value" style="font-size:15px">{_he.escape(rango_adj_est)}</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Rango de mercado (mediana)</div>
-      <div class="metric-value" style="font-size:15px">{_he.escape(rango_mkt)}</div>
-    </div>
-  </div>
-  <div class="metric-grid-2" style="margin-top:14px">
-    <div class="metric-card">
-      <div class="metric-label">Stock en radio</div>
-      <div class="metric-value" style="font-size:17px">{stock} prop. en {radio} m</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Comparables usados</div>
-      <div class="metric-value" style="font-size:17px">{n_us} <span style="font-size:13px;color:var(--muted)">(de {n_tot} analizados)</span></div>
-    </div>
-  </div>
+  {dias_html}
 </div>
 
-<div class="card">
-  <div class="section-hdr">Top 3 Comparables Más Similares</div>
-  <div class="comp-grid">{top3_cards_html}</div>
-</div>
+{outliers_html}
 
 <div class="card">
-  <div class="section-hdr">Comparables del Mercado</div>
+  <div class="section-hdr">Top 24 candidatos — marcá exactamente 6 testigos</div>
+  <div class="alert alert-info" style="margin-bottom:16px">
+    Abrí cada aviso en ZonaProp antes de marcar. Verificá estado real, fotos, m² descubiertos y que siga activo.
+    Marcá exactamente <b>6</b> testigos para continuar.
+  </div>
+  <div id="sel-status" style="margin-bottom:12px;font-size:14px;font-weight:600;color:var(--primary)">
+    Seleccionados: <span id="sel-count">0</span> / 6
+  </div>
   <div style="overflow-x:auto">
-  <table class="comp-tbl">
-    <thead><tr>
-      <th>★</th><th>Dirección</th><th style="text-align:center">Dist.</th>
-      <th style="text-align:center">Amb</th>
-      <th style="text-align:center">m²</th><th style="text-align:center">Piso</th>
-      <th style="text-align:center">Disp</th><th style="text-align:right">USD/m²</th>
-      <th style="text-align:right">Precio</th><th style="text-align:right">Expensas</th>
-      <th style="text-align:center">Coch</th><th style="text-align:center">Link</th>
-    </tr></thead>
-    <tbody>{comp_rows}</tbody>
-  </table>
-  </div>
-  <div style="margin-top:8px;font-size:12px;color:var(--muted)">★ Máxima similitud con la propiedad analizada</div>
-</div>
-
-<div class="price-adj-card">
-  <div class="section-hdr" style="margin-bottom:10px">Confirmación de Precio y Generación del Informe</div>
-  <p style="font-size:13px;color:#374151;margin-bottom:6px">
-    Precio sugerido por mediana: <span style="color:var(--muted);text-decoration:line-through">{precio_sugerido_fmt}</span>
-    &nbsp;→&nbsp;
-    Ajustado por estado <b>({_he.escape(estado)}, {_he.escape(coef_pct)})</b>:
-    <b style="color:var(--orange)">{precio_adj_fmt}</b>
-  </p>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
-    Rango ajustado: {_he.escape(rango_adj_est)}. Podés editar el precio antes de generar el informe.
-  </p>
-  <form action="/acm/generar" method="POST">
-    <input type="hidden" name="acm_data" value="{acm_data_json}">
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <div>
-        <label style="margin-bottom:6px">Precio final (USD)</label>
-        <input type="number" name="precio_final" class="price-input-big"
-               value="{precio_ajustado or ps or ''}" min="1000" max="100000000" required>
-      </div>
-      <div style="margin-top:22px">
-        <button type="submit" class="btn btn-orange" id="gen-btn">
-          <span id="gen-btn-txt">Generar informe ACM</span>
-          <span class="loader" id="gen-loader" style="display:none"></span>
-        </button>
-      </div>
+  <form id="confirm-form" action="/acm/confirmar" method="POST">
+    <input type="hidden" name="candidatos_json" value="{cands_json}">
+    <input type="hidden" name="datos_prop_json" value="{dp_json}">
+    <input type="hidden" name="stats_json"      value="{stats_json}">
+    <input type="hidden" id="restantes-json" value="{restantes_json}">
+    <table class="cand-tbl">
+      <thead><tr>
+        <th class="chk-cell">✓</th><th>#</th><th>Dirección</th>
+        <th style="text-align:center">Amb</th><th style="text-align:center">m²</th>
+        <th style="text-align:center">Piso</th><th style="text-align:center">Disp</th>
+        <th style="text-align:center">Coch</th><th style="text-align:right">USD/m²</th>
+        <th style="text-align:right">Precio</th><th style="text-align:right">Expensas</th>
+        <th style="text-align:center">Días</th><th style="text-align:center">Simil.</th>
+        <th style="text-align:center">Link</th>
+      </tr></thead>
+      <tbody>{rows_cand}</tbody>
+    </table>
+    <div style="margin-top:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <button type="submit" class="btn btn-orange" id="confirm-btn" disabled>
+        Confirmar 6 testigos →
+      </button>
+      <span id="confirm-hint" style="font-size:13px;color:var(--muted)">Seleccioná exactamente 6.</span>
     </div>
   </form>
+  </div>
+
+  <div id="mas-candidatos-section" style="margin-top:16px{restantes_display}">
+    <button id="mas-btn" class="btn btn-outline" onclick="cargarMasCandidatos()">
+      Ver próximos 12 candidatos
+      <span class="loader" id="mas-loader" style="display:none"></span>
+    </button>
+    <span id="mas-hint" style="font-size:13px;color:var(--muted);margin-left:12px"></span>
+  </div>
+  <div id="tabla-extra" style="overflow-x:auto;margin-top:12px"></div>
+
 </div>
 
 <script>
-document.querySelector('form[action="/acm/generar"]').addEventListener('submit', function() {{
-  var btn = document.getElementById('gen-btn');
+function onCheck(cb) {{
+  var all = document.querySelectorAll('input[name="confirmados"]');
+  var checked = Array.from(all).filter(function(c){{return c.checked;}});
+  var n = checked.length;
+  if (!cb.checked === false && n > 6) {{ cb.checked = false; return; }}
+  document.getElementById('sel-count').textContent = Math.min(n, 6);
+  all.forEach(function(c) {{
+    var row = document.getElementById('row-' + c.value);
+    if (row) row.classList.toggle('confirmado', c.checked);
+  }});
+  var btn  = document.getElementById('confirm-btn');
+  var hint = document.getElementById('confirm-hint');
+  if (n === 6) {{
+    btn.disabled = false;
+    hint.textContent = '✓ 6 testigos seleccionados.';
+    hint.style.color = 'var(--green)';
+  }} else {{
+    btn.disabled = true;
+    hint.textContent = 'Seleccioná exactamente 6.';
+    hint.style.color = 'var(--muted)';
+  }}
+}}
+
+var _globalOffset = {len_candidatos};
+
+function cargarMasCandidatos() {{
+  var btn = document.getElementById('mas-btn');
   btn.disabled = true;
-  document.getElementById('gen-btn-txt').textContent = 'Generando informe...';
-  document.getElementById('gen-loader').style.display = 'inline-block';
-}});
+  document.getElementById('mas-loader').style.display = 'inline-block';
+  document.getElementById('mas-hint').textContent = 'Abriendo browser y scrapeando detalles...';
+
+  var restantesRaw = document.getElementById('restantes-json').value;
+  var restantes;
+  try {{ restantes = JSON.parse(restantesRaw); }} catch(e) {{ restantes = []; }}
+
+  var batch = restantes.slice(0, 12);
+  var resto = restantes.slice(12);
+
+  fetch('/acm/mas-candidatos', {{
+    method: 'POST',
+    headers: {{'Content-Type': 'application/json'}},
+    body: JSON.stringify({{
+      candidatos: batch,
+      datos_prop: {dp_json_inline}
+    }})
+  }})
+  .then(function(r) {{ return r.json(); }})
+  .then(function(data) {{
+    if (data.error) {{
+      document.getElementById('mas-hint').textContent = 'Error: ' + data.error;
+      btn.disabled = false;
+      document.getElementById('mas-loader').style.display = 'none';
+      return;
+    }}
+
+    var nuevos = data.candidatos || [];
+    var tbody = document.querySelector('.cand-tbl tbody') ||
+                document.getElementById('tabla-extra');
+
+    // Agregar filas a la tabla principal
+    var mainTbody = document.querySelector('.cand-tbl tbody');
+    nuevos.forEach(function(c, idx) {{
+      var i = _globalOffset + idx;
+      var diasCls = c.dias_publicado === null ? '' :
+                    c.dias_publicado <= 30 ? 'dias-fresh' :
+                    c.dias_publicado <= 90 ? 'dias-mid' : 'dias-old';
+      var diasTxt = c.dias_publicado === null ? '—' : c.dias_publicado + 'd';
+      var tr = document.createElement('tr');
+      tr.id = 'row-' + i;
+      tr.innerHTML =
+        '<td class="chk-cell"><input type="checkbox" name="confirmados" value="' + i + '" onchange="onCheck(this)" id="chk-' + i + '"></td>' +
+        '<td style="font-weight:600;color:var(--primary)">' + (i+1) + '</td>' +
+        '<td>' + (c.direccion || c.barrio || '—').substring(0,45) + '</td>' +
+        '<td style="text-align:center">' + (c.ambientes || '—') + '</td>' +
+        '<td style="text-align:center">' + (c.sup_cubierta ? Math.round(c.sup_cubierta) + ' m²' : '—') + '</td>' +
+        '<td style="text-align:center">' + (c.piso !== null && c.piso !== undefined ? c.piso : '—') + '</td>' +
+        '<td style="text-align:center">' + (c.disposicion || '—') + '</td>' +
+        '<td style="text-align:center">' + (c.cochera ? '✓' : '—') + '</td>' +
+        '<td style="text-align:right;font-family:monospace">' + (c.precio_por_m2 ? 'USD ' + Math.round(c.precio_por_m2).toLocaleString('es-AR') : '—') + '</td>' +
+        '<td style="text-align:right;font-family:monospace">' + (c.precio ? 'USD ' + Math.round(c.precio).toLocaleString('es-AR') : '—') + '</td>' +
+        '<td style="text-align:right;font-family:monospace">' + (c.expensas ? '$ ' + Math.round(c.expensas).toLocaleString('es-AR') : '—') + '</td>' +
+        '<td><span class="dias-badge ' + diasCls + '">' + diasTxt + '</span></td>' +
+        '<td></td>' +
+        '<td style="text-align:center">' + (c.url ? '<a href="' + c.url + '" target="_blank" class="link-zp">Ver ↗</a>' : '—') + '</td>';
+      mainTbody.appendChild(tr);
+
+      // Registrar en el form hidden para que el confirm lo pueda usar
+      document.querySelector('input[name="candidatos_json"]').value =
+        JSON.stringify(
+          JSON.parse(document.querySelector('input[name="candidatos_json"]').value).concat([c])
+        );
+    }});
+
+    _globalOffset += nuevos.length;
+
+    // Actualizar restantes
+    document.getElementById('restantes-json').value = JSON.stringify(resto);
+
+    document.getElementById('mas-loader').style.display = 'none';
+    if (resto.length === 0) {{
+      btn.style.display = 'none';
+      document.getElementById('mas-hint').textContent = 'No hay más candidatos disponibles.';
+    }} else {{
+      btn.disabled = false;
+      document.getElementById('mas-hint').textContent = nuevos.length + ' candidatos agregados. Quedan ' + resto.length + ' más.';
+    }}
+  }})
+  .catch(function(e) {{
+    document.getElementById('mas-hint').textContent = 'Error de conexión.';
+    btn.disabled = false;
+    document.getElementById('mas-loader').style.display = 'none';
+  }});
+}}
 </script>
 '''
     return _acm_html_page('Preview', body)
 
+
+
+# ── /acm/mas-candidatos — Scrape detalle de batch adicional ───────────────────
+
+@app.route('/acm/mas-candidatos', methods=['POST'])
+def acm_mas_candidatos():
+    import html as _he
+    body = request.get_json()
+    if not body:
+        return jsonify({'error': 'Sin datos'}), 400
+
+    candidatos_batch = body.get('candidatos', [])
+    datos_prop       = body.get('datos_prop', {})
+
+    if not candidatos_batch:
+        return jsonify({'candidatos': []})
+
+    if not _SCRAPER_ACM.exists() or not _PYTHON_VENV.exists():
+        return jsonify({'error': 'Scraper no encontrado'}), 500
+
+    # Llamar al scraper en modo batch: pasamos las URLs como JSON stdin
+    import tempfile, os
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json',
+                                     delete=False, encoding='utf-8') as tf:
+        json.dump({'candidatos': candidatos_batch, 'datos_prop': datos_prop},
+                  tf, ensure_ascii=False)
+        tf_path = tf.name
+
+    try:
+        cmd = [
+            str(_PYTHON_VENV), str(_SCRAPER_ACM),
+            '--batch-file', tf_path,
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+        os.unlink(tf_path)
+
+        if result.returncode != 0:
+            return jsonify({'error': (result.stderr or '')[-500:]}), 500
+
+        stdout = (result.stdout or '').strip()
+        if not stdout:
+            return jsonify({'error': 'Sin datos del scraper'}), 500
+
+        data = json.loads(stdout)
+        return jsonify({'candidatos': data.get('candidatos', [])})
+
+    except subprocess.TimeoutExpired:
+        try: os.unlink(tf_path)
+        except: pass
+        return jsonify({'error': 'Timeout — intentá de nuevo'}), 500
+    except Exception as e:
+        try: os.unlink(tf_path)
+        except: pass
+        return jsonify({'error': str(e)}), 500
+
+
+# ── /acm/confirmar ────────────────────────────────────────────────────────────
+
+@app.route('/acm/confirmar', methods=['POST'])
+def acm_confirmar():
+    import html as _he
+
+    try:
+        candidatos = json.loads(request.form.get('candidatos_json', '[]'))
+        dp         = json.loads(request.form.get('datos_prop_json', '{}'))
+        stats      = json.loads(request.form.get('stats_json', '{}'))
+    except Exception as e:
+        return _acm_html_page('Error', f'<div class="alert alert-error">{_he.escape(str(e))}</div>')
+
+    indices_str = request.form.getlist('confirmados')
+    if len(indices_str) != 6:
+        return _acm_html_page('Error',
+            f'<div class="alert alert-error">Seleccionaste {len(indices_str)} testigos. Deben ser exactamente 6.</div>')
+
+    try:
+        indices  = [int(i) for i in indices_str]
+        testigos = [candidatos[i] for i in indices if i < len(candidatos)]
+    except Exception as e:
+        return _acm_html_page('Error', f'<div class="alert alert-error">{_he.escape(str(e))}</div>')
+
+    if len(testigos) < 6:
+        return _acm_html_page('Error', '<div class="alert alert-error">Error recuperando testigos. Volvé atrás.</div>')
+
+    vals_m2  = [t['precio_por_m2'] for t in testigos if t.get('precio_por_m2')]
+    if not vals_m2:
+        return _acm_html_page('Error', '<div class="alert alert-error">Los testigos no tienen precio/m².</div>')
+
+    vals_s   = sorted(vals_m2)
+    n        = len(vals_s)
+    mediana  = (vals_s[n // 2] + vals_s[~(n // 2)]) / 2
+    m2_min   = min(vals_m2)
+    m2_max   = max(vals_m2)
+    sup      = float(dp.get('sup_cubierta') or 0)
+    coef     = float(dp.get('coef_estado') or 0)
+    estado   = dp.get('estado', 'Buen estado')
+
+    ps        = round(mediana * sup) if sup > 0 else 0
+    r_min     = round(m2_min * sup)  if sup > 0 else 0
+    r_max     = round(m2_max * sup)  if sup > 0 else 0
+    p_adj     = round(ps * (1 + coef))    if ps    else 0
+    r_min_adj = round(r_min * (1 + coef)) if r_min else 0
+    r_max_adj = round(r_max * (1 + coef)) if r_max else 0
+    coef_pct  = (
+        f"+{int(round(coef*100))}%" if coef > 0
+        else (f"{int(round(coef*100))}%" if coef < 0 else "0%")
+    )
+
+    stats_final    = {**stats, 'mediana_m2': round(mediana),
+                      'precio_sugerido': ps, 'rango_min': r_min, 'rango_max': r_max}
+    datos_prop_fin = {**dp,
+        'precio_ajustado': p_adj,
+        'cochera':         dp.get('cochera') in ('true', True),
+        'apto_credito':    dp.get('apto_credito') in ('true', True),
+        'expensas':        dp.get('expensas') or None,
+    }
+
+    acm_data_json = _he.escape(json.dumps({
+        'comparables':   testigos,
+        'stats':         stats_final,
+        'top3_indices':  list(range(min(3, len(testigos)))),
+        'datos_prop':    datos_prop_fin,
+    }, ensure_ascii=False))
+
+    cards_html = ''
+    for i, t in enumerate(testigos):
+        meta = []
+        if t.get('ambientes'):      meta.append(f"{t['ambientes']} amb")
+        if t.get('sup_cubierta'):   meta.append(f"{int(t['sup_cubierta'])} m²")
+        if t.get('piso') is not None: meta.append(f"Piso {t['piso']}")
+        if t.get('disposicion'):    meta.append(t['disposicion'])
+        if t.get('antiguedad'):     meta.append(f"{t['antiguedad']} años")
+        if t.get('cochera'):        meta.append('✓ Cochera')
+        if t.get('dias_publicado') is not None: meta.append(f"{t['dias_publicado']}d pub")
+        meta_html = ''.join(
+            f'<span style="background:#f0f4f8;padding:2px 8px;border-radius:4px;font-size:12px;color:var(--muted)">{_he.escape(m)}</span>'
+            for m in meta
+        )
+        link_html = (
+            f'<a href="{_he.escape(t["url"])}" target="_blank" class="link-zp">Ver en ZonaProp →</a>'
+            if t.get('url') else ''
+        )
+        cards_html += f'''
+<div style="border:2px solid var(--orange);border-radius:10px;padding:16px 18px;background:#fff;margin-bottom:10px">
+  <div style="font-size:11px;font-weight:700;color:var(--orange);text-transform:uppercase;margin-bottom:6px">Testigo {i+1}</div>
+  <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:4px">{_he.escape((t.get("direccion") or t.get("barrio") or "—"))}</div>
+  <div style="font-size:17px;font-weight:800;color:var(--orange);margin-bottom:8px">{_acm_fmt(t.get("precio"))}</div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">{meta_html}</div>
+  <div style="font-size:13px;font-weight:600">USD/m²: {_acm_fmt(t.get("precio_por_m2"))}</div>
+  {"<div style='font-size:12px;color:var(--muted)'>Expensas: " + _acm_fmt_ars(t.get("expensas")) + "/mes</div>" if t.get("expensas") else ""}
+  <div style="margin-top:8px">{link_html}</div>
+</div>'''
+
+    body = f'''
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+  <h1>Análisis Final — 6 Testigos Confirmados</h1>
+  <a href="/acm" style="font-size:13px;color:var(--muted);text-decoration:none">← Nueva búsqueda</a>
+</div>
+<p class="subtitle">{_he.escape(dp.get("barrio",""))} · {_he.escape(dp.get("tipo",""))} · {_he.escape(dp.get("sup_cubierta",""))} m²</p>
+
+<div class="card">
+  <div class="section-hdr">6 Testigos Validados</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">{cards_html}</div>
+</div>
+
+<div class="card">
+  <div class="section-hdr">Resultado del Análisis</div>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="metric-label">Mediana USD/m² testigos</div>
+      <div class="metric-value orange">{_acm_fmt(round(mediana))}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Rango testigos</div>
+      <div class="metric-value sm">{_acm_fmt(round(m2_min))} – {_acm_fmt(round(m2_max))}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Precio sugerido mediana</div>
+      <div class="metric-value sm" style="text-decoration:line-through;color:var(--muted)">{_acm_fmt(ps)}</div>
+    </div>
+    <div class="metric-card" style="border:2px solid var(--orange)">
+      <div class="metric-label">Ajustado — {_he.escape(estado)} ({_he.escape(coef_pct)})</div>
+      <div class="metric-value orange">{_acm_fmt(p_adj)}</div>
+    </div>
+  </div>
+  <div class="metric-row">
+    <div class="metric-card">
+      <div class="metric-label">Rango ajustado</div>
+      <div class="metric-value sm">{_acm_fmt(r_min_adj)} – {_acm_fmt(r_max_adj)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Universo analizado</div>
+      <div class="metric-value sm">{stats.get("n_validos",0)} propiedades</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Mediana universo USD/m²</div>
+      <div class="metric-value sm">{_acm_fmt(stats.get("mediana_m2"))}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Señal de mercado</div>
+      <div class="metric-value sm" style="font-size:11px;line-height:1.4">{_he.escape((stats.get("señal_mercado",""))[:100])}</div>
+    </div>
+  </div>
+</div>
+
+<div class="price-adj-card">
+  <div class="section-hdr" style="margin-bottom:10px">Generar informe .docx</div>
+  <p style="font-size:13px;color:#374151;margin-bottom:16px">
+    Precio sugerido: <span style="color:var(--muted);text-decoration:line-through">{_acm_fmt(ps)}</span>
+    &nbsp;→&nbsp; Ajustado ({_he.escape(estado)}, {_he.escape(coef_pct)}):
+    <b style="color:var(--orange)">{_acm_fmt(p_adj)}</b>
+  </p>
+  <form action="/acm/generar" method="POST">
+    <input type="hidden" name="acm_data" value="{{acm_data_json}}">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      Editá el rango antes de generar. El informe muestra el rango como recomendación principal
+      y calcula el precio/m² y el posicionamiento en base a estos valores.
+    </p>
+    <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+      <div>
+        <label style="margin-bottom:6px">Rango mínimo (USD)</label>
+        <input type="number" name="rango_min" class="price-input-big"
+               value="{{r_min_adj or r_min or ''}}" min="1000" max="100000000" required
+               style="width:200px">
+      </div>
+      <div style="padding-bottom:14px;font-size:20px;color:var(--muted)">–</div>
+      <div>
+        <label style="margin-bottom:6px">Rango máximo (USD)</label>
+        <input type="number" name="rango_max" class="price-input-big"
+               value="{{r_max_adj or r_max or ''}}" min="1000" max="100000000" required
+               style="width:200px">
+      </div>
+      <div style="padding-bottom:12px">
+        <button type="submit" class="btn btn-orange" id="gen-btn">
+          <span id="gen-btn-txt">Generar informe ACM .docx</span>
+          <span class="loader" id="gen-loader" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">
+      Precio de referencia interno (mediana ajustada): {_acm_fmt(p_adj or ps)}
+    </p>
+  </form>
+</div>
+<script>
+document.querySelector('form[action="/acm/generar"]').addEventListener('submit', function() {{
+  document.getElementById('gen-btn').disabled = true;
+  document.getElementById('gen-btn-txt').textContent = 'Generando...';
+  document.getElementById('gen-loader').style.display = 'inline-block';
+}});
+</script>
+'''
+    return _acm_html_page('Confirmación', body)
+
+
+# ── /acm/generar ─────────────────────────────────────────────────────────────
 
 @app.route('/acm/generar', methods=['POST'])
 def acm_generar():
@@ -2898,6 +3243,8 @@ def acm_generar():
     import html as _he
 
     precio_final_str = request.form.get('precio_final', '0').strip()
+    rango_min_str    = request.form.get('rango_min', '0').strip()
+    rango_max_str    = request.form.get('rango_max', '0').strip()
     acm_data_raw     = request.form.get('acm_data', '{}')
 
     try:
@@ -2906,34 +3253,46 @@ def acm_generar():
         stats        = acm_data.get('stats', {})
         top3_indices = acm_data.get('top3_indices', [])
         datos_prop   = acm_data.get('datos_prop', {})
-    except (json.JSONDecodeError, Exception) as e:
-        return _acm_html_page('Error', f'<div class="alert alert-error">Error al leer los datos: {_he.escape(str(e))}</div>')
+    except Exception as e:
+        return _acm_html_page('Error', f'<div class="alert alert-error">{_he.escape(str(e))}</div>')
 
     try:
         precio_final = float(re.sub(r'[^0-9.]', '', precio_final_str)) if precio_final_str else 0
     except ValueError:
         precio_final = 0
 
-    if not comparables or not stats or precio_final <= 0:
-        return _acm_html_page('Error', '<div class="alert alert-error">Datos incompletos. Volvé al análisis y completá el precio.</div>')
+    try:
+        rango_min = float(re.sub(r'[^0-9.]', '', rango_min_str)) if rango_min_str else 0
+        rango_max = float(re.sub(r'[^0-9.]', '', rango_max_str)) if rango_max_str else 0
+    except ValueError:
+        rango_min = rango_max = 0
 
-    # ── Generar .docx ────────────────────────────────────────────────────────────
+    # Si no hay rango explícito, usar precio_final como punto medio
+    if not rango_min and not rango_max and precio_final:
+        rango_min = round(precio_final * 0.95)
+        rango_max = round(precio_final * 1.05)
+
+    if not comparables or (not precio_final and not rango_min):
+        return _acm_html_page('Error', '<div class="alert alert-error">Datos incompletos.</div>')
+
     sys.path.insert(0, str(Path(__file__).parent))
     try:
         from acm_report import generar_docx
     except ImportError as e:
-        return _acm_html_page('Error', f'<div class="alert alert-error">No se pudo importar acm_report: {_he.escape(str(e))}. Instalá python-docx.</div>')
+        return _acm_html_page('Error', f'<div class="alert alert-error">No se pudo importar acm_report: {_he.escape(str(e))}</div>')
 
     try:
         docx_bytes = generar_docx(
-            datos_propiedad=datos_prop,
-            comparables=comparables,
-            stats=stats,
-            top3_indices=top3_indices,
-            precio_final=precio_final,
+            datos_propiedad = datos_prop,
+            comparables     = comparables,
+            stats           = stats,
+            top3_indices    = top3_indices,
+            precio_final    = precio_final,
+            rango_min       = rango_min,
+            rango_max       = rango_max,
         )
     except Exception as e:
-        return _acm_html_page('Error', f'<div class="alert alert-error">Error generando el .docx: {_he.escape(str(e))}</div>')
+        return _acm_html_page('Error', f'<div class="alert alert-error">Error generando .docx: {_he.escape(str(e))}</div>')
 
     fecha_str = _d2.today().strftime('%Y%m%d')
     barrio_fn = datos_prop.get('barrio', 'ACM').replace(' ', '_')
