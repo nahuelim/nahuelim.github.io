@@ -195,7 +195,7 @@ footer a{{color:var(--orange);text-decoration:none}}
       <div class="sec-title">Descripción</div>
       <div class="desc">
 {desc_html}
-        <p class="desc-note">Las medidas y superficies informadas son aproximadas. Las exactas surgen del título de propiedad o plano de mensura. Reservas únicamente con el matriculado en la inmobiliaria.</p>
+        <p class="desc-note"><strong>Aviso importante:</strong> La siguiente información se proporciona con fines orientativos para personas en búsqueda de inmuebles. Las descripciones, imágenes y datos aquí presentados provienen de terceros y podrían corresponder a una propiedad comercializada por otra inmobiliaria. Se recomienda confirmar todos los detalles con la inmobiliaria responsable de la operación.<br>La disponibilidad de la unidad está sujeta a cambios sin previo aviso, al igual que su precio. Las superficies, medidas, expensas y servicios mencionados son aproximados y pueden sufrir modificaciones.<br>Las fotografías y videos tienen carácter ilustrativo y no contractual.</p>
       </div>
     </div></div>
   </div>
@@ -222,7 +222,9 @@ footer a{{color:var(--orange);text-decoration:none}}
 
 <footer>
   Ficha preparada por <strong>Nahuel Lim</strong> · Century 21 Evolución Inmobiliaria S.A.<br>
-  CUCICBA 9135 – MN377 · <a href="https://wa.me/5491178268244">+54 9 11 7826-8244</a>
+  <a href="https://wa.me/5491178268244">+54 9 11 7826-8244</a><br><br>
+  En cumplimiento de las normas legales aplicables, informamos que los agentes NO ejercen el corretaje inmobiliario. Todas las operaciones inmobiliarias son concluidas por los corredores matriculados responsables en cada oficina.<br>
+  Karina Carrasquero · CUCICBA 9135
 </footer>
 
 <script>
