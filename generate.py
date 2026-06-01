@@ -231,7 +231,7 @@ footer a{{color:var(--orange);text-decoration:none}}
       <div class="sec-title">Descripción</div>
       <div class="desc">
 {desc_html}
-        <p class="desc-note"><strong>Aviso:</strong> La siguiente información se proporciona con fines orientativos para personas en búsqueda de inmuebles. Las descripciones, imágenes y datos aquí presentados provienen de terceros y podrían corresponder a una propiedad comercializada por otra inmobiliaria. Se recomienda confirmar todos los detalles con la inmobiliaria responsable de la operación.<br>La disponibilidad de la unidad está sujeta a cambios sin previo aviso, al igual que su precio. Las superficies, medidas, expensas y servicios mencionados son aproximados y pueden sufrir modificaciones.<br>Las fotografías y videos tienen carácter ilustrativo y no contractual.</p>
+        <p class="desc-note"><strong>Aviso:</strong> La siguiente información se proporciona con fines orientativos para personas en búsqueda de inmuebles, y pueden provenir de terceros. Se recomienda confirmar todos los detalles con la inmobiliaria responsable de la operación.<br>La disponibilidad de la unidad está sujeta a cambios sin previo aviso, al igual que su precio. Las superficies, medidas, expensas y servicios mencionados son aproximados y pueden sufrir modificaciones.<br>Las fotografías y videos tienen carácter ilustrativo y no contractual.</p>
       </div>
     </div></div>
   </div>
