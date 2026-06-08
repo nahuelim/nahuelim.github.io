@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ACM Tool — Nahuel Lim</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #003153;
+  --primary-hover: #004070;
+  --primary-pale: #eef4f9;
+  --orange: #E8630A;
+  --orange-pale: #fef3ec;
+  --bg: #f0f2f5;
+  --white: #ffffff;
+  --text: #1a2332;
+  --muted: #6b7280;
+  --border: #dde1e7;
+  --green: #16a34a;
+  --red: #dc2626;
+  /* agent */
+  --agent-bg: #0d1e30;
+  --agent-surface: #152840;
+  --agent-border: #1e3a5a;
+  --agent-text: #cdd8e3;
+  --agent-muted: #7a9ab8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+
+/* ── LOGIN ── */
+#login-screen{
+  position:fixed;inset:0;
+  background:#f8f9fb;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;z-index:1000;padding:40px;
+}
+.login-logo-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.login-monogram{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--primary);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:1px;
+}
+.login-brand{font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--primary);opacity:.7}
+.login-title{font-size:26px;font-weight:700;color:var(--text);text-align:center;line-height:1.2;letter-spacing:-.3px}
+.login-title span{color:var(--orange)}
+.login-box{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px}
+.login-input{
+  width:100%;padding:15px 20px;
+  background:#fff;border:1.5px solid var(--border);
+  color:var(--text);font-size:20px;font-family:'Inter',sans-serif;
+  border-radius:10px;outline:none;letter-spacing:8px;text-align:center;
+  transition:border-color .2s;box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+.login-input:focus{border-color:var(--primary)}
+.login-input.shake{animation:shake .4s ease;border-color:var(--red)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-7px)}80%{transform:translateX(7px)}}
+.btn-login{
+  width:100%;padding:15px;
+  background:var(--primary);border:none;color:#fff;
+  font-weight:600;font-size:14px;letter-spacing:1px;text-transform:uppercase;
+  border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;
+  transition:background .2s;
+}
+.btn-login:active{background:var(--primary-hover)}
+.login-hint{font-size:11px;color:var(--muted);text-align:center}
+
+/* ── APP ── */
+#app{display:none}
+
+/* ── TOPBAR ── */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:var(--primary);
+  border-bottom:2px solid var(--orange);
+  padding:11px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-monogram{
+  width:32px;height:32px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--primary);letter-spacing:.5px;
+}
+.topbar-brand{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.2px}
+.topbar-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:1px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn-sm{padding:7px 12px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .2s}
+.btn-sm:active{opacity:.75}
+.btn-ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+.btn-ghost:hover{background:rgba(255,255,255,.15)}
+.btn-agent{background:transparent;border:1px solid rgba(232,99,10,.5);color:rgba(232,99,10,.9);display:flex;align-items:center;gap:5px}
+.btn-agent.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── PROGRESS ── */
+.progress-bar{height:2px;background:rgba(0,0,0,.06)}
+.progress-fill{height:100%;background:var(--orange);transition:width .4s ease}
+
+/* ── FORM ── */
+.form-body{padding:0 0 110px}
+
+/* ── SECTION ── */
+.section{border-bottom:1px solid var(--border);background:var(--white)}
+.section.agent-section{background:var(--agent-bg);border-color:var(--agent-border)}
+.section-header{
+  padding:14px 16px;
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;user-select:none;min-height:52px;
+}
+.section-num{
+  width:27px;height:27px;border-radius:50%;
+  background:var(--primary-pale);border:1.5px solid rgba(0,49,83,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--primary);flex-shrink:0;
+}
+.section.agent-section .section-num{background:var(--agent-surface);border-color:var(--agent-border);color:var(--orange)}
+.section-title{font-size:14px;font-weight:600;color:var(--text);flex:1;line-height:1.3;letter-spacing:-.1px}
+.section.agent-section .section-title{color:var(--agent-text)}
+.section-chevron{font-size:11px;color:var(--muted);transition:transform .25s;flex-shrink:0}
+.section-chevron.open{transform:rotate(180deg)}
+.section-body{padding:4px 16px 20px;display:flex;flex-direction:column;gap:12px}
+.section-body.collapsed{display:none}
+
+/* ── AGENT BADGE ── */
+.agent-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(232,99,10,.12);border:1px solid rgba(232,99,10,.4);
+  border-radius:4px;padding:2px 7px;
+  font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange);font-weight:600;
+}
+
+/* ── FIELDS ── */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.section.agent-section .field label{color:var(--agent-muted)}
+.field label span.req{color:var(--orange);margin-left:2px}
+.field input,.field textarea,.field select{
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--text);font-family:'Inter',sans-serif;font-size:15px;
+  padding:11px 12px;border-radius:8px;outline:none;width:100%;
+  transition:border-color .2s;-webkit-appearance:none;
+}
+.section.agent-section .field input,
+.section.agent-section .field textarea,
+.section.agent-section .field select{background:var(--agent-surface);border-color:var(--agent-border);color:var(--agent-text)}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary);background:#fff}
+.section.agent-section .field input:focus,
+.section.agent-section .field textarea:focus,
+.section.agent-section .field select:focus{border-color:var(--orange);background:var(--agent-bg)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.field select option{background:var(--white);color:var(--text)}
+.section.agent-section .field select option{background:var(--agent-surface);color:var(--agent-text)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.highlight-field input{border-color:var(--primary)!important;font-size:17px!important;font-weight:700!important;color:var(--primary)!important;background:#fff!important}
+
+/* ── AUTOCOMPLETE ── */
+.autocomplete-wrap{position:relative}
+.autocomplete-list{
+  position:absolute;top:100%;left:0;right:0;
+  background:var(--white);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 8px 8px;z-index:50;max-height:200px;overflow-y:auto;
+  box-shadow:0 4px 16px rgba(0,0,0,.1);
+}
+.autocomplete-item{padding:10px 12px;font-size:14px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--bg)}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover{background:var(--primary-pale);color:var(--primary)}
+.autocomplete-item mark{background:none;color:var(--orange);font-weight:600}
+
+/* ── RATING ── */
+.rating-table{width:100%;border-collapse:collapse}
+.rating-table th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:5px 3px;text-align:center;font-weight:600}
+.rating-table th:first-child{text-align:left}
+.rating-table td{padding:7px 3px;border-bottom:1px solid var(--bg);font-size:12px;color:var(--text)}
+.rating-table td:first-child{padding-left:0}
+.radio-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);background:var(--bg);cursor:pointer;margin:0 auto;display:block;transition:all .15s;position:relative}
+.radio-dot.selected{border-color:var(--primary);background:var(--primary)}
+.radio-dot.selected::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:#fff}
+
+/* ── CHECKLIST ── */
+.checklist{display:flex;flex-direction:column;gap:6px}
+.check-item{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 12px;
+  border-radius:8px;background:var(--bg);border:1px solid var(--border);
+  cursor:pointer;user-select:none;transition:border-color .15s,background .15s;
+}
+.check-item.checked{border-color:var(--primary);background:var(--primary-pale)}
+.section.agent-section .check-item{background:var(--agent-surface);border-color:var(--agent-border)}
+.section.agent-section .check-item.checked{border-color:var(--orange);background:rgba(232,99,10,.08)}
+.check-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
+.check-item.checked .check-box{background:var(--primary);border-color:var(--primary)}
+.section.agent-section .check-item.checked .check-box{background:var(--orange);border-color:var(--orange)}
+.check-box svg{display:none}
+.check-item.checked .check-box svg{display:block}
+.check-label{font-size:13px;color:var(--muted);line-height:1.4}
+.check-item.checked .check-label{color:var(--text);font-weight:500}
+.section.agent-section .check-label{color:var(--agent-muted)}
+.section.agent-section .check-item.checked .check-label{color:var(--agent-text)}
+
+/* ── RANGE ── */
+.range-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end}
+.range-result{
+  background:var(--primary-pale);border:1.5px solid rgba(0,49,83,.25);
+  border-radius:8px;padding:11px 10px;
+  font-weight:700;font-size:14px;color:var(--primary);text-align:center;
+}
+
+/* ── CALLOUT ── */
+.callout{background:var(--orange-pale);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5}
+.callout strong{color:var(--orange)}
+.section.agent-section .callout{background:rgba(232,99,10,.07);border-color:var(--orange);color:var(--agent-muted)}
+.section.agent-section .callout strong{color:var(--orange)}
+
+/* ── TESTIGOS ── */
+.testigos-table{width:100%;border-collapse:collapse;font-size:12px}
+.testigos-table th{background:var(--primary-pale);padding:7px 8px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--primary);text-align:left;font-weight:600;border-bottom:1.5px solid rgba(0,49,83,.2)}
+.testigos-table td{padding:8px 6px;border-bottom:1px solid var(--bg)}
+.testigos-table td input{
+  background:transparent;border:none;border-bottom:1px solid var(--border);
+  color:var(--text);font-size:13px;font-family:'Inter',sans-serif;
+  width:100%;outline:none;padding:2px 4px;transition:border-color .2s;
+}
+.testigos-table td input:focus{border-color:var(--primary)}
+.btn-add-row{
+  margin-top:8px;padding:7px 14px;border-radius:6px;
+  background:var(--primary-pale);border:1px solid rgba(0,49,83,.2);
+  color:var(--primary);font-size:12px;font-weight:600;font-family:'Inter',sans-serif;
+  cursor:pointer;display:flex;align-items:center;gap:5px;
+}
+.btn-add-row:active{opacity:.75}
+
+/* ── VENTANA ── */
+.ventana-table{width:100%;border-collapse:collapse;font-size:13px}
+.ventana-table th{background:var(--primary);padding:8px 10px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.75);text-align:left;font-weight:600}
+.ventana-table td{padding:9px 8px;border-bottom:1px solid var(--bg)}
+.ventana-table td.label{font-weight:600;font-size:13px}
+.ventana-table td input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;width:100%;outline:none;padding:5px 8px;border-radius:5px;transition:border-color .2s}
+.ventana-table td input:focus{border-color:var(--primary);background:#fff}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--primary);border-top:2px solid var(--orange);
+  padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:100;
+}
+.status-info{font-size:11px;color:rgba(255,255,255,.4);flex:1}
+.btn-full{padding:12px 18px;border-radius:8px;font-weight:600;font-size:12px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;cursor:pointer;border:none}
+.btn-full:active{opacity:.8}
+.btn-pdf{background:rgba(255,255,255,.1);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
+.btn-save{background:var(--orange);color:#fff}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:9px 20px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+#toast.show{opacity:1}
+
+/* ── MODAL ── */
+#modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+#modal.show{opacity:1;pointer-events:all}
+.modal-box{background:var(--primary);border-radius:16px 16px 0 0;padding:28px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform .35s ease}
+#modal.show .modal-box{transform:translateY(0)}
+.modal-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:5px;letter-spacing:-.2px}
+.modal-sub{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:20px}
+.modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.modal-field label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.modal-field input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:13px;padding:11px 12px;border-radius:8px;outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
+.modal-field input:focus{border-color:var(--orange)}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.modal-btn{flex:1;padding:13px;border-radius:8px;font-weight:600;font-size:12px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;cursor:pointer;border:none}
+.btn-cancel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
+.btn-confirm{background:var(--orange);color:#fff}
+.divider{height:1px;background:var(--border);margin:4px 0}
+.section.agent-section .divider{background:var(--agent-border)}
+.sublabel{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:4px 0 2px}
+.section.agent-section .sublabel{color:var(--agent-muted)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo-wrap">
+    <div class="login-monogram">NL</div>
+    <div class="login-brand">Nahuel Lim · Real Estate</div>
+  </div>
+  <h1 class="login-title">Herramienta <span>ACM</span></h1>
+  <div class="login-box">
+    <input type="password" id="pwd-input" class="login-input" placeholder="••••" autocomplete="off" inputmode="numeric">
+    <button class="btn-login" onclick="checkLogin()">Ingresar</button>
+    <div class="login-hint">Acceso exclusivo para agentes</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-monogram">NL</div>
+      <div>
+        <div class="topbar-brand">Nahuel Lim</div>
+        <div class="topbar-label">ACM · Prelisting</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn-sm btn-ghost" onclick="resetForm()">Nueva</button>
+      <button class="btn-sm btn-agent" id="agent-btn" onclick="toggleAgentMode()">
+        <div class="agent-dot"></div>Modo Agente
+      </button>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <form id="main-form" class="form-body" autocomplete="off">
+
+    <!-- S1: CLIENTE -->
+    <div class="section" id="sec-1">
+      <div class="section-header" onclick="toggleSection('sec-1')">
+        <div class="section-num">1</div>
+        <div class="section-title">Datos del Cliente</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-1">
+        <div class="field-row">
+          <div class="field">
+            <label>Fecha<span class="req">*</span></label>
+            <input type="date" id="fecha" required>
+          </div>
+          <div class="field">
+            <label>Agente</label>
+            <input type="text" id="agente" value="Nahuel Lim" readonly style="color:var(--primary);font-weight:600;background:#fff">
+          </div>
+        </div>
+        <div class="field">
+          <label>Nombre y Apellido<span class="req">*</span></label>
+          <input type="text" id="cliente_nombre" placeholder="Ej: María González">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Celular</label>
+            <input type="tel" id="cliente_cel" placeholder="+54 9 11...">
+          </div>
+          <div class="field">
+            <label>Mail</label>
+            <input type="email" id="cliente_mail" placeholder="mail@gmail.com">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S2: CONTEXTUAL (ex Necesidad de Venta) -->
+    <div class="section" id="sec-2">
+      <div class="section-header" onclick="toggleSection('sec-2')">
+        <div class="section-num">2</div>
+        <div class="section-title">Contextual</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-2">
+        <div class="field">
+          <label>Tipo de operación<span class="req">*</span></label>
+          <select id="tipo_op" onchange="handleTipoOp()">
+            <option value="">Seleccioná...</option>
+            <option>Vende para comprar (simultáneo)</option>
+            <option>Vende y no compra (liquidez)</option>
+            <option>Vende por mudanza / cambio de zona</option>
+            <option>Herencia / división</option>
+            <option>Urgencia financiera</option>
+            <option>Inversión / realizó plusvalor</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="field" id="tipo_op_otro_wrap" style="display:none">
+          <label>Especificá</label>
+          <input type="text" id="tipo_op_otro" placeholder="Describí el motivo...">
+        </div>
+        <div class="field">
+          <label>Notas</label>
+          <textarea id="motivo" placeholder="Situación general, timing, lo que mencionaron..."></textarea>
+        </div>
+        <div class="field">
+          <label>Urgencia</label>
+          <select id="urgencia">
+            <option value="">Sin definir</option>
+            <option>Baja — tiene tiempo, quiere el mejor precio</option>
+            <option>Media — tiene plazo en mente (3-6 meses)</option>
+            <option>Alta — necesita cerrar en menos de 90 días</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Precio que tienen en mente (USD)</label>
+          <input type="text" id="precio_esperado" placeholder="Lo que mencionaron">
+        </div>
+      </div>
+    </div>
+
+    <!-- S3: PROPIEDAD -->
+    <div class="section" id="sec-3">
+      <div class="section-header" onclick="toggleSection('sec-3')">
+        <div class="section-num">3</div>
+        <div class="section-title">Datos de la Propiedad</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-3">
+        <div class="field">
+          <label>Dirección<span class="req">*</span></label>
+          <input type="text" id="prop_dir" placeholder="Ej: Av. Santa Fe 3200, 4°B">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Barrio<span class="req">*</span></label>
+            <div class="autocomplete-wrap">
+              <input type="text" id="prop_barrio_input" placeholder="Escribí para buscar..." oninput="filterBarrios()" onfocus="filterBarrios()" autocomplete="off">
+              <div class="autocomplete-list" id="barrio-list" style="display:none"></div>
+            </div>
+            <input type="hidden" id="prop_barrio">
+          </div>
+          <div class="field">
+            <label>Tipología</label>
+            <select id="prop_tipo">
+              <option value="">Seleccioná...</option>
+              <option>Departamento</option><option>PH</option><option>Casa</option>
+              <option>Loft</option><option>Duplex</option><option>Semipiso</option><option>Otro</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row3">
+          <div class="field"><label>Sup. Hom. (m²)</label><input type="number" id="sup" placeholder="75"></div>
+          <div class="field"><label>Ambientes</label><input type="number" id="amb" placeholder="3" min="1" max="10"></div>
+          <div class="field"><label>Baños</label><input type="number" id="banos" placeholder="1" min="1" max="5"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Antigüedad (años)</label><input type="number" id="antig" placeholder="35"></div>
+          <div class="field"><label>Piso</label><input type="text" id="piso" placeholder="4° / PB"></div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Orientación</label>
+            <select id="orientacion">
+              <option value="">Sin definir</option>
+              <option>Norte</option><option>Sur</option><option>Este</option><option>Oeste</option>
+              <option>Noreste</option><option>Noroeste</option><option>Sureste</option><option>Suroeste</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Cochera</label>
+            <select id="cochera"><option>No</option><option>Sí fija</option><option>Sí rotativa</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Expensas (ARS)</label><input type="text" id="expensas" placeholder="85.000"></div>
+          <div class="field">
+            <label>Apto crédito</label>
+            <select id="apto_credito">
+              <option>Sin definir</option><option>Sí</option><option>No</option><option>A verificar</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Notas de la propiedad</label>
+          <textarea id="prop_notas" placeholder="Amenities, estado general, detalles relevantes..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S4: CARACTERÍSTICAS -->
+    <div class="section" id="sec-4">
+      <div class="section-header" onclick="toggleSection('sec-4')">
+        <div class="section-num">4</div>
+        <div class="section-title">Características Secundarias</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-4">
+        <table class="rating-table">
+          <thead><tr><th>Atributo</th><th>Reg</th><th>Bueno</th><th>M.Bueno</th><th>Exc.</th></tr></thead>
+          <tbody id="rating-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- S5: OBJECIONES -->
+    <div class="section" id="sec-5">
+      <div class="section-header" onclick="toggleSection('sec-5')">
+        <div class="section-num">5</div>
+        <div class="section-title">Objeciones Duras</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-5">
+        <div class="callout"><strong>Tip:</strong> Nombrá cada objeción antes que el cliente. "Sé que X va a ser una objeción frecuente — te quiero ser honesto sobre cuánto impacta en el valor."</div>
+        <div class="checklist" id="objeciones-list"></div>
+        <div class="field" style="margin-top:4px">
+          <label>Notas adicionales</label>
+          <textarea id="objeciones_notas" placeholder="Detalles, reajuste estimado..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S6: PROPIEDADES TESTIGO -->
+    <div class="section" id="sec-6">
+      <div class="section-header" onclick="toggleSection('sec-6')">
+        <div class="section-num">6</div>
+        <div class="section-title">Propiedades Testigo</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-6">
+        <div class="callout"><strong>Comparables usados para el ACM.</strong> Agregá las propiedades de referencia con su link de ZonaProp o MercadoLibre.</div>
+        <table class="testigos-table" id="testigos-table">
+          <thead>
+            <tr>
+              <th style="width:30%">Dirección / Ref.</th>
+              <th style="width:12%">m²</th>
+              <th style="width:15%">USD/m²</th>
+              <th style="width:18%">Total USD</th>
+              <th style="width:25%">Link</th>
+            </tr>
+          </thead>
+          <tbody id="testigos-body"></tbody>
+        </table>
+        <button type="button" class="btn-add-row" onclick="addTestigoRow()">+ Agregar propiedad</button>
+        <div class="field" style="margin-top:4px">
+          <label>Notas sobre comparables</label>
+          <textarea id="testigos_notas" placeholder="Observaciones, por qué se eligieron estos comparables, ajustes aplicados..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S7: ACM -->
+    <div class="section" id="sec-7">
+      <div class="section-header" onclick="toggleSection('sec-7')">
+        <div class="section-num">7</div>
+        <div class="section-title">Análisis Comparativo de Mercado</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-7">
+        <div class="sublabel">Publicados — Rango m² (USD)</div>
+        <div class="range-row">
+          <div class="field"><label>Mín</label><input type="number" id="pub_m2_min" placeholder="2.400" oninput="calcProm('pub_m2')"></div>
+          <div class="field"><label>Máx</label><input type="number" id="pub_m2_max" placeholder="3.200" oninput="calcProm('pub_m2')"></div>
+          <div><div class="sublabel">Prom.</div><div class="range-result" id="pub_m2_prom">—</div></div>
+        </div>
+        <div class="range-row">
+          <div class="field"><label>Total pub. Mín (USD)</label><input type="number" id="pub_tot_min" placeholder="180.000" oninput="calcProm('pub_tot')"></div>
+          <div class="field"><label>Total pub. Máx (USD)</label><input type="number" id="pub_tot_max" placeholder="240.000" oninput="calcProm('pub_tot')"></div>
+          <div><div class="sublabel">Prom.</div><div class="range-result" id="pub_tot_prom">—</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="sublabel">Vendidos — Rango m² (USD)</div>
+        <div class="range-row">
+          <div class="field"><label>Mín</label><input type="number" id="vend_m2_min" placeholder="2.100" oninput="calcProm('vend_m2')"></div>
+          <div class="field"><label>Máx</label><input type="number" id="vend_m2_max" placeholder="2.700" oninput="calcProm('vend_m2')"></div>
+          <div><div class="sublabel">Prom.</div><div class="range-result" id="vend_m2_prom">—</div></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Días prom. en mercado</label><input type="number" id="acm_dias" placeholder="75"></div>
+          <div class="field"><label>Margen negociación (%)</label><input type="text" id="acm_margen" placeholder="10-12"></div>
+        </div>
+        <div class="field">
+          <label>Tendencia de mercado</label>
+          <select id="acm_tendencia"><option>En alza</option><option>Estable</option><option>En corrección</option></select>
+        </div>
+        <div class="field">
+          <label>Notas ACM</label>
+          <textarea id="acm_notas" placeholder="Fuentes, particularidades de zona, contexto macro..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S8: VENTANA -->
+    <div class="section" id="sec-8">
+      <div class="section-header" onclick="toggleSection('sec-8')">
+        <div class="section-num">8</div>
+        <div class="section-title">Ventana de Venta &amp; Estrategia</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-8">
+        <table class="ventana-table">
+          <thead><tr><th>Escenario</th><th>m² USD</th><th>Total USD</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="label" style="color:var(--muted)">Publicado promedio (techo)</td>
+              <td><input type="text" id="v_pub_m2" placeholder="2.800"></td>
+              <td><input type="text" id="v_pub_tot" placeholder="210.000"></td>
+            </tr>
+            <tr>
+              <td class="label">Lanzamiento Competitivo</td>
+              <td><input type="text" id="v_lanch_m2" placeholder="2.600"></td>
+              <td><input type="text" id="v_lanch_tot" placeholder="195.000"></td>
+            </tr>
+            <tr>
+              <td class="label" style="color:var(--primary);font-weight:700">Valor Cierre (piso)</td>
+              <td><input type="text" id="v_cierre_m2" placeholder="2.350"></td>
+              <td><input type="text" id="v_cierre_tot" placeholder="176.000"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="field highlight-field" style="margin-top:8px">
+          <label>Precio acordado de lanzamiento (USD)</label>
+          <input type="text" id="precio_acordado" placeholder="195.000">
+        </div>
+        <div class="callout"><strong>Estrategia dinámica:</strong> Sin consultas sem. 3-4 → -15% · Pocas visitas → -10% · Consultas sin reservas → -5%</div>
+        <div class="field">
+          <label>Compromisos / condiciones acordadas</label>
+          <textarea id="compromisos" placeholder="Exclusividad, reportes, condiciones especiales..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODO AGENTE (privado) -->
+    <div class="section agent-section" id="sec-agent" style="display:none">
+      <div class="section-header" onclick="toggleSection('sec-agent')">
+        <div class="section-num" style="font-size:14px">🔒</div>
+        <div style="flex:1">
+          <div class="agent-badge" style="margin-bottom:4px">Modo Agente</div>
+          <div class="section-title">Notas Privadas &amp; Checklist</div>
+        </div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-agent">
+        <div class="callout"><strong>Solo vos ves esto.</strong> No aparece en el PDF del cliente. Se guarda en tu fila de Sheets.</div>
+        <div class="agent-badge">Preguntas clave — no olvidarse</div>
+        <div class="checklist" id="preguntas-list"></div>
+        <div class="divider" style="margin-top:8px"></div>
+        <div class="field">
+          <label>Señales de urgencia real</label>
+          <textarea id="ag_urgencia" placeholder="¿Cómo llegaron — frío, referido, ya decididos? ¿Algo en el relato que indica presión?"></textarea>
+        </div>
+        <div class="field">
+          <label>Expectativa de precio vs. mercado</label>
+          <select id="ag_expectativa">
+            <option value="">Sin evaluar</option>
+            <option>Alineada ✓</option>
+            <option>Levemente sobrevaluada (5-10%)</option>
+            <option>Sobrevaluada (10-20%)</option>
+            <option>Muy sobrevaluada (+20%) — requiere trabajo previo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>¿Habló con otros asesores?</label>
+          <select id="ag_competencia">
+            <option value="">Sin definir</option>
+            <option>No — primera reunión</option>
+            <option>Sí — uno o dos más, sin propuesta formal</option>
+            <option>Sí — ya tienen propuesta de otra inmobiliaria</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Dinámica de decisión</label>
+          <textarea id="ag_dinamica" placeholder="¿Quién decide? ¿Hay alguien que no está que necesita dar el OK?"></textarea>
+        </div>
+        <div class="field">
+          <label>Evaluación general</label>
+          <select id="ag_evaluacion">
+            <option value="">Sin evaluar</option>
+            <option>⭐⭐⭐ Cliente ideal — listo para arrancar</option>
+            <option>⭐⭐ Necesita trabajo — pero vale la pena</option>
+            <option>⭐ Difícil — precio irreal o motivación baja</option>
+            <option>❌ No tomar — precio intransigente / red flag</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Notas libres</label>
+          <textarea id="ag_notas" placeholder="Todo lo que no podés escribir delante del cliente..."></textarea>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <div class="status-bar">
+    <div class="status-info" id="status-info">Completá los campos requeridos</div>
+    <button class="btn-full btn-pdf" onclick="generatePDF()">↓ PDF</button>
+    <button class="btn-full btn-save" onclick="showModal()">Guardar</button>
+  </div>
+  <div id="toast"></div>
+
+  <div id="modal">
+    <div class="modal-box">
+      <div class="modal-title">Guardar ACM</div>
+      <div class="modal-sub">Genera el PDF para el cliente y guarda en Google Sheets (con tus notas privadas).</div>
+      <div class="modal-field">
+        <label>URL Apps Script (Sheets webhook)</label>
+        <input type="url" id="webhook-url" placeholder="https://script.google.com/macros/s/...">
+      </div>
+      <div class="callout" style="font-size:11px"><strong>Primera vez:</strong> pegá la URL de tu doPost. Se guarda en el dispositivo.</div>
+      <div class="modal-actions">
+        <button class="modal-btn btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="modal-btn btn-confirm" onclick="saveAll()">Guardar todo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+const PASSWORD = "1209"; // cambiá antes de subir
+// ══════════════════════════════════════
+
+const BARRIOS_CABA = ["Agronomía","Almagro","Balvanera","Barracas","Belgrano","Boedo","Caballito","Chacarita","Coghlan","Colegiales","Constitución","Flores","Floresta","La Boca","La Paternal","Liniers","Mataderos","Monte Castro","Montserrat","Nueva Pompeya","Núñez","Palermo","Parque Avellaneda","Parque Chacabuco","Parque Chas","Parque Patricios","Puerto Madero","Recoleta","Retiro","Saavedra","San Cristóbal","San Nicolás","San Telmo","Vélez Sársfield","Versalles","Villa Crespo","Villa del Parque","Villa Devoto","Villa Gral. Mitre","Villa Lugano","Villa Luro","Villa Ortúzar","Villa Pueyrredón","Villa Real","Villa Riachuelo","Villa Santa Rita","Villa Soldati","Villa Urquiza"];
+
+const ATRIBUTOS = ["Luminosidad","Ventilación","Accesibilidad (ascensor)","Distribución interna","Mantenimiento / modernización","Visuales y orientación","Aire libre (balcón/terraza)","Conectividad y transporte"];
+const NIVELES = ["Reg","Bueno","M.Bueno","Exc."];
+
+const OBJECIONES = ["Sin ascensor / acceso solo por escalera","Sin luz natural — contrafrente o pozo de luz","Sin visual / da a medianera o pared ciega","Zona conflictiva o cerca de cancha / estadio","Estado de mantenimiento regular o malo","Escaleras internas (PH de dos plantas, duplex)","Distribución disfuncional o poco práctica","Obras linderas activas en este momento","Problemas estructurales o de humedad en el edificio","Expensas altas respecto del promedio de la zona"];
+
+const PREGUNTAS_CLAVE = [
+  "¿Estuvieron en algún momento cerca de vender, o es la primera vez que lo ponen en el mercado?",
+  "¿Ya tuvieron la propiedad publicada en algún momento? ¿Qué pasó?",
+  "Si el mercado te mostrara que el valor real de cierre está por debajo de lo que tenés en mente, ¿cómo lo tomarías?",
+  "¿El número que tienen en mente es el mínimo que necesitan para que la operación les cierre, o hay margen?",
+  "Si aparece el comprador rápido — en 30 o 45 días — ¿están en condiciones de entregar, o necesitan un plazo mínimo?",
+  "¿Tienen algo pactado que dependa de los tiempos de esta venta — mudanza, compra, otra operación?",
+  "Si llegamos a un acuerdo hoy, ¿están en condiciones de avanzar, o hay alguien más que necesita estar de acuerdo?",
+  "¿Quiénes son los titulares — están todos acá o hay que sumar a alguien en el proceso?"
+];
+
+// ── LOGIN ──
+function checkLogin() {
+  if (document.getElementById('pwd-input').value === PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  } else {
+    const inp = document.getElementById('pwd-input');
+    inp.classList.add('shake'); inp.value = '';
+    setTimeout(() => inp.classList.remove('shake'), 500);
+  }
+}
+document.getElementById('pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkLogin(); });
+
+// ── INIT ──
+function init() {
+  buildRatingTable(); buildObjeciones(); buildPreguntas();
+  addTestigoRow(); addTestigoRow(); addTestigoRow();
+  document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+  const wh = localStorage.getItem('acm_webhook');
+  if (wh) document.getElementById('webhook-url').value = wh;
+  document.getElementById('main-form').addEventListener('input', updateProgress);
+  document.addEventListener('click', e => { if (!e.target.closest('.autocomplete-wrap')) closeBarrioList(); });
+  updateProgress();
+}
+
+// ── SECTIONS ──
+function toggleSection(id) {
+  const body = document.getElementById('body-' + id);
+  const chev = document.querySelector('#' + id + ' .section-chevron');
+  const collapsed = body.classList.toggle('collapsed');
+  if (chev) chev.classList.toggle('open', !collapsed);
+}
+
+// ── MODO AGENTE ──
+let agentMode = false;
+function toggleAgentMode() {
+  agentMode = !agentMode;
+  const btn = document.getElementById('agent-btn');
+  btn.classList.toggle('active', agentMode);
+  btn.innerHTML = `<div class="agent-dot"></div>${agentMode ? 'Agente ON' : 'Modo Agente'}`;
+  document.getElementById('sec-agent').style.display = agentMode ? 'block' : 'none';
+}
+
+// ── TIPO OP ──
+function handleTipoOp() {
+  const v = document.getElementById('tipo_op').value;
+  document.getElementById('tipo_op_otro_wrap').style.display = v === 'otro' ? 'flex' : 'none';
+}
+
+// ── BARRIO AUTOCOMPLETE ──
+function filterBarrios() {
+  const q = document.getElementById('prop_barrio_input').value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const list = document.getElementById('barrio-list');
+  if (!q) { list.style.display = 'none'; return; }
+  const matches = BARRIOS_CABA.filter(b => b.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q));
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(b => {
+    const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+    return `<div class="autocomplete-item" onclick="selectBarrio('${b}')">${b.replace(re,'<mark>$1</mark>')}</div>`;
+  }).join('');
+  list.style.display = 'block';
+}
+function selectBarrio(b) { document.getElementById('prop_barrio_input').value = b; document.getElementById('prop_barrio').value = b; closeBarrioList(); updateProgress(); }
+function closeBarrioList() { document.getElementById('barrio-list').style.display = 'none'; }
+
+// ── RATING ──
+const ratings = {};
+function buildRatingTable() {
+  const tbody = document.getElementById('rating-body'); tbody.innerHTML = '';
+  ATRIBUTOS.forEach((attr, ai) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${attr}</td>` + NIVELES.map((_, li) => `<td><div class="radio-dot" data-attr="${ai}" data-level="${li}" onclick="selectRating(${ai},${li})"></div></td>`).join('');
+    tbody.appendChild(tr);
+  });
+}
+function selectRating(ai, li) {
+  ratings[ai] = li;
+  document.querySelectorAll(`.radio-dot[data-attr="${ai}"]`).forEach((d, i) => d.classList.toggle('selected', i === li));
+}
+
+// ── OBJECIONES ──
+const checked = {};
+function buildObjeciones() {
+  const list = document.getElementById('objeciones-list'); list.innerHTML = '';
+  OBJECIONES.forEach((obj, i) => {
+    const div = document.createElement('div'); div.className = 'check-item';
+    div.innerHTML = `<div class="check-box"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="check-label">${obj}</span>`;
+    div.addEventListener('click', () => { checked[i] = !checked[i]; div.classList.toggle('checked', checked[i]); });
+    list.appendChild(div);
+  });
+}
+
+// ── PREGUNTAS PRIVADAS ──
+const preguntasCheck = {};
+function buildPreguntas() {
+  const list = document.getElementById('preguntas-list'); list.innerHTML = '';
+  PREGUNTAS_CLAVE.forEach((p, i) => {
+    const div = document.createElement('div'); div.className = 'check-item';
+    div.innerHTML = `<div class="check-box"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="check-label">${p}</span>`;
+    div.addEventListener('click', () => { preguntasCheck[i] = !preguntasCheck[i]; div.classList.toggle('checked', preguntasCheck[i]); });
+    list.appendChild(div);
+  });
+}
+
+// ── TESTIGOS ──
+let testigoCount = 0;
+function addTestigoRow() {
+  const tbody = document.getElementById('testigos-body');
+  const n = ++testigoCount;
+  const tr = document.createElement('tr');
+  tr.id = `testigo-${n}`;
+  tr.innerHTML = `
+    <td><input type="text" placeholder="Ej: Gurruchaga 1200 3A" id="t_dir_${n}"></td>
+    <td><input type="number" placeholder="65" id="t_sup_${n}" oninput="calcTestigoM2(${n})"></td>
+    <td><input type="number" placeholder="2600" id="t_m2_${n}" oninput="calcTestigoTotal(${n})"></td>
+    <td><input type="text" placeholder="169.000" id="t_tot_${n}"></td>
+    <td><input type="url" placeholder="zonaprop.com..." id="t_link_${n}"></td>
+  `;
+  tbody.appendChild(tr);
+}
+function calcTestigoM2(n) {
+  const sup = parseFloat(document.getElementById(`t_sup_${n}`)?.value) || 0;
+  const m2 = parseFloat(document.getElementById(`t_m2_${n}`)?.value) || 0;
+  if (sup && m2) { document.getElementById(`t_tot_${n}`).value = Math.round(sup * m2).toLocaleString('es-AR'); }
+}
+function calcTestigoTotal(n) { calcTestigoM2(n); }
+
+// ── PROMEDIOS ──
+function calcProm(key) {
+  const min = parseFloat(document.getElementById(key+'_min')?.value)||0;
+  const max = parseFloat(document.getElementById(key+'_max')?.value)||0;
+  const el = document.getElementById(key+'_prom');
+  if (el) el.textContent = (min&&max) ? Math.round((min+max)/2).toLocaleString('es-AR') : '—';
+}
+
+// ── PROGRESS ──
+function updateProgress() {
+  const req = ['fecha','cliente_nombre','prop_dir','prop_barrio'];
+  const filled = req.filter(id => document.getElementById(id)?.value?.trim()).length;
+  document.getElementById('progress').style.width = Math.round((filled/req.length)*100)+'%';
+  const name = document.getElementById('cliente_nombre')?.value?.trim();
+  document.getElementById('status-info').textContent = name ? `ACM: ${name}` : 'Completá los campos requeridos';
+}
+
+// ── RESET ──
+function resetForm() {
+  if (!confirm('¿Limpiar todo para una nueva ACM?')) return;
+  document.getElementById('main-form').reset();
+  [ratings,checked,preguntasCheck].forEach(o => Object.keys(o).forEach(k => delete o[k]));
+  document.getElementById('prop_barrio').value=''; document.getElementById('prop_barrio_input').value='';
+  testigoCount=0; document.getElementById('testigos-body').innerHTML='';
+  buildRatingTable(); buildObjeciones(); buildPreguntas();
+  addTestigoRow(); addTestigoRow(); addTestigoRow();
+  document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('agente').value='Nahuel Lim';
+  ['pub_m2_prom','pub_tot_prom','vend_m2_prom'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
+  updateProgress();
+}
+
+// ── COLLECT ──
+function collect() {
+  const g = id => document.getElementById(id)?.value?.trim()||'';
+  const testigos = [];
+  for(let i=1;i<=testigoCount;i++){
+    const dir=g(`t_dir_${i}`);
+    if(dir) testigos.push({dir,sup:g(`t_sup_${i}`),m2:g(`t_m2_${i}`),tot:g(`t_tot_${i}`),link:g(`t_link_${i}`)});
+  }
+  return {
+    fecha:g('fecha'),agente:g('agente'),
+    cliente:{nombre:g('cliente_nombre'),cel:g('cliente_cel'),mail:g('cliente_mail')},
+    operacion:{tipo:g('tipo_op')==='otro'?g('tipo_op_otro'):g('tipo_op'),motivo:g('motivo'),urgencia:g('urgencia'),precio_esperado:g('precio_esperado')},
+    propiedad:{direccion:g('prop_dir'),barrio:g('prop_barrio'),tipo:g('prop_tipo'),sup:g('sup'),amb:g('amb'),banos:g('banos'),antig:g('antig'),piso:g('piso'),orientacion:g('orientacion'),expensas:g('expensas'),cochera:g('cochera'),apto_credito:g('apto_credito'),notas:g('prop_notas')},
+    secundarias:ATRIBUTOS.map((a,i)=>({atributo:a,nivel:ratings[i]!==undefined?NIVELES[ratings[i]]:''})),
+    objeciones:OBJECIONES.filter((_,i)=>checked[i]),
+    objeciones_notas:g('objeciones_notas'),
+    testigos,testigos_notas:g('testigos_notas'),
+    acm:{pub_m2_min:g('pub_m2_min'),pub_m2_max:g('pub_m2_max'),pub_m2_prom:document.getElementById('pub_m2_prom')?.textContent||'',pub_tot_min:g('pub_tot_min'),pub_tot_max:g('pub_tot_max'),pub_tot_prom:document.getElementById('pub_tot_prom')?.textContent||'',vend_m2_min:g('vend_m2_min'),vend_m2_max:g('vend_m2_max'),vend_m2_prom:document.getElementById('vend_m2_prom')?.textContent||'',dias:g('acm_dias'),margen:g('acm_margen'),tendencia:g('acm_tendencia'),notas:g('acm_notas')},
+    ventana:{pub_m2:g('v_pub_m2'),pub_tot:g('v_pub_tot'),lanch_m2:g('v_lanch_m2'),lanch_tot:g('v_lanch_tot'),cierre_m2:g('v_cierre_m2'),cierre_tot:g('v_cierre_tot'),precio_acordado:g('precio_acordado'),compromisos:g('compromisos')},
+    privado:{preguntas_hechas:PREGUNTAS_CLAVE.filter((_,i)=>preguntasCheck[i]),urgencia_detectada:g('ag_urgencia'),expectativa:g('ag_expectativa'),competencia:g('ag_competencia'),dinamica:g('ag_dinamica'),evaluacion:g('ag_evaluacion'),notas_privadas:g('ag_notas')}
+  };
+}
+
+// ── PDF (solo cliente, sin privado) ──
+function generatePDF() {
+  const d = collect();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  const W=210,M=14,CW=W-M*2;
+  let y=0;
+  const PR=0,PG=49,PB=83;
+  const OR=232,OG=99,OB=10;
+
+  function newPage(){doc.addPage();y=15;}
+  function checkY(n=10){if(y+n>272)newPage();}
+
+  // Header
+  doc.setFillColor(PR,PG,PB); doc.rect(0,0,W,26,'F');
+  doc.setFillColor(OR,OG,OB); doc.rect(0,26,W,2,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+  doc.text('NL',16,10);
+  doc.setFontSize(15); doc.text('ANÁLISIS COMPARATIVO DE MERCADO',26,11);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(160,185,210);
+  doc.text(`Nahuel Lim · Century 21 Evolución   ·   ${d.fecha}`,26,19);
+  y=34;
+
+  function secTitle(txt){
+    checkY(12);
+    doc.setFillColor(PR,PG,PB); doc.rect(M,y,CW,7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+    doc.text(txt,M+3,y+5); y+=10;
+  }
+  function row(label,val){
+    checkY(6); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.setTextColor(130,120,110); doc.text(label,M,y);
+    doc.setTextColor(20,30,50); doc.text(val||'—',M+58,y); y+=6;
+  }
+  function twoCol(pairs){
+    const half=Math.ceil(pairs.length/2);
+    for(let i=0;i<half;i++){
+      checkY(6);
+      const l=pairs[i],r=pairs[i+half];
+      doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      if(l){doc.setTextColor(130,120,110);doc.text(l[0],M,y);doc.setTextColor(20,30,50);doc.text(l[1]||'—',M+30,y);}
+      if(r){doc.setTextColor(130,120,110);doc.text(r[0],M+CW/2+2,y);doc.setTextColor(20,30,50);doc.text(r[1]||'—',M+CW/2+32,y);}
+      y+=6;
+    }
+  }
+
+  secTitle('1. CLIENTE');
+  twoCol([['Nombre:',d.cliente.nombre],['Celular:',d.cliente.cel],['Mail:',d.cliente.mail]]);
+  y+=2;
+
+  secTitle('2. OPERACIÓN');
+  row('Tipo:',d.operacion.tipo);
+  row('Urgencia:',d.operacion.urgencia);
+  if(d.operacion.precio_esperado) row('Precio en mente:',`USD ${d.operacion.precio_esperado}`);
+  if(d.operacion.motivo){checkY(14);doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.operacion.motivo,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
+  y+=2;
+
+  secTitle('3. PROPIEDAD');
+  row('Dirección:',d.propiedad.direccion);
+  twoCol([['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Sup. Hom.:',d.propiedad.sup?`${d.propiedad.sup} m²`:''],['Ambientes:',d.propiedad.amb],['Baños:',d.propiedad.banos],['Antigüedad:',d.propiedad.antig?`${d.propiedad.antig} años`:''],['Piso:',d.propiedad.piso],['Orientación:',d.propiedad.orientacion],['Cochera:',d.propiedad.cochera],['Apto crédito:',d.propiedad.apto_credito],['Expensas:',d.propiedad.expensas?`ARS ${d.propiedad.expensas}`:'']]);
+  if(d.propiedad.notas){checkY(12);doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Notas: '+d.propiedad.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
+  y+=2;
+
+  const sf=d.secundarias.filter(s=>s.nivel);
+  if(sf.length){secTitle('4. CARACTERÍSTICAS');twoCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
+
+  if(d.objeciones.length){
+    secTitle('5. OBJECIONES DETECTADAS');
+    d.objeciones.forEach(ob=>{checkY(6);doc.setFillColor(192,57,43);doc.circle(M+2,y-1.5,1.5,'F');doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(20,30,50);doc.text(ob,M+6,y);y+=6;});
+    if(d.objeciones_notas){checkY(8);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);doc.text(doc.splitTextToSize(d.objeciones_notas,CW),M,y);y+=8;}
+    y+=2;
+  }
+
+  // TESTIGOS
+  if(d.testigos.length){
+    secTitle('6. PROPIEDADES TESTIGO');
+    checkY(10);
+    doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(PR,PG,PB);
+    doc.text('Dirección / Ref.',M+2,y+5);
+    doc.text('m²',M+72,y+5);
+    doc.text('USD/m²',M+86,y+5);
+    doc.text('Total USD',M+106,y+5);
+    doc.text('Link',M+132,y+5);
+    y+=7;
+    d.testigos.forEach((t,i)=>{
+      checkY(8);
+      if(i%2===0){doc.setFillColor(248,250,252);doc.rect(M,y,CW,7,'F');}
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(20,30,50);
+      doc.text(t.dir.substring(0,28),M+2,y+5);
+      doc.text(t.sup||'—',M+72,y+5);
+      doc.text(t.m2||'—',M+86,y+5);
+      doc.text(t.tot||'—',M+106,y+5);
+      if(t.link){
+        doc.setTextColor(OR,OG,OB);
+        const shortLink=t.link.replace(/^https?:\/\/(www\.)?/,'').substring(0,22);
+        doc.textWithLink(shortLink,M+132,y+5,{url:t.link});
+        doc.setTextColor(20,30,50);
+      }
+      y+=7;
+    });
+    if(d.testigos_notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.testigos_notas,CW);doc.text(lines,M,y);y+=lines.length*5;}
+    y+=4;
+  }
+
+  secTitle('7. ANÁLISIS DE MERCADO');
+  twoCol([['Publicado m² rango:',`USD ${d.acm.pub_m2_min||'—'} – ${d.acm.pub_m2_max||'—'}`],['Publicado m² prom.:',`USD ${d.acm.pub_m2_prom||'—'}`],['Publicado total prom.:',`USD ${d.acm.pub_tot_prom||'—'}`],['Vendido m² rango:',`USD ${d.acm.vend_m2_min||'—'} – ${d.acm.vend_m2_max||'—'}`],['Vendido m² prom.:',`USD ${d.acm.vend_m2_prom||'—'}`],['Días promedio:',d.acm.dias?`${d.acm.dias} días`:''],['Margen neg.:',d.acm.margen?`${d.acm.margen}%`:''],['Tendencia:',d.acm.tendencia]]);
+  if(d.acm.notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.acm.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
+  y+=2;
+
+  secTitle('8. VENTANA DE VENTA');
+  checkY(36);
+  doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(PR,PG,PB);
+  doc.text('Escenario',M+3,y+5);doc.text('m² USD',M+82,y+5);doc.text('Total USD',M+120,y+5);y+=7;
+  [['Publicado promedio (techo)',d.ventana.pub_m2,d.ventana.pub_tot,[120,120,130]],['Lanzamiento Competitivo',d.ventana.lanch_m2,d.ventana.lanch_tot,[20,30,50]],['Valor Cierre (piso)',d.ventana.cierre_m2,d.ventana.cierre_tot,[PR,PG,PB]]].forEach(([label,m2,tot,color],i)=>{
+    checkY(9);
+    doc.setFillColor(i%2===0?245:255,i%2===0?248:255,i%2===0?252:255);doc.rect(M,y,CW,8,'F');
+    doc.setFont('helvetica',i===1?'bold':'normal');doc.setFontSize(8.5);doc.setTextColor(...color);
+    doc.text(label,M+3,y+5.5);doc.setTextColor(20,30,50);
+    doc.text(m2?`USD ${m2}`:'—',M+82,y+5.5);doc.text(tot?`USD ${tot}`:'—',M+120,y+5.5);y+=8;
+  });
+  y+=4;
+  if(d.ventana.precio_acordado){
+    checkY(13);doc.setFillColor(OR,OG,OB);doc.rect(M,y,CW,11,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
+    doc.text(`PRECIO ACORDADO: USD ${d.ventana.precio_acordado}`,M+3,y+7.5);y+=15;
+  }
+  if(d.ventana.compromisos){checkY(14);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Compromisos: '+d.ventana.compromisos,CW);doc.text(lines,M,y);y+=lines.length*5+4;}
+
+  // FOOTER con disclaimer legal y WhatsApp
+  const total=doc.getNumberOfPages();
+  const disclaimer='En cumplimiento de las normas legales aplicables, informamos que los agentes NO ejercen el corretaje inmobiliario. Todas las operaciones inmobiliarias son concluidas por los corredores matriculados responsables en cada oficina. Karina Carrasquero - CUCICBA 9135';
+  for(let i=1;i<=total;i++){
+    doc.setPage(i);
+    doc.setFillColor(PR,PG,PB);doc.rect(0,277,W,20,'F');
+    doc.setFillColor(OR,OG,OB);doc.rect(0,277,3,20,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(160,185,210);
+    const dlines=doc.splitTextToSize(disclaimer,CW-40);
+    doc.text(dlines,M+2,282);
+    // WhatsApp clickable
+    doc.setTextColor(OR,OG,OB);doc.setFontSize(7);doc.setFont('helvetica','bold');
+    doc.textWithLink('WhatsApp Nahuel Lim',W-M,290,{url:'https://wa.me/message/UOADLAGBAZ6SO1',align:'right'});
+    doc.setTextColor(160,185,210);doc.setFont('helvetica','normal');doc.setFontSize(6);
+    doc.text(`Pág. ${i} / ${total}`,W/2,292,{align:'center'});
+  }
+
+  doc.save(`ACM_${(d.cliente.nombre||'cliente').replace(/\s+/g,'_')}_${d.fecha||'fecha'}.pdf`);
+  showToast('PDF generado');
+}
+
+// ── SHEETS ──
+async function sendToSheets(data,url){
+  try{await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return true;}
+  catch(e){return false;}
+}
+async function saveAll(){
+  const url=document.getElementById('webhook-url').value.trim();
+  if(url) localStorage.setItem('acm_webhook',url);
+  if(url) await sendToSheets(collect(),url);
+  generatePDF(); closeModal(); showToast('Guardado + PDF generado');
+}
+
+function showModal(){document.getElementById('modal').classList.add('show');}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
