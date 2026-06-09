@@ -260,6 +260,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── MODAL ── */
 #modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+#draft-modal{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+#draft-modal.show{opacity:1;pointer-events:all}
+#draft-modal .modal-box{background:var(--primary);border-radius:16px 16px 0 0;padding:28px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform .35s ease}
+#draft-modal.show .modal-box{transform:translateY(0)}
+.draft-item{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:12px 14px;cursor:pointer;transition:background .15s}
+.draft-item:hover{background:rgba(255,255,255,.15)}
+.draft-item-name{font-size:14px;font-weight:600;color:#fff}
+.draft-item-meta{font-size:11px;color:rgba(255,255,255,.45);margin-top:3px}
+.draft-item-load{float:right;background:var(--orange);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 #modal.show{opacity:1;pointer-events:all}
 .modal-box{background:var(--primary);border-radius:16px 16px 0 0;padding:28px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform .35s ease}
 #modal.show .modal-box{transform:translateY(0)}
@@ -306,6 +315,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div class="topbar-actions">
+      <button class="btn-sm btn-ghost" onclick="showDraftModal()">Borrador</button>
       <button class="btn-sm btn-ghost" onclick="resetForm()">Nueva</button>
       <button class="btn-sm btn-agent" id="agent-btn" onclick="toggleAgentMode()">
         <div class="agent-dot"></div>Modo Agente
@@ -525,14 +535,47 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
 
-    <!-- S7: ACM -->
-    <div class="section" id="sec-7">
-      <div class="section-header" onclick="toggleSection('sec-7')">
+    <!-- S7: REPORTE INMOBILIARIO -->
+    <div class="section" id="sec-reporte">
+      <div class="section-header" onclick="toggleSection('sec-reporte')">
         <div class="section-num">7</div>
+        <div class="section-title">Market Valuation — Reporte Inmobiliario</div>
+        <div class="section-chevron open">▾</div>
+      </div>
+      <div class="section-body" id="body-sec-reporte">
+        <div class="callout" style="font-size:11px;margin-bottom:4px">Datos de <strong>reporteinmobiliario.com</strong> — zona · tipología · superficie · antigüedad</div>
+        <table class="testigos-table" style="margin-top:4px">
+          <thead>
+            <tr>
+              <th>Sup. Homogeneizada</th>
+              <th>Valor Promedio m² Publicado</th>
+              <th>Valor Promedio Publicado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="text" id="ri_sup" placeholder="90 m²"></td>
+              <td><input type="text" id="ri_m2" placeholder="USD 2.400"></td>
+              <td><input type="text" id="ri_total" placeholder="USD 216.000"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="field" style="margin-top:8px">
+          <label>Notas / contexto del reporte</label>
+          <textarea id="ri_notas" placeholder="Variación de precios, tendencia de escrituras, contexto de crédito hipotecario..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- S8: ACM -->
+
+    <div class="section" id="sec-8">
+      <div class="section-header" onclick="toggleSection('sec-8')">
+        <div class="section-num">8</div>
         <div class="section-title">Análisis Comparativo de Mercado</div>
         <div class="section-chevron open">▾</div>
       </div>
-      <div class="section-body" id="body-sec-7">
+      <div class="section-body" id="body-sec-8">
         <div class="sublabel">Publicados — Rango m² (USD)</div>
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="pub_m2_min" placeholder="2.400" oninput="calcProm('pub_m2')"></div>
@@ -566,14 +609,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
 
-    <!-- S8: VENTANA -->
-    <div class="section" id="sec-8">
-      <div class="section-header" onclick="toggleSection('sec-8')">
-        <div class="section-num">8</div>
+    <!-- S9: VENTANA -->
+    <div class="section" id="sec-9">
+      <div class="section-header" onclick="toggleSection('sec-9')">
+        <div class="section-num">9</div>
         <div class="section-title">Ventana de Venta &amp; Estrategia</div>
         <div class="section-chevron open">▾</div>
       </div>
-      <div class="section-body" id="body-sec-8">
+      <div class="section-body" id="body-sec-9">
         <table class="ventana-table">
           <thead><tr><th>Escenario</th><th>m² USD</th><th>Total USD</th></tr></thead>
           <tbody>
@@ -717,14 +760,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
   <div class="status-bar">
     <div class="status-info" id="status-info">Completá los campos requeridos</div>
-    <button class="btn-full btn-pdf" onclick="generatePDF()">↓ PDF</button>
-    <button class="btn-full btn-save" onclick="showModal()">Guardar</button>
+    <button class="btn-full btn-pdf" onclick="saveDraft()">Guardar</button>
+    <button class="btn-full btn-save" onclick="showModal()">Finalizar</button>
   </div>
   <div id="toast"></div>
 
+  <!-- MODAL FINALIZAR -->
   <div id="modal">
     <div class="modal-box">
-      <div class="modal-title">Guardar ACM</div>
+      <div class="modal-title">Finalizar ACM</div>
       <div class="modal-sub">Genera el PDF para el cliente y guarda en Google Sheets (con tus notas privadas).</div>
       <div class="modal-field">
         <label>URL Apps Script (Sheets webhook)</label>
@@ -733,11 +777,27 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       <div class="callout" style="font-size:11px"><strong>Primera vez:</strong> pegá la URL de tu doPost. Se guarda en el dispositivo.</div>
       <div class="modal-actions">
         <button class="modal-btn btn-cancel" onclick="closeModal()">Cancelar</button>
-        <button class="modal-btn btn-confirm" onclick="saveAll()">Guardar todo</button>
+        <button class="modal-btn btn-confirm" onclick="saveAll()">Generar PDF</button>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- MODAL BORRADORES -->
+  <div id="draft-modal">
+    <div class="modal-box">
+      <div class="modal-title">Borradores guardados</div>
+      <div class="modal-sub">Seleccioná un borrador para continuar.</div>
+      <div id="draft-list" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
+      <div class="modal-field" style="margin-top:8px">
+        <label>URL Apps Script (para guardar/recuperar)</label>
+        <input type="url" id="draft-webhook-url" placeholder="https://script.google.com/macros/s/...">
+      </div>
+      <div class="modal-actions">
+        <button class="modal-btn btn-cancel" onclick="closeDraftModal()">Cerrar</button>
+        <button class="modal-btn btn-confirm" onclick="loadDraftsFromSheets()">Buscar borradores</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 // ══════════════════════════════════════
@@ -940,6 +1000,7 @@ function collect() {
     objeciones:OBJECIONES.filter((_,i)=>checked[i]),
     objeciones_notas:g('objeciones_notas'),
     testigos,testigos_notas:g('testigos_notas'),
+    reporte:{sup:g('ri_sup'),m2:g('ri_m2'),total:g('ri_total'),notas:g('ri_notas')},
     acm:{pub_m2_min:g('pub_m2_min'),pub_m2_max:g('pub_m2_max'),pub_m2_prom:document.getElementById('pub_m2_prom')?.textContent||'',pub_tot_min:g('pub_tot_min'),pub_tot_max:g('pub_tot_max'),pub_tot_prom:document.getElementById('pub_tot_prom')?.textContent||'',vend_m2_min:g('vend_m2_min'),vend_m2_max:g('vend_m2_max'),vend_m2_prom:document.getElementById('vend_m2_prom')?.textContent||'',dias:g('acm_dias'),margen:g('acm_margen'),tendencia:g('acm_tendencia'),notas:g('acm_notas')},
     ventana:{pub_m2:g('v_pub_m2'),pub_tot:g('v_pub_tot'),lanch_m2:g('v_lanch_m2'),lanch_tot:g('v_lanch_tot'),cierre_m2:g('v_cierre_m2'),cierre_tot:g('v_cierre_tot'),precio_acordado:g('precio_acordado'),compromisos:g('compromisos')},
     privado:{preguntas_hechas:PREGUNTAS_CLAVE.filter((_,i)=>preguntasCheck[i]),urgencia_detectada:g('ag_urgencia'),expectativa:g('ag_expectativa'),competencia:g('ag_competencia'),dinamica:g('ag_dinamica'),evaluacion:g('ag_evaluacion'),notas_privadas:g('ag_notas')}
@@ -974,7 +1035,7 @@ function generatePDF() {
   y=38;
 
   function secTitle(txt){
-    checkY(14);
+    checkY(40);
     doc.setFillColor(PR,PG,PB); doc.rect(M,y,CW,7,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
     doc.text(txt,M+3,y+5); y+=11;
@@ -986,21 +1047,14 @@ function generatePDF() {
   }
   function twoCol(pairs){
     const half=Math.ceil(pairs.length/2);
+    const COL_VAL_L = M+52;  // valor izquierda — posición fija
+    const COL_VAL_R = M+CW/2+52; // valor derecha — posición fija
     for(let i=0;i<half;i++){
       checkY(6);
       const l=pairs[i],r=pairs[i+half];
       doc.setFont('helvetica','normal'); doc.setFontSize(8);
-      if(l){
-        doc.setTextColor(130,120,110); doc.text(l[0],M+2,y);
-        doc.setTextColor(20,30,50);
-        // valor en columna separada con suficiente espacio
-        doc.text(l[1]||'—',M+2+doc.getTextWidth(l[0])+3,y);
-      }
-      if(r){
-        doc.setTextColor(130,120,110); doc.text(r[0],M+CW/2+2,y);
-        doc.setTextColor(20,30,50);
-        doc.text(r[1]||'—',M+CW/2+2+doc.getTextWidth(r[0])+3,y);
-      }
+      if(l){doc.setTextColor(130,120,110);doc.text(l[0],M+2,y);doc.setTextColor(20,30,50);doc.text(l[1]||'—',COL_VAL_L,y);}
+      if(r){doc.setTextColor(130,120,110);doc.text(r[0],M+CW/2+2,y);doc.setTextColor(20,30,50);doc.text(r[1]||'—',COL_VAL_R,y);}
       y+=6;
     }
   }
@@ -1057,12 +1111,27 @@ function generatePDF() {
     y+=4;
   }
 
-  secTitle('6. ANÁLISIS DE MERCADO');
+  secTitle('6. MARKET VALUATION — REPORTE INMOBILIARIO');
+  if(d.reporte?.sup||d.reporte?.m2||d.reporte?.total){
+    checkY(10);
+    doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(PR,PG,PB);
+    doc.text('Sup. Homogeneizada',M+2,y+5); doc.text('Valor Prom. m² Publicado',M+CW/3+2,y+5); doc.text('Valor Prom. Publicado',M+CW*2/3+2,y+5); y+=7;
+    doc.setFillColor(255,255,255); doc.rect(M,y,CW,8,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(20,30,50);
+    doc.text(d.reporte.sup||'—',M+2,y+5.5); doc.text(d.reporte.m2||'—',M+CW/3+2,y+5.5); doc.text(d.reporte.total||'—',M+CW*2/3+2,y+5.5); y+=9;
+  } else {
+    doc.setFontSize(8); doc.setTextColor(140,130,120); doc.text('Sin datos del reporte',M+2,y); y+=6;
+  }
+  if(d.reporte?.notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.reporte.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
+  y+=3;
+
+  secTitle('8. ANÁLISIS DE MERCADO');
   twoCol([['Publicado m² rango:',`USD ${d.acm.pub_m2_min||'—'} – ${d.acm.pub_m2_max||'—'}`],['Publicado m² prom.:',`USD ${d.acm.pub_m2_prom||'—'}`],['Publicado total prom.:',`USD ${d.acm.pub_tot_prom||'—'}`],['Vendido m² rango:',`USD ${d.acm.vend_m2_min||'—'} – ${d.acm.vend_m2_max||'—'}`],['Vendido m² prom.:',`USD ${d.acm.vend_m2_prom||'—'}`],['Días promedio:',d.acm.dias?`${d.acm.dias} días`:''],['Margen neg.:',d.acm.margen?`${d.acm.margen}%`:''],['Tendencia:',d.acm.tendencia]]);
   if(d.acm.notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.acm.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
   y+=2;
 
-  secTitle('7. VENTANA DE VENTA');
+  secTitle('9. VENTANA DE VENTA');
   checkY(36);
   doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(PR,PG,PB);
@@ -1107,6 +1176,87 @@ function generatePDF() {
   showToast('PDF generado');
 }
 
+// ── DRAFT SAVE / LOAD ──
+async function saveDraft() {
+  const url = localStorage.getItem('acm_webhook');
+  if (!url) { showToast('Configurá la URL en Finalizar primero'); return; }
+  const data = collect();
+  data._draft = true;
+  data._draft_ts = new Date().toISOString();
+  data._draft_id = `DRAFT_${data.cliente?.nombre?.replace(/\s+/g,'_')||'sin_nombre'}_${Date.now()}`;
+  try {
+    await fetch(url, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    showToast('✓ Borrador guardado');
+  } catch(e) { showToast('Error al guardar'); }
+}
+
+function showDraftModal() {
+  const url = localStorage.getItem('acm_webhook');
+  if (url) document.getElementById('draft-webhook-url').value = url;
+  document.getElementById('draft-modal').classList.add('show');
+}
+function closeDraftModal() { document.getElementById('draft-modal').classList.remove('show'); }
+
+async function loadDraftsFromSheets() {
+  const url = document.getElementById('draft-webhook-url').value.trim();
+  if (!url) { showToast('Pegá la URL primero'); return; }
+  localStorage.setItem('acm_webhook', url);
+  document.getElementById('webhook-url').value = url;
+  const listDiv = document.getElementById('draft-list');
+  listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px">Buscando borradores...</div>';
+  try {
+    const fetchUrl = url.replace('/exec', '/exec') + '?action=getDrafts';
+    const res = await fetch(fetchUrl);
+    const json = await res.json();
+    if (!json.drafts || !json.drafts.length) {
+      listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px">No hay borradores guardados.</div>';
+      return;
+    }
+    listDiv.innerHTML = '';
+    json.drafts.forEach((d, i) => {
+      const div = document.createElement('div');
+      div.className = 'draft-item';
+      div.innerHTML = `
+        <button class="draft-item-load" onclick="loadDraft(${i})">Cargar</button>
+        <div class="draft-item-name">${d.cliente || 'Sin nombre'}</div>
+        <div class="draft-item-meta">${d.fecha || ''} · ${d.ts ? new Date(d.ts).toLocaleString('es-AR') : ''}</div>
+      `;
+      div._data = d;
+      listDiv.appendChild(div);
+    });
+    listDiv._drafts = json.drafts;
+  } catch(e) {
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px">Error al buscar. Verificá la URL.</div>';
+  }
+}
+
+function loadDraft(idx) {
+  const listDiv = document.getElementById('draft-list');
+  const d = listDiv._drafts?.[idx];
+  if (!d) return;
+  // Populate form fields
+  const s = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
+  s('fecha', d.fecha); s('cliente_nombre', d.cliente_nombre||d.cliente); s('cliente_cel', d.cliente_cel); s('cliente_mail', d.cliente_mail);
+  s('tipo_op', d.tipo_op); s('motivo', d.motivo); s('urgencia', d.urgencia); s('precio_esperado', d.precio_esperado);
+  s('prop_dir', d.prop_dir); s('prop_barrio_input', d.prop_barrio); s('prop_barrio', d.prop_barrio);
+  s('prop_tipo', d.prop_tipo); s('sup', d.sup); s('amb', d.amb); s('banos', d.banos);
+  s('antig', d.antig); s('piso', d.piso); s('orientacion', d.orientacion); s('cochera', d.cochera);
+  s('expensas', d.expensas); s('apto_credito', d.apto_credito); s('prop_notas', d.prop_notas);
+  s('ri_sup', d.ri_sup); s('ri_m2', d.ri_m2); s('ri_total', d.ri_total); s('ri_notas', d.ri_notas);
+  s('pub_m2_min', d.pub_m2_min); s('pub_m2_max', d.pub_m2_max);
+  s('pub_tot_min', d.pub_tot_min); s('pub_tot_max', d.pub_tot_max);
+  s('vend_m2_min', d.vend_m2_min); s('vend_m2_max', d.vend_m2_max);
+  s('acm_dias', d.acm_dias); s('acm_margen', d.acm_margen); s('acm_tendencia', d.acm_tendencia); s('acm_notas', d.acm_notas);
+  s('v_cierre_m2', d.v_cierre_m2); s('v_cierre_tot', d.v_cierre_tot);
+  s('v_lanch_m2', d.v_lanch_m2); s('v_lanch_tot', d.v_lanch_tot);
+  s('v_pub_m2', d.v_pub_m2); s('v_pub_tot', d.v_pub_tot);
+  s('precio_acordado', d.precio_acordado); s('compromisos', d.compromisos);
+  ['pub_m2','pub_tot','vend_m2'].forEach(k => calcProm(k));
+  updateProgress();
+  closeDraftModal();
+  showToast('✓ Borrador cargado');
+}
+
 // ── SHEETS ──
 async function sendToSheets(data,url){
   try{await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});return true;}
@@ -1122,6 +1272,7 @@ async function saveAll(){
 function showModal(){document.getElementById('modal').classList.add('show');}
 function closeModal(){document.getElementById('modal').classList.remove('show');}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+document.getElementById('draft-modal').addEventListener('click',e=>{if(e.target===document.getElementById('draft-modal'))closeDraftModal();});
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 </script>
 </body>
