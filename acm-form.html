@@ -1045,12 +1045,15 @@ function generatePDF() {
   function row(label,val){
     checkY(6); doc.setFont('helvetica','normal'); doc.setFontSize(8);
     doc.setTextColor(130,120,110); doc.text(label,M+2,y);
-    doc.setTextColor(20,30,50); doc.text(val||'—',M+60,y); y+=6;
+    doc.setTextColor(20,30,50); doc.text(val||'—',M+2+doc.getTextWidth(label)+2,y); y+=6;
   }
   function twoCol(pairs){
     const half=Math.ceil(pairs.length/2);
-    const COL_VAL_L = M+52;  // valor izquierda — posición fija
-    const COL_VAL_R = M+CW/2+52; // valor derecha — posición fija
+    // Calcular la posición del valor basada en el label más largo de cada columna
+    const maxLenL = Math.max(...pairs.slice(0,half).map(p=>doc.getTextWidth(p[0])));
+    const maxLenR = pairs.length>half ? Math.max(...pairs.slice(half).map(p=>doc.getTextWidth(p[0]))) : 0;
+    const COL_VAL_L = M+2+maxLenL+3;
+    const COL_VAL_R = M+CW/2+2+maxLenR+3;
     for(let i=0;i<half;i++){
       checkY(6);
       const l=pairs[i],r=pairs[i+half];
@@ -1059,6 +1062,16 @@ function generatePDF() {
       if(r){doc.setTextColor(130,120,110);doc.text(r[0],M+CW/2+2,y);doc.setTextColor(20,30,50);doc.text(r[1]||'—',COL_VAL_R,y);}
       y+=6;
     }
+  }
+  // S4 una sola columna
+  function oneCol(pairs){
+    const maxLen = Math.max(...pairs.map(p=>doc.getTextWidth(p[0])));
+    const COL_VAL = M+2+maxLen+3;
+    pairs.forEach(p=>{
+      checkY(6); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.setTextColor(130,120,110); doc.text(p[0],M+2,y);
+      doc.setTextColor(20,30,50); doc.text(p[1]||'—',COL_VAL,y); y+=6;
+    });
   }
 
   secTitle('1. CLIENTE');
@@ -1072,11 +1085,25 @@ function generatePDF() {
   y+=2;
 
   const sf=d.secundarias.filter(s=>s.nivel);
-  if(sf.length){secTitle('3. CARACTERÍSTICAS');twoCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
+  if(sf.length){secTitle('3. CARACTERÍSTICAS');oneCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
 
   if(d.objeciones.length){
     secTitle('4. OBJECIONES DETECTADAS');
-    d.objeciones.forEach(ob=>{checkY(6);doc.setFillColor(192,57,43);doc.circle(M+2,y-1.5,1.5,'F');doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(20,30,50);doc.text(ob,M+6,y);y+=6;});
+    const obs = d.objeciones;
+    const half = Math.ceil(obs.length/2);
+    for(let i=0;i<half;i++){
+      checkY(6);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      // izquierda
+      doc.setFillColor(192,57,43); doc.circle(M+2,y-1.5,1.5,'F');
+      doc.setTextColor(20,30,50); doc.text(obs[i],M+6,y);
+      // derecha (si existe)
+      if(obs[i+half]){
+        doc.setFillColor(192,57,43); doc.circle(M+CW/2+2,y-1.5,1.5,'F');
+        doc.text(obs[i+half],M+CW/2+6,y);
+      }
+      y+=6;
+    }
     if(d.objeciones_notas){checkY(8);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);doc.text(doc.splitTextToSize(d.objeciones_notas,CW),M,y);y+=8;}
     y+=2;
   }
