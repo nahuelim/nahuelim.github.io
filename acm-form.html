@@ -785,16 +785,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- MODAL BORRADORES -->
   <div id="draft-modal">
     <div class="modal-box">
-      <div class="modal-title">Borradores guardados</div>
-      <div class="modal-sub">Seleccioná un borrador para continuar.</div>
-      <div id="draft-list" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;margin-bottom:16px"></div>
-      <div class="modal-field" style="margin-top:8px">
-        <label>URL Apps Script (para guardar/recuperar)</label>
+      <div class="modal-title">Borradores</div>
+      <div class="modal-sub">Borradores guardados en este dispositivo.</div>
+      <div id="draft-list" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:16px"></div>
+      <div class="divider" style="margin-bottom:16px;background:rgba(255,255,255,.1)"></div>
+      <div class="modal-sub" style="margin-bottom:8px">Recuperar desde otro dispositivo (Sheets)</div>
+      <div class="modal-field">
+        <label>URL Apps Script</label>
         <input type="url" id="draft-webhook-url" placeholder="https://script.google.com/macros/s/...">
       </div>
       <div class="modal-actions">
         <button class="modal-btn btn-cancel" onclick="closeDraftModal()">Cerrar</button>
-        <button class="modal-btn btn-confirm" onclick="loadDraftsFromSheets()">Buscar borradores</button>
+        <button class="modal-btn btn-confirm" onclick="loadDraftsFromSheets()">Buscar en Sheets</button>
       </div>
     </div>
   </div>
@@ -1177,25 +1179,80 @@ function generatePDF() {
 }
 
 // ── DRAFT SAVE / LOAD ──
+const LS_KEY = 'acm_drafts';
+
+function getDraftsFromLS() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveDraftsToLS(drafts) {
+  localStorage.setItem(LS_KEY, JSON.stringify(drafts));
+}
+
 async function saveDraft() {
   const url = localStorage.getItem('acm_webhook');
   if (!url) { showToast('Configurá la URL en Finalizar primero'); return; }
+
   const data = collect();
+  const ts = new Date().toISOString();
+  const id = `DRAFT_${(data.cliente?.nombre||'sin_nombre').replace(/\s+/g,'_')}_${Date.now()}`;
   data._draft = true;
-  data._draft_ts = new Date().toISOString();
-  data._draft_id = `DRAFT_${data.cliente?.nombre?.replace(/\s+/g,'_')||'sin_nombre'}_${Date.now()}`;
+  data._draft_ts = ts;
+  data._draft_id = id;
+
+  // 1. Guardar en localStorage (completo, inmediato)
+  const drafts = getDraftsFromLS();
+  drafts.unshift({ id, ts, cliente: data.cliente?.nombre||'Sin nombre', fecha: data.fecha, json: data });
+  // Máximo 20 borradores locales
+  if (drafts.length > 20) drafts.splice(20);
+  saveDraftsToLS(drafts);
+
+  // 2. Enviar a Sheets también (con JSON completo en campo extra)
+  const payload = { ...data, _json_full: JSON.stringify(data) };
   try {
-    await fetch(url, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    await fetch(url, {method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     showToast('✓ Borrador guardado');
-  } catch(e) { showToast('Error al guardar'); }
+  } catch(e) {
+    showToast('✓ Guardado local (sin conexión)');
+  }
 }
 
 function showDraftModal() {
   const url = localStorage.getItem('acm_webhook');
   if (url) document.getElementById('draft-webhook-url').value = url;
+  renderDraftList();
   document.getElementById('draft-modal').classList.add('show');
 }
 function closeDraftModal() { document.getElementById('draft-modal').classList.remove('show'); }
+
+function renderDraftList() {
+  const listDiv = document.getElementById('draft-list');
+  const drafts = getDraftsFromLS();
+  if (!drafts.length) {
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">No hay borradores guardados en este dispositivo.<br><br>Si guardaste desde otro dispositivo, buscalos en Sheets abajo.</div>';
+    return;
+  }
+  listDiv.innerHTML = '';
+  drafts.forEach((d, i) => {
+    const div = document.createElement('div');
+    div.className = 'draft-item';
+    const dt = new Date(d.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    div.innerHTML = `
+      <button class="draft-item-load" onclick="loadDraftFromLS(${i})">Cargar</button>
+      <div class="draft-item-name">${d.cliente || 'Sin nombre'}</div>
+      <div class="draft-item-meta">${d.fecha||''} · Guardado: ${dt}</div>
+    `;
+    listDiv.appendChild(div);
+  });
+}
+
+function loadDraftFromLS(idx) {
+  const drafts = getDraftsFromLS();
+  const d = drafts[idx];
+  if (!d || !d.json) return;
+  populateForm(d.json);
+  closeDraftModal();
+  showToast('✓ Borrador cargado');
+}
 
 async function loadDraftsFromSheets() {
   const url = document.getElementById('draft-webhook-url').value.trim();
@@ -1203,58 +1260,127 @@ async function loadDraftsFromSheets() {
   localStorage.setItem('acm_webhook', url);
   document.getElementById('webhook-url').value = url;
   const listDiv = document.getElementById('draft-list');
-  listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px">Buscando borradores...</div>';
+  listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">Buscando en Sheets...</div>';
   try {
-    const fetchUrl = url.replace('/exec', '/exec') + '?action=getDrafts';
-    const res = await fetch(fetchUrl);
+    const res = await fetch(url);
     const json = await res.json();
     if (!json.drafts || !json.drafts.length) {
-      listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px">No hay borradores guardados.</div>';
+      listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">No hay borradores en Sheets.</div>';
       return;
     }
-    listDiv.innerHTML = '';
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:11px;margin-bottom:8px">BORRADORES EN SHEETS</div>';
     json.drafts.forEach((d, i) => {
       const div = document.createElement('div');
       div.className = 'draft-item';
       div.innerHTML = `
-        <button class="draft-item-load" onclick="loadDraft(${i})">Cargar</button>
+        <button class="draft-item-load" onclick="loadDraftFromSheets(${i})">Cargar</button>
         <div class="draft-item-name">${d.cliente || 'Sin nombre'}</div>
-        <div class="draft-item-meta">${d.fecha || ''} · ${d.ts ? new Date(d.ts).toLocaleString('es-AR') : ''}</div>
+        <div class="draft-item-meta">${d.fecha || ''} · ${d.ts ? new Date(d.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : ''}</div>
       `;
-      div._data = d;
       listDiv.appendChild(div);
     });
-    listDiv._drafts = json.drafts;
+    listDiv._sheets_drafts = json.drafts;
   } catch(e) {
-    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px">Error al buscar. Verificá la URL.</div>';
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">Error al conectar. Verificá la URL.</div>';
   }
 }
 
-function loadDraft(idx) {
+function loadDraftFromSheets(idx) {
   const listDiv = document.getElementById('draft-list');
-  const d = listDiv._drafts?.[idx];
+  const d = listDiv._sheets_drafts?.[idx];
   if (!d) return;
-  // Populate form fields
-  const s = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== null) el.value = val; };
-  s('fecha', d.fecha); s('cliente_nombre', d.cliente_nombre||d.cliente); s('cliente_cel', d.cliente_cel); s('cliente_mail', d.cliente_mail);
-  s('tipo_op', d.tipo_op); s('motivo', d.motivo); s('urgencia', d.urgencia); s('precio_esperado', d.precio_esperado);
-  s('prop_dir', d.prop_dir); s('prop_barrio_input', d.prop_barrio); s('prop_barrio', d.prop_barrio);
-  s('prop_tipo', d.prop_tipo); s('sup', d.sup); s('amb', d.amb); s('banos', d.banos);
-  s('antig', d.antig); s('piso', d.piso); s('orientacion', d.orientacion); s('cochera', d.cochera);
-  s('expensas', d.expensas); s('apto_credito', d.apto_credito); s('prop_notas', d.prop_notas);
-  s('ri_sup', d.ri_sup); s('ri_m2', d.ri_m2); s('ri_total', d.ri_total); s('ri_notas', d.ri_notas);
-  s('pub_m2_min', d.pub_m2_min); s('pub_m2_max', d.pub_m2_max);
-  s('pub_tot_min', d.pub_tot_min); s('pub_tot_max', d.pub_tot_max);
-  s('vend_m2_min', d.vend_m2_min); s('vend_m2_max', d.vend_m2_max);
-  s('acm_dias', d.acm_dias); s('acm_margen', d.acm_margen); s('acm_tendencia', d.acm_tendencia); s('acm_notas', d.acm_notas);
-  s('v_cierre_m2', d.v_cierre_m2); s('v_cierre_tot', d.v_cierre_tot);
-  s('v_lanch_m2', d.v_lanch_m2); s('v_lanch_tot', d.v_lanch_tot);
-  s('v_pub_m2', d.v_pub_m2); s('v_pub_tot', d.v_pub_tot);
-  s('precio_acordado', d.precio_acordado); s('compromisos', d.compromisos);
+  // Si tiene json_full, usarlo completo
+  if (d.json_full) {
+    try {
+      const full = JSON.parse(d.json_full);
+      populateForm(full);
+      closeDraftModal();
+      showToast('✓ Borrador cargado desde Sheets');
+      return;
+    } catch(e) {}
+  }
+  // Fallback: campos planos
+  populateForm(d);
+  closeDraftModal();
+  showToast('✓ Borrador cargado desde Sheets');
+}
+
+function populateForm(d) {
+  const s = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el || val === undefined || val === null || val === '') return;
+    el.value = val;
+  };
+  // S1
+  s('fecha', d.fecha); s('cliente_nombre', d.cliente?.nombre||d.cliente_nombre);
+  s('cliente_cel', d.cliente?.cel||d.cliente_cel); s('cliente_mail', d.cliente?.mail||d.cliente_mail);
+  // S2
+  const tipo = d.operacion?.tipo||d.tipo_op||'';
+  s('tipo_op', tipo); handleTipoOp();
+  s('motivo', d.operacion?.motivo||d.motivo); s('urgencia', d.operacion?.urgencia||d.urgencia);
+  s('precio_esperado', d.operacion?.precio_esperado||d.precio_esperado);
+  // S3
+  const p = d.propiedad||d;
+  s('prop_dir', p.direccion||d.prop_dir);
+  const barrio = p.barrio||d.prop_barrio||'';
+  if (barrio) { s('prop_barrio_input', barrio); s('prop_barrio', barrio); }
+  s('prop_tipo', p.tipo||d.prop_tipo); s('sup', p.sup||d.sup); s('amb', p.amb||d.amb);
+  s('banos', p.banos||d.banos); s('antig', p.antig||d.antig); s('piso', p.piso||d.piso);
+  s('orientacion', p.orientacion||d.orientacion); s('cochera', p.cochera||d.cochera);
+  s('expensas', p.expensas||d.expensas); s('apto_credito', p.apto_credito||d.apto_credito);
+  s('prop_notas', p.notas||d.prop_notas);
+  // S4 — ratings
+  if (d.secundarias?.length) {
+    d.secundarias.forEach((item, ai) => {
+      if (item.nivel) {
+        const li = ['Reg','Bueno','M.Bueno','Exc.'].indexOf(item.nivel);
+        if (li >= 0) selectRating(ai, li);
+      }
+    });
+  }
+  // S5 — objeciones
+  if (d.objeciones?.length) {
+    OBJECIONES.forEach((obj, i) => {
+      if (d.objeciones.includes(obj)) {
+        checked[i] = true;
+        const items = document.querySelectorAll('#objeciones-list .check-item');
+        if (items[i]) items[i].classList.add('checked');
+      }
+    });
+  }
+  s('objeciones_notas', d.objeciones_notas);
+  // S6 — comparables
+  if (d.testigos?.length) {
+    testigoCount = 0;
+    document.getElementById('testigos-body').innerHTML = '';
+    d.testigos.forEach(t => {
+      addTestigoRow();
+      s(`t_dir_${testigoCount}`, t.dir); s(`t_sup_${testigoCount}`, t.sup);
+      s(`t_m2_${testigoCount}`, t.m2); s(`t_tot_${testigoCount}`, t.tot);
+      s(`t_link_${testigoCount}`, t.link);
+    });
+  }
+  s('testigos_notas', d.testigos_notas);
+  // S7 — reporte
+  const r = d.reporte||d;
+  s('ri_sup', r.sup||d.ri_sup); s('ri_m2', r.m2||d.ri_m2);
+  s('ri_total', r.total||d.ri_total); s('ri_notas', r.notas||d.ri_notas);
+  // S8 — ACM
+  const acm = d.acm||d;
+  s('pub_m2_min', acm.pub_m2_min); s('pub_m2_max', acm.pub_m2_max);
+  s('pub_tot_min', acm.pub_tot_min); s('pub_tot_max', acm.pub_tot_max);
+  s('vend_m2_min', acm.vend_m2_min); s('vend_m2_max', acm.vend_m2_max);
+  s('acm_dias', acm.dias||d.acm_dias); s('acm_margen', acm.margen||d.acm_margen);
+  s('acm_tendencia', acm.tendencia||d.acm_tendencia); s('acm_notas', acm.notas||d.acm_notas);
+  // S9 — ventana
+  const v = d.ventana||d;
+  s('v_cierre_m2', v.cierre_m2||d.v_cierre_m2); s('v_cierre_tot', v.cierre_tot||d.v_cierre_tot);
+  s('v_lanch_m2', v.lanch_m2||d.v_lanch_m2); s('v_lanch_tot', v.lanch_tot||d.v_lanch_tot);
+  s('v_pub_m2', v.pub_m2||d.v_pub_m2); s('v_pub_tot', v.pub_tot||d.v_pub_tot);
+  s('precio_acordado', v.precio_acordado||d.precio_acordado); s('compromisos', v.compromisos||d.compromisos);
+  // Recalcular promedios
   ['pub_m2','pub_tot','vend_m2'].forEach(k => calcProm(k));
   updateProgress();
-  closeDraftModal();
-  showToast('✓ Borrador cargado');
 }
 
 // ── SHEETS ──
