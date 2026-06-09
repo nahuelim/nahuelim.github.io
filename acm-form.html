@@ -74,7 +74,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── TOPBAR ── */
 .topbar{
-  position:sticky;top:0;z-index:100;
+  position:fixed;top:0;left:0;right:0;z-index:100;
   background:var(--primary);
   border-bottom:2px solid var(--orange);
   padding:11px 16px;
@@ -98,11 +98,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
 /* ── PROGRESS ── */
-.progress-bar{height:2px;background:rgba(0,0,0,.06)}
+.progress-bar{height:2px;background:rgba(0,0,0,.06);position:fixed;top:57px;left:0;right:0;z-index:99}
 .progress-fill{height:100%;background:var(--orange);transition:width .4s ease}
 
 /* ── FORM ── */
-.form-body{padding:0 0 110px}
+.form-body{padding:57px 0 110px}
 
 /* ── SECTION ── */
 .section{border-bottom:1px solid var(--border);background:var(--white)}
@@ -301,7 +301,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="topbar-left">
       <div class="topbar-monogram">NL</div>
       <div>
-        <div class="topbar-brand">Nahuel Lim</div>
+        <div class="topbar-brand">Nahuel Lim <span style="color:rgba(255,255,255,.35);font-weight:400;margin:0 4px">|</span> <span style="color:var(--orange);font-weight:600">Century 21 Evolución</span></div>
         <div class="topbar-label">ACM · Prelisting</div>
       </div>
     </div>
@@ -618,7 +618,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-agent">
-        <div class="callout"><strong>Solo vos ves esto.</strong> No aparece en el PDF del cliente. Se guarda en tu fila de Sheets.</div>
         <div class="agent-badge">Preguntas clave — no olvidarse</div>
         <div class="checklist" id="preguntas-list"></div>
         <div class="divider" style="margin-top:8px"></div>
@@ -694,7 +693,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 <script>
 // ══════════════════════════════════════
-const PASSWORD = "1209"; // cambiá antes de subir
+const PASSWORD = "2025"; // cambiá antes de subir
 // ══════════════════════════════════════
 
 const BARRIOS_CABA = ["Agronomía","Almagro","Balvanera","Barracas","Belgrano","Boedo","Caballito","Chacarita","Coghlan","Colegiales","Constitución","Flores","Floresta","La Boca","La Paternal","Liniers","Mataderos","Monte Castro","Montserrat","Nueva Pompeya","Núñez","Palermo","Parque Avellaneda","Parque Chacabuco","Parque Chas","Parque Patricios","Puerto Madero","Recoleta","Retiro","Saavedra","San Cristóbal","San Nicolás","San Telmo","Vélez Sársfield","Versalles","Villa Crespo","Villa del Parque","Villa Devoto","Villa Gral. Mitre","Villa Lugano","Villa Luro","Villa Ortúzar","Villa Pueyrredón","Villa Real","Villa Riachuelo","Villa Santa Rita","Villa Soldati","Villa Urquiza"];
@@ -912,25 +911,29 @@ function generatePDF() {
   function checkY(n=10){if(y+n>272)newPage();}
 
   // Header
-  doc.setFillColor(PR,PG,PB); doc.rect(0,0,W,26,'F');
-  doc.setFillColor(OR,OG,OB); doc.rect(0,26,W,2,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
-  doc.text('NL',16,10);
-  doc.setFontSize(15); doc.text('ANÁLISIS COMPARATIVO DE MERCADO',26,11);
+  doc.setFillColor(PR,PG,PB); doc.rect(0,0,W,28,'F');
+  doc.setFillColor(OR,OG,OB); doc.rect(0,28,W,2,'F');
+  // NL monogram
+  doc.setFillColor(255,255,255); doc.circle(M+4,13,5,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(PR,PG,PB);
+  doc.text('NL',M+1.5,15.5);
+  // Nahuel Lim · Century 21 Evolución
+  doc.setFontSize(15); doc.setTextColor(255,255,255);
+  doc.text('ANÁLISIS COMPARATIVO DE MERCADO',M+12,12);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(160,185,210);
-  doc.text(`Nahuel Lim · Century 21 Evolución   ·   ${d.fecha}`,26,19);
-  y=34;
+  doc.text(`Nahuel Lim · Century 21 Evolución   ·   ${d.fecha}`,M+12,20);
+  y=38;
 
   function secTitle(txt){
-    checkY(12);
+    checkY(14);
     doc.setFillColor(PR,PG,PB); doc.rect(M,y,CW,7,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
-    doc.text(txt,M+3,y+5); y+=10;
+    doc.text(txt,M+3,y+5); y+=11;
   }
   function row(label,val){
     checkY(6); doc.setFont('helvetica','normal'); doc.setFontSize(8);
-    doc.setTextColor(130,120,110); doc.text(label,M,y);
-    doc.setTextColor(20,30,50); doc.text(val||'—',M+58,y); y+=6;
+    doc.setTextColor(130,120,110); doc.text(label,M+2,y);
+    doc.setTextColor(20,30,50); doc.text(val||'—',M+60,y); y+=6;
   }
   function twoCol(pairs){
     const half=Math.ceil(pairs.length/2);
@@ -938,7 +941,7 @@ function generatePDF() {
       checkY(6);
       const l=pairs[i],r=pairs[i+half];
       doc.setFont('helvetica','normal'); doc.setFontSize(8);
-      if(l){doc.setTextColor(130,120,110);doc.text(l[0],M,y);doc.setTextColor(20,30,50);doc.text(l[1]||'—',M+30,y);}
+      if(l){doc.setTextColor(130,120,110);doc.text(l[0],M+2,y);doc.setTextColor(20,30,50);doc.text(l[1]||'—',M+32,y);}
       if(r){doc.setTextColor(130,120,110);doc.text(r[0],M+CW/2+2,y);doc.setTextColor(20,30,50);doc.text(r[1]||'—',M+CW/2+32,y);}
       y+=6;
     }
@@ -1028,21 +1031,23 @@ function generatePDF() {
   }
   if(d.ventana.compromisos){checkY(14);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Compromisos: '+d.ventana.compromisos,CW);doc.text(lines,M,y);y+=lines.length*5+4;}
 
-  // FOOTER con disclaimer legal y WhatsApp
+  // FOOTER — pegado al fondo de cada página
   const total=doc.getNumberOfPages();
   const disclaimer='En cumplimiento de las normas legales aplicables, informamos que los agentes NO ejercen el corretaje inmobiliario. Todas las operaciones inmobiliarias son concluidas por los corredores matriculados responsables en cada oficina. Karina Carrasquero - CUCICBA 9135';
   for(let i=1;i<=total;i++){
     doc.setPage(i);
-    doc.setFillColor(PR,PG,PB);doc.rect(0,277,W,20,'F');
-    doc.setFillColor(OR,OG,OB);doc.rect(0,277,3,20,'F');
-    doc.setFont('helvetica','normal');doc.setFontSize(6);doc.setTextColor(160,185,210);
-    const dlines=doc.splitTextToSize(disclaimer,CW-40);
-    doc.text(dlines,M+2,282);
-    // WhatsApp clickable
-    doc.setTextColor(OR,OG,OB);doc.setFontSize(7);doc.setFont('helvetica','bold');
-    doc.textWithLink('WhatsApp Nahuel Lim',W-M,290,{url:'https://wa.me/message/UOADLAGBAZ6SO1',align:'right'});
-    doc.setTextColor(160,185,210);doc.setFont('helvetica','normal');doc.setFontSize(6);
-    doc.text(`Pág. ${i} / ${total}`,W/2,292,{align:'center'});
+    doc.setFillColor(PR,PG,PB); doc.rect(0,272,W,25,'F');
+    doc.setFillColor(OR,OG,OB); doc.rect(0,272,3,25,'F');
+    // Disclaimer — dos líneas
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(160,185,210);
+    const dlines=doc.splitTextToSize(disclaimer, CW-30);
+    doc.text(dlines, M+4, 278);
+    // WhatsApp
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(OR,OG,OB);
+    doc.textWithLink('WhatsApp Nahuel Lim', W-M, 288, {url:'https://wa.me/message/UOADLAGBAZ6SO1', align:'right'});
+    // Página
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(160,185,210);
+    doc.text(`Pág. ${i} / ${total}`, W/2, 293, {align:'center'});
   }
 
   doc.save(`ACM_${(d.cliente.nombre||'cliente').replace(/\s+/g,'_')}_${d.fecha||'fecha'}.pdf`);
