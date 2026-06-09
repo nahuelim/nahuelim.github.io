@@ -74,7 +74,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── TOPBAR ── */
 .topbar{
-  position:fixed;top:0;left:0;right:0;z-index:100;
+  position:-webkit-sticky;
+  position:sticky;top:0;left:0;right:0;z-index:100;
   background:var(--primary);
   border-bottom:2px solid var(--orange);
   padding:11px 16px;
@@ -98,11 +99,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
 /* ── PROGRESS ── */
-.progress-bar{height:2px;background:rgba(0,0,0,.06);position:fixed;top:57px;left:0;right:0;z-index:99}
+.progress-bar{height:2px;background:rgba(0,0,0,.06);position:-webkit-sticky;position:sticky;top:57px;z-index:99}
 .progress-fill{height:100%;background:var(--orange);transition:width .4s ease}
 
 /* ── FORM ── */
-.form-body{padding:57px 0 110px}
+.form-body{padding:0 0 110px}
 
 /* ── SECTION ── */
 .section{border-bottom:1px solid var(--border);background:var(--white)}
@@ -913,15 +914,15 @@ function generatePDF() {
   // Header
   doc.setFillColor(PR,PG,PB); doc.rect(0,0,W,28,'F');
   doc.setFillColor(OR,OG,OB); doc.rect(0,28,W,2,'F');
-  // NL monogram
-  doc.setFillColor(255,255,255); doc.circle(M+4,13,5,'F');
+  // NL monogram — alineado verticalmente con el texto
+  doc.setFillColor(255,255,255); doc.circle(M+5,14,5,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(PR,PG,PB);
-  doc.text('NL',M+1.5,15.5);
-  // Nahuel Lim · Century 21 Evolución
+  doc.text('NL',M+2.5,16);
+  // Título y subtítulo alineados con el círculo
   doc.setFontSize(15); doc.setTextColor(255,255,255);
-  doc.text('ANÁLISIS COMPARATIVO DE MERCADO',M+12,12);
+  doc.text('ANÁLISIS COMPARATIVO DE MERCADO',M+14,12);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(160,185,210);
-  doc.text(`Nahuel Lim · Century 21 Evolución   ·   ${d.fecha}`,M+12,20);
+  doc.text(`Nahuel Lim · Century 21 Evolución   ·   ${d.fecha}`,M+14,20);
   y=38;
 
   function secTitle(txt){
@@ -1036,18 +1037,20 @@ function generatePDF() {
   const disclaimer='En cumplimiento de las normas legales aplicables, informamos que los agentes NO ejercen el corretaje inmobiliario. Todas las operaciones inmobiliarias son concluidas por los corredores matriculados responsables en cada oficina. Karina Carrasquero - CUCICBA 9135';
   for(let i=1;i<=total;i++){
     doc.setPage(i);
-    doc.setFillColor(PR,PG,PB); doc.rect(0,272,W,25,'F');
-    doc.setFillColor(OR,OG,OB); doc.rect(0,272,3,25,'F');
-    // Disclaimer — dos líneas
+    // Fondo azul
+    doc.setFillColor(PR,PG,PB); doc.rect(0,273,W,24,'F');
+    // Borde naranja arriba del footer
+    doc.setFillColor(OR,OG,OB); doc.rect(0,273,W,2,'F');
+    // Disclaimer
     doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(160,185,210);
-    const dlines=doc.splitTextToSize(disclaimer, CW-30);
-    doc.text(dlines, M+4, 278);
-    // WhatsApp
+    const dlines=doc.splitTextToSize(disclaimer, CW);
+    doc.text(dlines, M, 279);
+    // WhatsApp a la izquierda, debajo del disclaimer
     doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(OR,OG,OB);
-    doc.textWithLink('WhatsApp Nahuel Lim', W-M, 288, {url:'https://wa.me/message/UOADLAGBAZ6SO1', align:'right'});
-    // Página
+    doc.textWithLink('WhatsApp Nahuel Lim', M, 289, {url:'https://wa.me/message/UOADLAGBAZ6SO1'});
+    // Página centrado
     doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(160,185,210);
-    doc.text(`Pág. ${i} / ${total}`, W/2, 293, {align:'center'});
+    doc.text(`Pág. ${i} / ${total}`, W/2, 294, {align:'center'});
   }
 
   doc.save(`ACM_${(d.cliente.nombre||'cliente').replace(/\s+/g,'_')}_${d.fecha||'fecha'}.pdf`);
