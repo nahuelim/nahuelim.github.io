@@ -29,7 +29,7 @@
   --agent-muted: #7a9ab8;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
 
 /* ── LOGIN ── */
 #login-screen{
@@ -70,12 +70,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .login-hint{font-size:11px;color:var(--muted);text-align:center}
 
 /* ── APP ── */
-#app{display:none}
+#app{display:none;height:100vh;display:none;flex-direction:column}
 
 /* ── TOPBAR ── */
 .topbar{
-  position:-webkit-sticky;
-  position:sticky;top:0;left:0;right:0;z-index:100;
+  position:fixed;top:0;left:0;right:0;z-index:100;
   background:var(--primary);
   border-bottom:2px solid var(--orange);
   padding:11px 16px;
@@ -99,11 +98,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
 /* ── PROGRESS ── */
-.progress-bar{height:2px;background:rgba(0,0,0,.06);position:-webkit-sticky;position:sticky;top:57px;z-index:99}
+.progress-bar{height:2px;background:rgba(0,0,0,.06);position:fixed;top:57px;left:0;right:0;z-index:99}
 .progress-fill{height:100%;background:var(--orange);transition:width .4s ease}
 
 /* ── FORM ── */
-.form-body{padding:0 0 110px}
+.form-body{padding:59px 0 110px;min-height:100vh}
 
 /* ── SECTION ── */
 .section{border-bottom:1px solid var(--border);background:var(--white)}
@@ -405,7 +404,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-3">
-        <div class="callout">Cada característica impacta directamente en el valor y en el tiempo de venta.</div>
         <div class="field">
           <label>Dirección<span class="req">*</span></label>
           <input type="text" id="prop_dir" placeholder="Ej: Av. Santa Fe 3200, 4°B">
@@ -475,7 +473,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-4">
-        <div class="callout">Estos atributos determinan cómo se posiciona la propiedad frente a la competencia directa.</div>
         <table class="rating-table">
           <thead><tr><th>Atributo</th><th>Reg</th><th>Bueno</th><th>M.Bueno</th><th>Exc.</th></tr></thead>
           <tbody id="rating-body"></tbody>
@@ -491,8 +488,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-5">
-        <div class="callout">Son los factores que los compradores van a objetar. Identificarlos hoy permite fijar un precio que anticipe esas conversaciones.</div>
-        <div class="callout" style="background:rgba(232,99,10,.08);border-color:var(--orange);margin-top:0" id="tip-objeciones" style="display:none"><strong>Tip:</strong> Nombrá cada objeción antes que el cliente. "Sé que X va a ser una objeción frecuente — te quiero ser honesto sobre cuánto impacta en el valor."</div>
+        <div class="callout" id="tip-objeciones" style="display:none"><strong>Tip:</strong> Nombrá cada objeción antes que el cliente. "Sé que X va a ser una objeción frecuente — te quiero ser honesto sobre cuánto impacta en el valor."</div>
         <div class="checklist" id="objeciones-list"></div>
         <div class="field" style="margin-top:4px">
           <label>Notas adicionales</label>
@@ -501,15 +497,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
 
-    <!-- S6: PROPIEDADES TESTIGO -->
+    <!-- S6: PROPIEDADES COMPARABLES -->
     <div class="section" id="sec-6">
       <div class="section-header" onclick="toggleSection('sec-6')">
         <div class="section-num">6</div>
-        <div class="section-title">Propiedades Testigo</div>
+        <div class="section-title">Propiedades Comparables</div>
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-6">
-        <div class="callout">Los comparables son el único dato objetivo que tiene el mercado para validar un precio.</div>
         <table class="testigos-table" id="testigos-table">
           <thead>
             <tr>
@@ -538,7 +533,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-7">
-        <div class="callout">El precio lo fija el mercado — no el propietario ni el asesor. Lo determina lo que compradores reales pagaron por propiedades similares en los últimos meses. Estos son los números hoy, una foto del mercado en este momento.</div>
         <div class="sublabel">Publicados — Rango m² (USD)</div>
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="pub_m2_min" placeholder="2.400" oninput="calcProm('pub_m2')"></div>
@@ -580,7 +574,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-8">
-        <div class="callout">Publicar dentro de la ventana maximiza las chances de venta. Salir por encima quema exposición sin generar ofertas.</div>
         <table class="ventana-table">
           <thead><tr><th>Escenario</th><th>m² USD</th><th>Total USD</th></tr></thead>
           <tbody>
@@ -976,7 +969,7 @@ function generatePDF() {
 
   // TESTIGOS
   if(d.testigos.length){
-    secTitle('5. PROPIEDADES TESTIGO');
+    secTitle('5. PROPIEDADES COMPARABLES');
     checkY(10);
     doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(PR,PG,PB);
