@@ -85,7 +85,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .topbar-monogram{
   width:32px;height:32px;border-radius:50%;background:#fff;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Inter',sans-serif;font-size:12px;font-weight:700;color:var(--primary);letter-spacing:.5px;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--primary);letter-spacing:0;
 }
 .topbar-brand{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.2px}
 .topbar-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:1px}
@@ -405,6 +405,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-3">
+        <div class="callout">Cada característica impacta directamente en el valor y en el tiempo de venta.</div>
         <div class="field">
           <label>Dirección<span class="req">*</span></label>
           <input type="text" id="prop_dir" placeholder="Ej: Av. Santa Fe 3200, 4°B">
@@ -474,6 +475,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-4">
+        <div class="callout">Estos atributos determinan cómo se posiciona la propiedad frente a la competencia directa.</div>
         <table class="rating-table">
           <thead><tr><th>Atributo</th><th>Reg</th><th>Bueno</th><th>M.Bueno</th><th>Exc.</th></tr></thead>
           <tbody id="rating-body"></tbody>
@@ -489,7 +491,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-5">
-        <div class="callout"><strong>Tip:</strong> Nombrá cada objeción antes que el cliente. "Sé que X va a ser una objeción frecuente — te quiero ser honesto sobre cuánto impacta en el valor."</div>
+        <div class="callout">Son los factores que los compradores van a objetar. Identificarlos hoy permite fijar un precio que anticipe esas conversaciones.</div>
+        <div class="callout" style="background:rgba(232,99,10,.08);border-color:var(--orange);margin-top:0" id="tip-objeciones" style="display:none"><strong>Tip:</strong> Nombrá cada objeción antes que el cliente. "Sé que X va a ser una objeción frecuente — te quiero ser honesto sobre cuánto impacta en el valor."</div>
         <div class="checklist" id="objeciones-list"></div>
         <div class="field" style="margin-top:4px">
           <label>Notas adicionales</label>
@@ -506,7 +509,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-6">
-        <div class="callout"><strong>Comparables usados para el ACM.</strong> Agregá las propiedades de referencia con su link de ZonaProp o MercadoLibre.</div>
+        <div class="callout">Los comparables son el único dato objetivo que tiene el mercado para validar un precio.</div>
         <table class="testigos-table" id="testigos-table">
           <thead>
             <tr>
@@ -535,6 +538,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-7">
+        <div class="callout">El precio lo fija el mercado — no el propietario ni el asesor. Lo determina lo que compradores reales pagaron por propiedades similares en los últimos meses. Estos son los números hoy, una foto del mercado en este momento.</div>
         <div class="sublabel">Publicados — Rango m² (USD)</div>
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="pub_m2_min" placeholder="2.400" oninput="calcProm('pub_m2')"></div>
@@ -576,13 +580,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-8">
+        <div class="callout">Publicar dentro de la ventana maximiza las chances de venta. Salir por encima quema exposición sin generar ofertas.</div>
         <table class="ventana-table">
           <thead><tr><th>Escenario</th><th>m² USD</th><th>Total USD</th></tr></thead>
           <tbody>
             <tr>
-              <td class="label" style="color:var(--muted)">Publicado promedio (techo)</td>
-              <td><input type="text" id="v_pub_m2" placeholder="2.800"></td>
-              <td><input type="text" id="v_pub_tot" placeholder="210.000"></td>
+              <td class="label" style="color:var(--primary);font-weight:700">Valor Cierre (piso)</td>
+              <td><input type="text" id="v_cierre_m2" placeholder="2.350"></td>
+              <td><input type="text" id="v_cierre_tot" placeholder="176.000"></td>
             </tr>
             <tr>
               <td class="label">Lanzamiento Competitivo</td>
@@ -590,9 +595,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
               <td><input type="text" id="v_lanch_tot" placeholder="195.000"></td>
             </tr>
             <tr>
-              <td class="label" style="color:var(--primary);font-weight:700">Valor Cierre (piso)</td>
-              <td><input type="text" id="v_cierre_m2" placeholder="2.350"></td>
-              <td><input type="text" id="v_cierre_tot" placeholder="176.000"></td>
+              <td class="label" style="color:var(--muted)">Publicado promedio (techo)</td>
+              <td><input type="text" id="v_pub_m2" placeholder="2.800"></td>
+              <td><input type="text" id="v_pub_tot" placeholder="210.000"></td>
             </tr>
           </tbody>
         </table>
@@ -757,6 +762,7 @@ function toggleAgentMode() {
   btn.classList.toggle('active', agentMode);
   btn.innerHTML = `<div class="agent-dot"></div>${agentMode ? 'Agente ON' : 'Modo Agente'}`;
   document.getElementById('sec-agent').style.display = agentMode ? 'block' : 'none';
+  document.getElementById('tip-objeciones').style.display = agentMode ? 'block' : 'none';
 }
 
 // ── TIPO OP ──
@@ -914,10 +920,10 @@ function generatePDF() {
   // Header
   doc.setFillColor(PR,PG,PB); doc.rect(0,0,W,28,'F');
   doc.setFillColor(OR,OG,OB); doc.rect(0,28,W,2,'F');
-  // NL monogram — alineado verticalmente con el texto
+  // NL monogram — círculo blanco con NL centrado
   doc.setFillColor(255,255,255); doc.circle(M+5,14,5,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(PR,PG,PB);
-  doc.text('NL',M+2.5,16);
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(PR,PG,PB);
+  doc.text('NL',M+5,15.5,{align:'center'});
   // Título y subtítulo alineados con el círculo
   doc.setFontSize(15); doc.setTextColor(255,255,255);
   doc.text('ANÁLISIS COMPARATIVO DE MERCADO',M+14,12);
@@ -952,24 +958,17 @@ function generatePDF() {
   twoCol([['Nombre:',d.cliente.nombre],['Celular:',d.cliente.cel],['Mail:',d.cliente.mail]]);
   y+=2;
 
-  secTitle('2. OPERACIÓN');
-  row('Tipo:',d.operacion.tipo);
-  row('Urgencia:',d.operacion.urgencia);
-  if(d.operacion.precio_esperado) row('Precio en mente:',`USD ${d.operacion.precio_esperado}`);
-  if(d.operacion.motivo){checkY(14);doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.operacion.motivo,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
-  y+=2;
-
-  secTitle('3. PROPIEDAD');
+  secTitle('2. PROPIEDAD');
   row('Dirección:',d.propiedad.direccion);
   twoCol([['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Sup. Hom.:',d.propiedad.sup?`${d.propiedad.sup} m²`:''],['Ambientes:',d.propiedad.amb],['Baños:',d.propiedad.banos],['Antigüedad:',d.propiedad.antig?`${d.propiedad.antig} años`:''],['Piso:',d.propiedad.piso],['Orientación:',d.propiedad.orientacion],['Cochera:',d.propiedad.cochera],['Apto crédito:',d.propiedad.apto_credito],['Expensas:',d.propiedad.expensas?`ARS ${d.propiedad.expensas}`:'']]);
   if(d.propiedad.notas){checkY(12);doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Notas: '+d.propiedad.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
   y+=2;
 
   const sf=d.secundarias.filter(s=>s.nivel);
-  if(sf.length){secTitle('4. CARACTERÍSTICAS');twoCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
+  if(sf.length){secTitle('3. CARACTERÍSTICAS');twoCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
 
   if(d.objeciones.length){
-    secTitle('5. OBJECIONES DETECTADAS');
+    secTitle('4. OBJECIONES DETECTADAS');
     d.objeciones.forEach(ob=>{checkY(6);doc.setFillColor(192,57,43);doc.circle(M+2,y-1.5,1.5,'F');doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(20,30,50);doc.text(ob,M+6,y);y+=6;});
     if(d.objeciones_notas){checkY(8);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);doc.text(doc.splitTextToSize(d.objeciones_notas,CW),M,y);y+=8;}
     y+=2;
@@ -977,7 +976,7 @@ function generatePDF() {
 
   // TESTIGOS
   if(d.testigos.length){
-    secTitle('6. PROPIEDADES TESTIGO');
+    secTitle('5. PROPIEDADES TESTIGO');
     checkY(10);
     doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(PR,PG,PB);
@@ -1007,12 +1006,12 @@ function generatePDF() {
     y+=4;
   }
 
-  secTitle('7. ANÁLISIS DE MERCADO');
+  secTitle('6. ANÁLISIS DE MERCADO');
   twoCol([['Publicado m² rango:',`USD ${d.acm.pub_m2_min||'—'} – ${d.acm.pub_m2_max||'—'}`],['Publicado m² prom.:',`USD ${d.acm.pub_m2_prom||'—'}`],['Publicado total prom.:',`USD ${d.acm.pub_tot_prom||'—'}`],['Vendido m² rango:',`USD ${d.acm.vend_m2_min||'—'} – ${d.acm.vend_m2_max||'—'}`],['Vendido m² prom.:',`USD ${d.acm.vend_m2_prom||'—'}`],['Días promedio:',d.acm.dias?`${d.acm.dias} días`:''],['Margen neg.:',d.acm.margen?`${d.acm.margen}%`:''],['Tendencia:',d.acm.tendencia]]);
   if(d.acm.notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.acm.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
   y+=2;
 
-  secTitle('8. VENTANA DE VENTA');
+  secTitle('7. VENTANA DE VENTA');
   checkY(36);
   doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(PR,PG,PB);
