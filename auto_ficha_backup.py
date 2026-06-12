@@ -879,14 +879,6 @@ def extraer_zonaprop(url: str) -> dict:
     else:
         datos['tags'] = ''
 
-    # Inmobiliaria/publisher
-    pub_m = re.search(r"'publisher'\s*:\s*\{[^}]*'name'\s*:\s*'([^']+)'", raw)
-    if not pub_m:
-        pub_m = re.search(r'"realEstateAgency"\s*:\s*\{[^}]*"name"\s*:\s*"([^"]+)"', raw)
-    if not pub_m:
-        pub_m = re.search(r'"advertiser"\s*:\s*\{[^}]*"name"\s*:\s*"([^"]+)"', raw)
-    datos['inmobiliaria'] = pub_m.group(1).strip() if pub_m else ''
-
     datos['badges'] = detectar_badges(datos)
     return datos
 def extraer_ml(url: str) -> dict:
@@ -984,13 +976,6 @@ def extraer_ml(url: str) -> dict:
             fotos.append(url_big)
     datos['fotos'] = fotos
 
-    # Inmobiliaria — seller_contact en la respuesta de la API
-    seller = item.get('seller_contact', {}) or {}
-    datos['inmobiliaria'] = seller.get('contact', '') or seller.get('other_info', '') or ''
-    if not datos['inmobiliaria']:
-        # Fallback: seller address o company_name si existe
-        datos['inmobiliaria'] = item.get('official_store_name', '') or ''
-
     datos['badges'] = detectar_badges(datos)
     return datos
 
@@ -1070,9 +1055,6 @@ def extraer_c21(html_path_or_url: str) -> dict:
         if u not in fotos:
             fotos.append(u)
     datos['fotos'] = fotos
-
-    # Inmobiliaria — C21 SPA no expone este dato en meta OG, se deja vacío
-    datos['inmobiliaria'] = ''
 
     datos['badges'] = detectar_badges(datos)
     return datos
@@ -1413,7 +1395,6 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
             '',                      # ESTADO
             '',                      # COMENTARIOS
             ficha_id,                # ID
-            d.get('inmobiliaria', ''), # INMOBILIARIA
         ]
 
         print(f'[Sheets] Fila a escribir: {fila}', flush=True)
