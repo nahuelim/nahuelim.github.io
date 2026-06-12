@@ -1,0 +1,49 @@
+Descargando HTML con Playwright...
+
+avisoInfo tiene 19387 caracteres
+
+======================================================================
+  similarLinkMostVisit: '/ph-venta-palermo-soho-orden-visitas-descendente.html'
+  url: '/propiedades/clasificado/veclphin-ph-3-ambientes-con-2-patios-83-m-sup2--totale...
+  pixelPlus: false
+  idAviso: '59188957'
+  requestVisit5A: false
+  cronut5A: <objeto>
+  enableBannerFicha: false
+  postingCode: "APH8073967"
+  postingType: 'PROPERTY'
+  status: 'ONLINE'
+  reserved: 'false'
+  pricesData: <lista>
+  price: 'USD 198.000'
+  expenses: '0'
+  generalFeatures: <objeto>
+  location: <objeto>
+  description: "PH 3 Ambientes  PB con 2 Patios | 83 m² Totales | Suite | Palermo<br />Ubicado ...
+  address: <objeto>
+  mapZoom: 16
+  visibility: 'EXACT'
+  propertyTypeId: '2001'
+  publisher: <objeto>
+    publisherId: '30375887'
+    name: 'A.BIANCOTTO BROKERS'
+    url: '/inmobiliarias/a.biancotto-brokers_30375887-inmuebles.html'
+    urlLogo: 'https://imgar.zonapropcdn.com/empresas/1/00/30/37/58/87/130x70/logo_a.biancotto...
+    premium: false
+    id: '30375887'
+    license: ''
+    partialPhone: '+54 1'
+    publisherTypeId: 2
+  whatsApp: '54 1124649500'
+  premier: false
+  partialPhone: '+54 1'
+  duplicated: false
+  pictures: <lista>
+  mainFeatures: <objeto>
+  realEstateType: <objeto>
+  publicationAreaId: "1"
+  publicationDateFormatted: '2026-05-22T15:16:50Z'
+  isUnit: false
+  featuresWithIcon: <lista>
+  generatedTitle: 'PH · 54m² · 3 ambientes'
+  postingTitle: "PH 3 Ambientes con 2 Patios | 83 m&sup2; Totales | Suite | Palermo"

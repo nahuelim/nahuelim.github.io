@@ -887,6 +887,22 @@ def extraer_zonaprop(url: str) -> dict:
         pub_m = re.search(r'"advertiser"\s*:\s*\{[^}]*"name"\s*:\s*"([^"]+)"', raw)
     datos['inmobiliaria'] = pub_m.group(1).strip() if pub_m else ''
 
+    # WhatsApp / teléfono — fallback chain
+    wa_m = re.search(r"'whatsApp'\s*:\s*'([^']+)'", raw)
+    if wa_m:
+        datos['whatsapp_publicador'] = wa_m.group(1).strip()
+    else:
+        ph_m = re.search(r"'phone'\s*:\s*'([^']+)'", raw)
+        if ph_m:
+            datos['whatsapp_publicador'] = ph_m.group(1).strip()
+        else:
+            pp_m = re.search(r"'partialPhone'\s*:\s*'([^']+)'", raw)
+            datos['whatsapp_publicador'] = pp_m.group(1).strip() if pp_m else ''
+
+    # Fecha real de publicacion
+    fp_m = re.search(r"'publicationDateFormatted'\s*:\s*'([^']+)'", raw)
+    datos['fecha_publicacion'] = fp_m.group(1).strip() if fp_m else ''
+
     datos['badges'] = detectar_badges(datos)
     return datos
 def extraer_ml(url: str) -> dict:
@@ -991,6 +1007,10 @@ def extraer_ml(url: str) -> dict:
         # Fallback: seller address o company_name si existe
         datos['inmobiliaria'] = item.get('official_store_name', '') or ''
 
+    # WhatsApp/telefono y fecha publicacion — no disponibles via API publica de ML
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
+
     datos['badges'] = detectar_badges(datos)
     return datos
 
@@ -1073,6 +1093,8 @@ def extraer_c21(html_path_or_url: str) -> dict:
 
     # Inmobiliaria — C21 SPA no expone este dato en meta OG, se deja vacío
     datos['inmobiliaria'] = ''
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
 
     datos['badges'] = detectar_badges(datos)
     return datos
@@ -1413,7 +1435,9 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
             '',                      # ESTADO
             '',                      # COMENTARIOS
             ficha_id,                # ID
-            d.get('inmobiliaria', ''), # INMOBILIARIA
+            d.get('inmobiliaria', ''),         # INMOBILIARIA
+            d.get('whatsapp_publicador', ''),   # WHATSAPP/TEL PUBLICADOR
+            d.get('fecha_publicacion', ''),     # FECHA PUBLICACION REAL
         ]
 
         print(f'[Sheets] Fila a escribir: {fila}', flush=True)
