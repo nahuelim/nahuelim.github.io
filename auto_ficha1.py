@@ -2311,17 +2311,6 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
           <div class="fi-lbl">{LABELS[key]}</div>
         </div>\n'''
 
-    nota = d.get("nahue_nota", "").strip()
-    if nota:
-        nahue_note_html = f"""
-          <div class="section-title">Nota de Nahuel</div>
-          <div class="caracteristicas-box" style="margin-bottom:24px; padding:16px; background:#f9f9f9; border-left:4px solid #000; font-style:italic;">
-          <div style="white-space:pre-wrap; line-height:1.6; color:#333;">{nota}</div>
-        </div>
-        """
-    else:
-        nahue_note_html = ''
-
     if descripcion:
         parrafos = [p.strip() for p in descripcion.split('\n\n') if p.strip()]
         if not parrafos:
@@ -2339,7 +2328,6 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
         expensas_html=expensas_html,
         badges_html=badges_html,
         caract_html=caract_html,
-        nahue_note_html=nahue_note_html,
         desc_html=desc_html,
         foto0=foto0,
         mg_cells=mg_cells,

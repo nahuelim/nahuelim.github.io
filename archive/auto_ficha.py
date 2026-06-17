@@ -426,10 +426,6 @@ HTML = r"""<!DOCTYPE html>
         <label>Descripción</label>
         <textarea id="f-descripcion" placeholder="Descripción del inmueble..."></textarea>
       </div>
-      <div class="full">
-        <label>📝 Nota del asesor <span style="font-weight:400;color:#9ca3af;">(opcional — aparece en la ficha si tiene texto)</span></label>
-        <textarea id="f-nahue-nota" style="min-height:70px;" placeholder="Ej: Esta unidad tiene expensas muy bajas para la zona. Recomiendo visitarla antes de descartarla por el precio."></textarea>
-      </div>
     </div>
 
     <!-- Fotos -->
@@ -631,7 +627,6 @@ async function generarFicha() {
       document.getElementById('f-badge6').value,
     ].filter(b => b.trim()),
     descripcion: document.getElementById('f-descripcion').value,
-    nahue_nota: document.getElementById('f-nahue-nota').value.trim(),
     fotos: fotos,
   };
 
@@ -698,7 +693,7 @@ function resetTodo() {
 
   // Limpiar todos los campos
   ['f-direccion','f-barrio','f-precio','f-expensas',
-   'f-badge1','f-badge2','f-badge3','f-badge4','f-badge5','f-badge6','f-descripcion','f-nahue-nota',
+   'f-badge1','f-badge2','f-badge3','f-badge4','f-badge5','f-badge6','f-descripcion',
    'f-fotos','f-fotos-manual'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -2311,17 +2306,6 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
           <div class="fi-lbl">{LABELS[key]}</div>
         </div>\n'''
 
-    nota = d.get("nahue_nota", "").strip()
-    if nota:
-        nahue_note_html = f"""
-          <div class="section-title">Nota de Nahuel</div>
-          <div class="caracteristicas-box" style="margin-bottom:24px; padding:16px; background:#f9f9f9; border-left:4px solid #000; font-style:italic;">
-          <div style="white-space:pre-wrap; line-height:1.6; color:#333;">{nota}</div>
-        </div>
-        """
-    else:
-        nahue_note_html = ''
-
     if descripcion:
         parrafos = [p.strip() for p in descripcion.split('\n\n') if p.strip()]
         if not parrafos:
@@ -2339,7 +2323,6 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
         expensas_html=expensas_html,
         badges_html=badges_html,
         caract_html=caract_html,
-        nahue_note_html=nahue_note_html,
         desc_html=desc_html,
         foto0=foto0,
         mg_cells=mg_cells,

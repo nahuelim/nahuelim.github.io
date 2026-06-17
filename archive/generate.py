@@ -113,9 +113,6 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 .desc p{{margin-bottom:10px}}
 .desc ul{{margin:6px 0 10px 18px;display:flex;flex-direction:column;gap:6px}}
 .desc-note{{font-size:11px;color:#9ca3af;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);line-height:1.65}}
-.nahue-note{{border-left:3px solid var(--orange);padding:12px 14px;background:var(--orange-lt);border-radius:0 6px 6px 0;margin-bottom:18px}}
-.nahue-note-label{{font-size:10px;font-weight:700;color:var(--orange-dk);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}}
-.nahue-note-text{{font-size:13px;color:#374151;line-height:1.6;font-style:italic}}
 .scard{{background:var(--primary);border-radius:var(--r);padding:26px;box-shadow:0 4px 20px rgba(0,49,83,.3)}}
 .agent-photo{{width:74px;height:74px;border-radius:50%;border:2.5px solid var(--orange);display:block;margin:0 auto 14px;object-fit:cover}}
 .scard h3{{color:#fff;font-size:17px;font-weight:700;text-align:center}}
@@ -231,7 +228,7 @@ footer a{{color:var(--orange);text-decoration:none}}
     </div></div>
 
     <div class="card card-desc"><div class="card-body">
-{nahue_note_html}      <div class="sec-title">Descripción</div>
+      <div class="sec-title">Descripción</div>
       <div class="desc">
 {desc_html}
         <p class="desc-note"><strong>Aviso:</strong> La siguiente información se proporciona con fines orientativos para personas en búsqueda de inmuebles, y pueden provenir de terceros. Se recomienda confirmar todos los detalles con la inmobiliaria responsable de la operación.<br>La disponibilidad de la unidad está sujeta a cambios sin previo aviso, al igual que su precio. Las superficies, medidas, expensas y servicios mencionados son aproximados y pueden sufrir modificaciones.<br>Las fotografías y videos tienen carácter ilustrativo y no contractual.</p>
@@ -525,17 +522,6 @@ def main():
     else:
         desc_html = "        <p>Consultá más información sobre esta propiedad.</p>"
 
-    # Nota personal de Nahuel (opcional)
-    nahue_nota = d.get('nahue_nota', '').strip()
-    if nahue_nota:
-        nahue_note_html = f"""      <div class="nahue-note">
-        <div class="nahue-note-label">📝 Nota del asesor</div>
-        <div class="nahue-note-text">{nahue_nota}</div>
-      </div>
-"""
-    else:
-        nahue_note_html = ''
-
     # ── Datos base ──
     direccion = datos.get("direccion", "").strip()
     barrio = datos.get("barrio", "").strip()
@@ -562,7 +548,6 @@ def main():
         expensas_html=expensas_html,
         badges_html=badges_html,
         caract_html=caract_html,
-        nahue_note_html=nahue_note_html,
         desc_html=desc_html,
         foto0=foto0,
         mg_cells=mg_cells,
