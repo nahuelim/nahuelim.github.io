@@ -421,6 +421,12 @@ HTML = r"""<!DOCTYPE html>
       </div>
 
       <div class="full">
+        <label>Video (opcional)</label>
+        <input type="url" id="f-video" placeholder="https://youtube.com/...  (o Instagram, Drive, etc.)">
+        <small style="display:block;margin-top:4px;color:#888;font-size:12px">YouTube/Vimeo se ven embebidos; cualquier otra URL sale como botón “Ver video”.</small>
+      </div>
+
+      <div class="full">
         <label>Descripción</label>
         <textarea id="f-descripcion" placeholder="Descripción del inmueble..."></textarea>
       </div>
@@ -625,6 +631,7 @@ async function generarFicha() {
       document.getElementById('f-badge6').value,
     ].filter(b => b.trim()),
     descripcion: document.getElementById('f-descripcion').value,
+    video: document.getElementById('f-video').value,
     fotos: fotos,
   };
 
@@ -691,7 +698,7 @@ function resetTodo() {
 
   // Limpiar todos los campos
   ['f-direccion','f-barrio','f-precio','f-expensas',
-   'f-badge1','f-badge2','f-badge3','f-badge4','f-badge5','f-badge6','f-descripcion',
+   'f-badge1','f-badge2','f-badge3','f-badge4','f-badge5','f-badge6','f-descripcion','f-video',
    'f-fotos','f-fotos-manual'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -1235,6 +1242,7 @@ def generar_html(d: dict, fotos: list) -> str:
         expensas_html=expensas_html,
         badges_html=badges_html,
         caract_html=caract_html,
+        video_html=_video_html(d.get('video', '')),
         desc_html=desc_html,
         foto0=foto0,
         mg_cells=mg_cells,
@@ -1457,6 +1465,32 @@ def generar():
     return jsonify({'url': url_publica, 'archivo': out_path.name})
 
 
+def _video_html(url: str) -> str:
+    """Bloque de video arriba de la descripción: embed si YouTube/Vimeo,
+    botón 'Ver video' para cualquier otra URL, y nada si el campo está vacío."""
+    url = (url or '').strip()
+    if not url:
+        return ''
+    yt = re.search(r'(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/|shorts/|live/))([\w-]{11})', url)
+    vi = re.search(r'vimeo\.com/(?:video/)?(\d+)', url)
+    if yt:
+        src = f'https://www.youtube.com/embed/{yt.group(1)}'
+    elif vi:
+        src = f'https://player.vimeo.com/video/{vi.group(1)}'
+    else:
+        src = None
+    if src:
+        inner = (f'<div class="video-embed"><iframe src="{src}" '
+                 f'allowfullscreen loading="lazy" title="Video"></iframe></div>')
+    else:
+        safe = _html_esc.escape(url, quote=True)
+        inner = f'<a class="video-btn" href="{safe}" target="_blank" rel="noopener">▶ Ver video</a>'
+    return ('    <div class="card card-video"><div class="card-body">\n'
+            '      <div class="sec-title">Video</div>\n'
+            f'      {inner}\n'
+            '    </div></div>\n')
+
+
 def _render(d: dict, fotos: list, TPL: str) -> str:
     """Renderiza el HTML de la ficha usando el template de generate.py"""
     direccion   = d.get('direccion', '').strip()
@@ -1530,6 +1564,7 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
         expensas_html=expensas_html,
         badges_html=badges_html,
         caract_html=caract_html,
+        video_html=_video_html(d.get('video', '')),
         desc_html=desc_html,
         foto0=foto0,
         mg_cells=mg_cells,

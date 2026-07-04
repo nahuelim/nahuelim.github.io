@@ -82,10 +82,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .scard-logo img{height:18px;object-fit:contain}
 .sdivider{border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0}
 .bwa-big{display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;padding:14px;border-radius:9px;text-decoration:none;font-weight:700;font-size:15px;width:100%;transition:background .15s}
+.bins-big{display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:var(--primary);border:1.5px solid var(--primary);padding:12px;border-radius:9px;text-decoration:none;font-weight:700;font-size:14px;width:100%;margin-top:10px;transition:all .15s}
+.bins-big:hover{background:var(--primary);color:#fff}
 .bwa-big:hover{background:#1dba57}
 .snote{color:rgba(255,255,255,.3);font-size:11px;text-align:center;margin-top:10px}
 .mapcard{border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,49,83,.3)}
 .mapcard iframe{width:100%;height:360px;border:none;display:block}
+.card-video .video-embed{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px}
+.card-video .video-embed iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.card-video .video-btn{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;text-decoration:none;padding:13px 24px;border-radius:8px;font-weight:600;font-size:14px}
 .maplbl{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid #e8eaed}
 .maplbl svg{flex-shrink:0;color:var(--orange)}
 .maplbl-text b{display:block;color:#1c1c1c;font-size:13px;font-weight:600;line-height:1.3}
@@ -262,13 +267,18 @@ footer a{color:var(--orange);text-decoration:none}
       </div>
     </div></div>
 
+    <div class="card card-video"><div class="card-body">
+      <div class="sec-title">Video</div>
+      <div class="video-embed"><iframe src="https://www.youtube.com/embed/PzkqI2Zz1JU" allowfullscreen loading="lazy" title="Video"></iframe></div>
+    </div></div>
+
     <div class="card card-desc"><div class="card-body">
       <div class="sec-title">Descripción</div>
       <div class="desc">
-        <p>VIDEO<br>https://www.youtube.com/watch?v=PzkqI2Zz1JU</p>
         <p>PH de 3 dormitorios desarrollado en PB y 1er, piso con entrada independiente.<br>En la planta baja encontramos el living al frente, la cocina semi-integrada a lo largo del terreno, un patio de aire y luz y el comedor.  <br>En el primer piso se ubican dos habitaciones al frente con salida al balcón terraza de 16 m2 , un baño completo con ventilación natural y el 3er dormitorio con ventana al hueco de la escalera doble altura con techo de vidrio. Hall de distribución y patio de 8m2 con parrilla.<br>Solo 2 unidades funcionales en el. terreno.<br>No paga expensas<br>Apto profesional<br>Apto crédito</p>
         <p>Excelente ubicación sobre la calle Planes en Caballito Norte.<br>A 7 cuadras de Plaza Irlanda y próximo al Cid Campeador<br>Entorno arbolado y de casas bajas.<br>Rodeado de colegios, locales gastronómicos y buena conectividad</p>
         <p>Toda la información del aviso, incluyendo medidas, precio, impuestos, servicios, etc. son estimativos, sujetos a modificación y no vinculantes, según lo dispuesto en el art. 973, Cód. Civ. y Com.</p>
+        <p>- KP - KPT - <br> -   Publicado usando KiteProp CRM Inmobiliario</p>
         <p class="desc-note"><strong>Aviso:</strong> La siguiente información se proporciona con fines orientativos para personas en búsqueda de inmuebles, y pueden provenir de terceros. Se recomienda confirmar todos los detalles con la inmobiliaria responsable de la operación.<br>La disponibilidad de la unidad está sujeta a cambios sin previo aviso, al igual que su precio. Las superficies, medidas, expensas y servicios mencionados son aproximados y pueden sufrir modificaciones.<br>Las fotografías y videos tienen carácter ilustrativo y no contractual.</p>
       </div>
     </div></div>
@@ -282,6 +292,7 @@ footer a{color:var(--orange);text-decoration:none}
       <div class="scard-logo"><img src="https://nahuelim.github.io/assets/c21-logo.svg" alt="Century 21"></div>
       <hr class="sdivider">
       <a class="bwa-big" href="https://wa.me/5491178268244?text=Hola%2C%20vi%20la%20ficha%20de%20PLANES%201200%20y%20quiero%20m%C3%A1s%20informaci%C3%B3n." target="_blank"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>&nbsp;Consultar por WhatsApp</a>
+      <a class="bins-big" href="https://instagram.com/nahuelim.realestate" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="flex-shrink:0"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163C8.741 0 8.332.014 7.052.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>&nbsp;Seguime en Instagram</a>
       <div class="snote">Consultame sin compromiso</div>
     </div>
   </aside>
