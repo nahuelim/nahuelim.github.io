@@ -542,6 +542,8 @@ function mostrarFormulario(d) {
   if (d.disposicion) setSelect('f-disposicion', d.disposicion);
   if (d.orientacion) setSelect('f-orientacion', d.orientacion);
   if (d.descripcion) document.getElementById('f-descripcion').value = d.descripcion;
+  window.scrapedInmo = d.inmobiliaria || '';
+  window.scrapedWa = d.whatsapp_publicador || '';
 
   // Badges
   const badges = d.badges || [];
@@ -632,6 +634,8 @@ async function generarFicha() {
     ].filter(b => b.trim()),
     descripcion: document.getElementById('f-descripcion').value,
     video: document.getElementById('f-video').value,
+    inmobiliaria: window.scrapedInmo || '',
+    whatsapp_publicador: window.scrapedWa || '',
     fotos: fotos,
   };
 
