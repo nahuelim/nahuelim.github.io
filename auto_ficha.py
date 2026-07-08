@@ -422,8 +422,8 @@ HTML = r"""<!DOCTYPE html>
 
       <div class="full">
         <label>Video (opcional)</label>
-        <input type="url" id="f-video" placeholder="https://youtube.com/...  (o Instagram, Drive, etc.)">
-        <small style="display:block;margin-top:4px;color:#888;font-size:12px">YouTube/Vimeo se ven embebidos; cualquier otra URL sale como botón “Ver video”.</small>
+        <input type="text" id="f-video" placeholder="https://youtube.com/...  (o Instagram, Drive, etc.)">
+        <small style="display:block;margin-top:4px;color:#888;font-size:12px">Pegá el link normal de YouTube o Vimeo (se reproduce en un popup). Otras URLs abren en pestaña nueva.</small>
       </div>
 
       <div class="full">
@@ -1150,110 +1150,6 @@ def mapa_url(direccion: str, barrio: str) -> str:
     q = quote(f"{dir_limpia}, {barrio}, Buenos Aires, Argentina")
     return f"https://maps.google.com/maps?q={q}&z=17&output=embed"
 
-def generar_html(d: dict, fotos: list) -> str:
-    import re
-    direccion    = d.get('direccion', '').strip()
-    # Limpiar "al NNNN" → "NNNN" en texto visible de la ficha
-    direccion    = re.sub(r'\bal\s+(\d+)', r'\1', direccion, flags=re.IGNORECASE).strip()
-    barrio       = d.get('barrio', '').strip()
-    operacion    = d.get('operacion', 'Venta').strip()
-    tipo         = d.get('tipo', 'Departamento').strip()
-    precio       = d.get('precio', '').strip()
-    expensas     = d.get('expensas', '').strip()
-    descripcion  = d.get('descripcion', '').strip()
-    ambientes    = str(d.get('ambientes', '')).strip()
-    badges_raw   = d.get('badges', [])
-
-    title = f"{operacion} {ambientes} Ambientes – {direccion}, {barrio}" if ambientes else f"{operacion} {tipo} – {direccion}, {barrio}"
-
-    # Mosaico
-    foto0 = fotos[0] if fotos else ''
-    mg_cells = ''
-    for i in range(1, 5):
-        url = fotos[i] if i < len(fotos) else (fotos[0] if fotos else '')
-        mg_cells += f'    <div class="mg-cell" style="background-image:url(\'{url}\')" onclick="openLB({i})"></div>\n'
-
-    # Thumbnails
-    thumbs = ''
-    for i, url in enumerate(fotos):
-        thumbs += f'      <img src="{url}" onclick="lbGoTo({i})">\n'
-
-    photos_json = ',\n'.join(f'  "{u}"' for u in fotos)
-
-    # Expensas
-    expensas_html = f'      <div class="exps">Expensas: <b>{expensas}</b></div>' if expensas else ''
-
-    # Badges
-    badges_html = ''
-    badge_clases = {
-        'a estrenar': 'org', 'apto crédito': 'grn', 'apto credito': 'grn',
-        'apto profesional': 'grn',
-    }
-    if tipo:
-        badges_html += f'        <span class="badge">{tipo}</span>\n'
-    if ambientes:
-        badges_html += f'        <span class="badge">{ambientes} ambientes</span>\n'
-    for b in badges_raw:
-        b = b.strip()
-        if not b:
-            continue
-        cls = badge_clases.get(b.lower(), '')
-        cls_str = f' class="badge {cls}"' if cls else ' class="badge"'
-        badges_html += f'        <span{cls_str}>{b}</span>\n'
-
-    # Características
-    CARACT_KEYS = ['ambientes','dormitorios','banos','toilette',
-                   'sup_total','sup_cubierta','antiguedad','disposicion','orientacion']
-    caract_html = ''
-    for key in CARACT_KEYS:
-        val = str(d.get(key, '')).strip()
-        if not val:
-            continue
-        if key in ('sup_total', 'sup_cubierta'):
-            val = f"{val} m²"
-        if key == 'antiguedad':
-            val = f"{val} años"
-        caract_html += f'''        <div class="fi">
-          <img class="fi-icon" src="{ICONOS[key]}" alt="{LABELS[key]}">
-          <div class="fi-val">{val}</div>
-          <div class="fi-lbl">{LABELS[key]}</div>
-        </div>\n'''
-
-    # Descripción
-    if descripcion:
-        parrafos = [p.strip() for p in descripcion.split('\n\n') if p.strip()]
-        if not parrafos:
-            parrafos = [descripcion]
-        desc_html = '\n'.join(f'        <p>{p.replace(chr(10), "<br>")}</p>' for p in parrafos)
-    else:
-        desc_html = '        <p>Consultá más información sobre esta propiedad.</p>'
-
-    _wa = wa_url(direccion)
-    _mapa = mapa_url(direccion, barrio)
-
-    # Importar template desde generate.py (inline para no depender del archivo)
-    from template_ficha import TEMPLATE as TPL
-    html = TPL.format(
-        title=title,
-        wa_url=_wa,
-        mapa_url=_mapa,
-        operacion=operacion,
-        precio=precio,
-        expensas_html=expensas_html,
-        badges_html=badges_html,
-        caract_html=caract_html,
-        video_html=_video_html(d.get('video', '')),
-        desc_html=desc_html,
-        foto0=foto0,
-        mg_cells=mg_cells,
-        n_fotos=len(fotos),
-        thumbs=thumbs,
-        photos_json=photos_json,
-        direccion=direccion,
-        barrio=barrio,
-    )
-    return html
-
 
 def nombre_unico(directorio: Path, nombre_base: str) -> Path:
     path = directorio / f"{nombre_base}.html"
@@ -1465,30 +1361,59 @@ def generar():
     return jsonify({'url': url_publica, 'archivo': out_path.name})
 
 
-def _video_html(url: str) -> str:
-    """Bloque de video arriba de la descripción: embed si YouTube/Vimeo,
-    botón 'Ver video' para cualquier otra URL, y nada si el campo está vacío."""
+def _video_embed_src(url: str):
+    """URL /embed (con autoplay) de YouTube o Vimeo, o None si no es embebible."""
+    url = (url or '').strip()
+    if not url:
+        return None
+    yt = re.search(r'(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/|shorts/|live/))([\w-]{11})', url)
+    if yt:
+        return f'https://www.youtube.com/embed/{yt.group(1)}?autoplay=1&rel=0'
+    vi = re.search(r'vimeo\.com/(?:video/)?(\d+)', url)
+    if vi:
+        return f'https://player.vimeo.com/video/{vi.group(1)}?autoplay=1'
+    return None
+
+
+_VIDEO_ICON = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" '
+               'width="13" height="13" style="flex-shrink:0"><polygon points="6 4 20 12 6 20 6 4"/></svg>')
+
+
+def _video_button(url: str) -> str:
+    """Botón 'Ver video' sobre el hero (abajo-izq). Abre modal si es YouTube/Vimeo;
+    para cualquier otra URL abre en pestaña nueva. Vacío si no hay video."""
     url = (url or '').strip()
     if not url:
         return ''
-    yt = re.search(r'(?:youtu\.be/|youtube\.com/(?:watch\?v=|embed/|shorts/|live/))([\w-]{11})', url)
-    vi = re.search(r'vimeo\.com/(?:video/)?(\d+)', url)
-    if yt:
-        src = f'https://www.youtube.com/embed/{yt.group(1)}'
-    elif vi:
-        src = f'https://player.vimeo.com/video/{vi.group(1)}'
-    else:
-        src = None
-    if src:
-        inner = (f'<div class="video-embed"><iframe src="{src}" '
-                 f'allowfullscreen loading="lazy" title="Video"></iframe></div>')
-    else:
-        safe = _html_esc.escape(url, quote=True)
-        inner = f'<a class="video-btn" href="{safe}" target="_blank" rel="noopener">▶ Ver video</a>'
-    return ('    <div class="card card-video"><div class="card-body">\n'
-            '      <div class="sec-title">Video</div>\n'
-            f'      {inner}\n'
-            '    </div></div>\n')
+    if _video_embed_src(url):
+        return ('    <button class="mg-btn mg-btn-video" onclick="event.stopPropagation();openVideo()">'
+                f'{_VIDEO_ICON} Ver video</button>\n')
+    safe = _html_esc.escape(url, quote=True)
+    return (f'    <a class="mg-btn mg-btn-video" href="{safe}" target="_blank" rel="noopener" '
+            f'onclick="event.stopPropagation()">{_VIDEO_ICON} Ver video</a>\n')
+
+
+def _video_modal(url: str) -> str:
+    """Modal (lightbox) que reproduce el video embebido. Solo YouTube/Vimeo; vacío si no."""
+    src = _video_embed_src(url)
+    if not src:
+        return ''
+    return (
+        '<div class="vlb" id="vlb" onclick="closeVideo()">'
+        '<button class="lb-close" onclick="closeVideo()">&#x2715;</button>'
+        '<div class="vlb-frame" onclick="event.stopPropagation()">'
+        '<iframe id="vlb-iframe" src="" allow="autoplay; fullscreen; encrypted-media" '
+        'allowfullscreen title="Video"></iframe>'
+        '</div></div>\n'
+        '<script>'
+        f'var VLB_SRC={json.dumps(src)};'
+        'function openVideo(){document.getElementById("vlb-iframe").src=VLB_SRC;'
+        'document.getElementById("vlb").style.display="flex";document.body.style.overflow="hidden";}'
+        'function closeVideo(){document.getElementById("vlb").style.display="none";'
+        'document.getElementById("vlb-iframe").src="";document.body.style.overflow="";}'
+        'document.addEventListener("keydown",function(e){if(e.key==="Escape")closeVideo();});'
+        '</script>\n'
+    )
 
 
 def _render(d: dict, fotos: list, TPL: str) -> str:
@@ -1564,7 +1489,8 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
         expensas_html=expensas_html,
         badges_html=badges_html,
         caract_html=caract_html,
-        video_html=_video_html(d.get('video', '')),
+        video_btn=_video_button(d.get('video', '')),
+        video_modal=_video_modal(d.get('video', '')),
         desc_html=desc_html,
         foto0=foto0,
         mg_cells=mg_cells,

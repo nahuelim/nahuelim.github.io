@@ -35,6 +35,10 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 .mg-cell:hover{{filter:brightness(.88)}}
 .mg-btn{{position:absolute;bottom:14px;right:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.92);color:var(--text);padding:8px 14px;border-radius:7px;font-size:12px;font-weight:600;border:1px solid var(--border);cursor:pointer;transition:background .15s;backdrop-filter:blur(4px)}}
 .mg-btn:hover{{background:#fff}}
+.mg-btn-video{{left:14px;right:auto;text-decoration:none}}
+.vlb{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1100;align-items:center;justify-content:center;padding:20px}}
+.vlb-frame{{position:relative;width:100%;max-width:1000px;aspect-ratio:16/9}}
+.vlb-frame iframe{{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:10px}}
 .lb{{display:none;position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:1000;flex-direction:column;align-items:center;justify-content:center}}
 .lb.open{{display:flex}}
 .lb-img{{max-width:90vw;max-height:80vh;object-fit:contain;border-radius:3px;user-select:none}}
@@ -90,9 +94,6 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 .snote{{color:rgba(255,255,255,.3);font-size:11px;text-align:center;margin-top:10px}}
 .mapcard{{border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,49,83,.3)}}
 .mapcard iframe{{width:100%;height:360px;border:none;display:block}}
-.card-video .video-embed{{position:relative;width:100%;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:10px}}
-.card-video .video-embed iframe{{position:absolute;top:0;left:0;width:100%;height:100%;border:none}}
-.card-video .video-btn{{display:inline-flex;align-items:center;gap:8px;background:var(--primary);color:#fff;text-decoration:none;padding:13px 24px;border-radius:8px;font-weight:600;font-size:14px}}
 .maplbl{{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid #e8eaed}}
 .maplbl svg{{flex-shrink:0;color:var(--orange)}}
 .maplbl-text b{{display:block;color:#1c1c1c;font-size:13px;font-weight:600;line-height:1.3}}
@@ -102,13 +103,13 @@ footer strong{{color:rgba(255,255,255,.7)}}
 footer a{{color:var(--orange);text-decoration:none}}
 /* ── Mobile order & sticky bar ───────────────────────────── */
 @media(max-width:800px){{
-  .wrap{{padding-bottom:80px}}
+  .wrap{{padding-bottom:24px}}
 }}
 /* Sticky WA bar — mobile only */
 .sticky-wa{{display:none}}
 @media(max-width:800px){{
   .sticky-wa{{
-    display:flex;align-items:center;gap:12px;
+    display:none;align-items:center;gap:12px;
     position:fixed;bottom:0;left:0;right:0;z-index:300;
     background:var(--primary-dark);
     padding:10px 16px 14px;
@@ -125,7 +126,6 @@ footer a{{color:var(--orange);text-decoration:none}}
     transition:background .15s;
   }}
   .sticky-wa-btn:hover{{background:#1dba57}}
-  .bar-r{{display:none}}
 }}
 </style>
 </head>
@@ -148,7 +148,7 @@ footer a{{color:var(--orange);text-decoration:none}}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       Ver las {n_fotos} fotos
     </button>
-  </div>
+{video_btn}  </div>
   <div class="mg-right">
 {mg_cells}
   </div>
@@ -167,6 +167,7 @@ footer a{{color:var(--orange);text-decoration:none}}
   </div>
 </div>
 
+{video_modal}
 <div class="wrap">
   <div class="col col-main">
     <div class="card card-precio"><div class="card-body">
@@ -195,7 +196,6 @@ footer a{{color:var(--orange);text-decoration:none}}
       </div>
     </div></div>
 
-{video_html}
     <div class="card card-desc"><div class="card-body">
       <div class="sec-title">Descripción</div>
       <div class="desc">
