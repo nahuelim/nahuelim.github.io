@@ -6,6 +6,14 @@ TEMPLATE = '''<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{og_desc}">
+<meta property="og:image" content="{foto0}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{og_desc}">
+<meta name="twitter:image" content="{foto0}">
 <link rel="icon" type="image/svg+xml" href="https://nahuelim.github.io/assets/favicon.svg">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}

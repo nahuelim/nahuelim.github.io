@@ -484,7 +484,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
       <div class="section-body" id="body-sec-4">
         <table class="rating-table">
-          <thead><tr><th>Atributo</th><th>Reg</th><th>Bueno</th><th>M.Bueno</th><th>Exc.</th></tr></thead>
+          <thead><tr><th>Atributo</th><th>A&nbsp;mej.</th><th>Reg</th><th>Bueno</th><th>M.Bueno</th><th>Exc.</th></tr></thead>
           <tbody id="rating-body"></tbody>
         </table>
       </div>
@@ -544,7 +544,13 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
       <div class="section-body" id="body-sec-reporte">
         <div class="callout" style="font-size:11px;margin-bottom:4px">Datos de <strong>reporteinmobiliario.com</strong> — zona · tipología · superficie · antigüedad</div>
-        <table class="testigos-table" style="margin-top:4px">
+        <div class="field" style="margin-top:6px">
+          <label>Screenshot del reporte (opcional)</label>
+          <input type="file" id="ri_screenshot" accept="image/*" onchange="onRiShot(this)">
+          <div class="sublabel" style="margin-top:3px">Si subís la imagen, va directo al PDF. Si no, se usan los campos de abajo.</div>
+          <img id="ri_shot_preview" style="display:none;max-width:100%;margin-top:8px;border:1px solid #d5dce5;border-radius:6px">
+        </div>
+        <table class="testigos-table" style="margin-top:8px">
           <thead>
             <tr>
               <th>Sup. Homogeneizada</th>
@@ -580,19 +586,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="pub_m2_min" placeholder="2.400" oninput="calcProm('pub_m2')"></div>
           <div class="field"><label>Máx</label><input type="number" id="pub_m2_max" placeholder="3.200" oninput="calcProm('pub_m2')"></div>
-          <div><div class="sublabel">Prom.</div><div class="range-result" id="pub_m2_prom">—</div></div>
+          <div><div class="sublabel">Prom.</div><input type="text" id="pub_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
         </div>
         <div class="range-row">
           <div class="field"><label>Total pub. Mín (USD)</label><input type="number" id="pub_tot_min" placeholder="180.000" oninput="calcProm('pub_tot')"></div>
           <div class="field"><label>Total pub. Máx (USD)</label><input type="number" id="pub_tot_max" placeholder="240.000" oninput="calcProm('pub_tot')"></div>
-          <div><div class="sublabel">Prom.</div><div class="range-result" id="pub_tot_prom">—</div></div>
+          <div><div class="sublabel">Prom.</div><input type="text" id="pub_tot_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
         </div>
         <div class="divider"></div>
         <div class="sublabel">Vendidos — Rango m² (USD)</div>
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="vend_m2_min" placeholder="2.100" oninput="calcProm('vend_m2')"></div>
           <div class="field"><label>Máx</label><input type="number" id="vend_m2_max" placeholder="2.700" oninput="calcProm('vend_m2')"></div>
-          <div><div class="sublabel">Prom.</div><div class="range-result" id="vend_m2_prom">—</div></div>
+          <div><div class="sublabel">Prom.</div><input type="text" id="vend_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
         </div>
         <div class="field-row">
           <div class="field"><label>Días prom. en mercado</label><input type="number" id="acm_dias" placeholder="75"></div>
@@ -809,9 +815,9 @@ const PASSWORD = "2025"; // cambiá antes de subir
 const BARRIOS_CABA = ["Agronomía","Almagro","Balvanera","Barracas","Belgrano","Boedo","Caballito","Chacarita","Coghlan","Colegiales","Constitución","Flores","Floresta","La Boca","La Paternal","Liniers","Mataderos","Monte Castro","Montserrat","Nueva Pompeya","Núñez","Palermo","Parque Avellaneda","Parque Chacabuco","Parque Chas","Parque Patricios","Puerto Madero","Recoleta","Retiro","Saavedra","San Cristóbal","San Nicolás","San Telmo","Vélez Sársfield","Versalles","Villa Crespo","Villa del Parque","Villa Devoto","Villa Gral. Mitre","Villa Lugano","Villa Luro","Villa Ortúzar","Villa Pueyrredón","Villa Real","Villa Riachuelo","Villa Santa Rita","Villa Soldati","Villa Urquiza"];
 
 const ATRIBUTOS = ["Luminosidad","Ventilación","Accesibilidad (ascensor)","Distribución interna","Mantenimiento / modernización","Visuales y orientación","Aire libre (balcón/terraza)","Conectividad y transporte"];
-const NIVELES = ["Reg","Bueno","M.Bueno","Exc."];
+const NIVELES = ["A mejorar","Regular","Bueno","Muy bueno","Excelente"];
 
-const OBJECIONES = ["Sin ascensor / acceso solo por escalera","Sin luz natural — contrafrente o pozo de luz","Sin visual / da a medianera o pared ciega","Zona conflictiva o cerca de cancha / estadio","Estado de mantenimiento regular o malo","Escaleras internas (PH de dos plantas, duplex)","Distribución disfuncional o poco práctica","Obras linderas activas en este momento","Problemas estructurales o de humedad en el edificio","Expensas altas respecto del promedio de la zona"];
+const OBJECIONES = ["Sin ascensor / acceso solo por escalera","Sin luz natural — contrafrente o pozo de luz","Sin visual / da a medianera o pared ciega","Zona conflictiva o cerca de cancha / estadio","Estado de mantenimiento regular o malo","Escaleras internas (PH de dos plantas, duplex)","Distribución disfuncional o poco práctica","Obras linderas activas en este momento","Problemas estructurales o de humedad en el edificio","Expensas altas respecto del promedio de la zona","Sin espacios exteriores (balcón/terraza)"];
 
 const PREGUNTAS_CLAVE = [
   "¿Estuvieron en algún momento cerca de vender, o es la primera vez que lo ponen en el mercado?",
@@ -841,6 +847,7 @@ document.getElementById('pwd-input').addEventListener('keydown', e => { if (e.ke
 // ── INIT ──
 function init() {
   buildRatingTable(); buildObjeciones(); buildPreguntas();
+  injectPdfToggles();
   addTestigoRow(); addTestigoRow(); addTestigoRow();
   document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
   const wh = localStorage.getItem('acm_webhook');
@@ -941,7 +948,7 @@ function addTestigoRow() {
     <td><input type="text" placeholder="Ej: Gurruchaga 1200 3A" id="t_dir_${n}"></td>
     <td><input type="number" placeholder="65" id="t_sup_${n}" oninput="calcTestigoM2(${n})"></td>
     <td><input type="number" placeholder="2600" id="t_m2_${n}" oninput="calcTestigoTotal(${n})"></td>
-    <td><input type="text" placeholder="169.000" id="t_tot_${n}"></td>
+    <td><input type="text" placeholder="169.000" id="t_tot_${n}" oninput="this.dataset.manual='1'"></td>
     <td><input type="url" placeholder="zonaprop.com..." id="t_link_${n}"></td>
   `;
   tbody.appendChild(tr);
@@ -949,7 +956,8 @@ function addTestigoRow() {
 function calcTestigoM2(n) {
   const sup = parseFloat(document.getElementById(`t_sup_${n}`)?.value) || 0;
   const m2 = parseFloat(document.getElementById(`t_m2_${n}`)?.value) || 0;
-  if (sup && m2) { document.getElementById(`t_tot_${n}`).value = Math.round(sup * m2).toLocaleString('es-AR'); }
+  const tot = document.getElementById(`t_tot_${n}`);
+  if (sup && m2 && tot && !tot.dataset.manual) { tot.value = Math.round(sup * m2).toLocaleString('es-AR'); }
 }
 function calcTestigoTotal(n) { calcTestigoM2(n); }
 
@@ -958,7 +966,44 @@ function calcProm(key) {
   const min = parseFloat(document.getElementById(key+'_min')?.value)||0;
   const max = parseFloat(document.getElementById(key+'_max')?.value)||0;
   const el = document.getElementById(key+'_prom');
-  if (el) el.textContent = (min&&max) ? Math.round((min+max)/2).toLocaleString('es-AR') : '—';
+  if (el && !el.dataset.manual) el.value = (min&&max) ? Math.round((min+max)/2).toLocaleString('es-AR') : '';
+}
+
+// ── SCREENSHOT REPORTE INMOBILIARIO (se incrusta en el PDF) ──
+let riShot = null; // {data, w, h, fmt}
+function onRiShot(input){
+  const f = input.files && input.files[0];
+  const prev = document.getElementById('ri_shot_preview');
+  if(!f){ riShot=null; if(prev) prev.style.display='none'; return; }
+  const r = new FileReader();
+  r.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      riShot = {data:ev.target.result, w:img.naturalWidth, h:img.naturalHeight, fmt:(f.type.indexOf('png')>=0?'PNG':'JPEG')};
+      if(prev){ prev.src = ev.target.result; prev.style.display='block'; }
+    };
+    img.src = ev.target.result;
+  };
+  r.readAsDataURL(f);
+}
+
+// ── TILDES "Incluir en PDF" por sección ──
+const PDF_SECCIONES = ['sec-2','sec-3','sec-4','sec-5','sec-6','sec-reporte','sec-8','sec-9'];
+function pdfOn(id){ const c=document.getElementById('pdf-'+id); return !c || c.checked; }
+function injectPdfToggles(){
+  PDF_SECCIONES.forEach(id=>{
+    if(document.getElementById('pdf-'+id)) return;
+    const sec=document.getElementById(id); if(!sec) return;
+    const header=sec.querySelector('.section-header'); if(!header) return;
+    const chev=header.querySelector('.section-chevron');
+    const lbl=document.createElement('label');
+    lbl.title='Incluir esta sección en el PDF del cliente';
+    lbl.style.cssText='margin-left:auto;margin-right:12px;font-size:11px;font-weight:600;color:#003153;display:flex;align-items:center;gap:5px;cursor:pointer';
+    lbl.addEventListener('click', e=>e.stopPropagation());
+    const chk = (id==='sec-2') ? '' : 'checked';  // Contextual arranca destildada
+    lbl.innerHTML='<input type="checkbox" id="pdf-'+id+'" '+chk+' style="cursor:pointer"> PDF';
+    if(chev) header.insertBefore(lbl, chev); else header.appendChild(lbl);
+  });
 }
 
 // ── PROGRESS ──
@@ -981,7 +1026,8 @@ function resetForm() {
   addTestigoRow(); addTestigoRow(); addTestigoRow();
   document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
   document.getElementById('agente').value='Nahuel Lim';
-  ['pub_m2_prom','pub_tot_prom','vend_m2_prom'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='—';});
+  ['pub_m2_prom','pub_tot_prom','vend_m2_prom'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';el.removeAttribute('data-manual');}});
+  riShot=null; const _rp=document.getElementById('ri_shot_preview'); if(_rp)_rp.style.display='none';
   updateProgress();
 }
 
@@ -1003,7 +1049,7 @@ function collect() {
     objeciones_notas:g('objeciones_notas'),
     testigos,testigos_notas:g('testigos_notas'),
     reporte:{sup:g('ri_sup'),m2:g('ri_m2'),total:g('ri_total'),notas:g('ri_notas')},
-    acm:{pub_m2_min:g('pub_m2_min'),pub_m2_max:g('pub_m2_max'),pub_m2_prom:document.getElementById('pub_m2_prom')?.textContent||'',pub_tot_min:g('pub_tot_min'),pub_tot_max:g('pub_tot_max'),pub_tot_prom:document.getElementById('pub_tot_prom')?.textContent||'',vend_m2_min:g('vend_m2_min'),vend_m2_max:g('vend_m2_max'),vend_m2_prom:document.getElementById('vend_m2_prom')?.textContent||'',dias:g('acm_dias'),margen:g('acm_margen'),tendencia:g('acm_tendencia'),notas:g('acm_notas')},
+    acm:{pub_m2_min:g('pub_m2_min'),pub_m2_max:g('pub_m2_max'),pub_m2_prom:document.getElementById('pub_m2_prom')?.value||'',pub_tot_min:g('pub_tot_min'),pub_tot_max:g('pub_tot_max'),pub_tot_prom:document.getElementById('pub_tot_prom')?.value||'',vend_m2_min:g('vend_m2_min'),vend_m2_max:g('vend_m2_max'),vend_m2_prom:document.getElementById('vend_m2_prom')?.value||'',dias:g('acm_dias'),margen:g('acm_margen'),tendencia:g('acm_tendencia'),notas:g('acm_notas')},
     ventana:{pub_m2:g('v_pub_m2'),pub_tot:g('v_pub_tot'),lanch_m2:g('v_lanch_m2'),lanch_tot:g('v_lanch_tot'),cierre_m2:g('v_cierre_m2'),cierre_tot:g('v_cierre_tot'),precio_acordado:g('precio_acordado'),compromisos:g('compromisos')},
     privado:{preguntas_hechas:PREGUNTAS_CLAVE.filter((_,i)=>preguntasCheck[i]),urgencia_detectada:g('ag_urgencia'),expectativa:g('ag_expectativa'),competencia:g('ag_competencia'),dinamica:g('ag_dinamica'),evaluacion:g('ag_evaluacion'),notas_privadas:g('ag_notas')}
   };
@@ -1078,16 +1124,25 @@ function generatePDF() {
   twoCol([['Nombre:',d.cliente.nombre],['Celular:',d.cliente.cel],['Mail:',d.cliente.mail]]);
   y+=2;
 
+  if(pdfOn('sec-2') && (d.operacion.tipo||d.operacion.motivo||d.operacion.urgencia||d.operacion.precio_esperado)){
+    secTitle('CONTEXTO DE LA OPERACIÓN');
+    twoCol([['Tipo de operación:',d.operacion.tipo],['Urgencia:',d.operacion.urgencia],['Precio en mente:',d.operacion.precio_esperado?`USD ${d.operacion.precio_esperado}`:'']]);
+    if(d.operacion.motivo){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Notas: '+d.operacion.motivo,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
+    y+=2;
+  }
+
+  if(pdfOn('sec-3')){
   secTitle('2. PROPIEDAD');
   row('Dirección:',d.propiedad.direccion);
   twoCol([['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Sup. Hom.:',d.propiedad.sup?`${d.propiedad.sup} m²`:''],['Ambientes:',d.propiedad.amb],['Baños:',d.propiedad.banos],['Antigüedad:',d.propiedad.antig?`${d.propiedad.antig} años`:''],['Piso:',d.propiedad.piso],['Orientación:',d.propiedad.orientacion],['Cochera:',d.propiedad.cochera],['Apto crédito:',d.propiedad.apto_credito],['Expensas:',d.propiedad.expensas?`ARS ${d.propiedad.expensas}`:'']]);
   if(d.propiedad.notas){checkY(12);doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Notas: '+d.propiedad.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
   y+=2;
+  }
 
   const sf=d.secundarias.filter(s=>s.nivel);
-  if(sf.length){secTitle('3. CARACTERÍSTICAS');oneCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
+  if(pdfOn('sec-4') && sf.length){secTitle('3. CARACTERÍSTICAS');oneCol(sf.map(s=>[s.atributo+':',s.nivel]));y+=2;}
 
-  if(d.objeciones.length){
+  if(pdfOn('sec-5') && d.objeciones.length){
     secTitle('4. OBJECIONES DETECTADAS');
     const obs = d.objeciones;
     const half = Math.ceil(obs.length/2);
@@ -1109,7 +1164,7 @@ function generatePDF() {
   }
 
   // TESTIGOS
-  if(d.testigos.length){
+  if(pdfOn('sec-6') && d.testigos.length){
     secTitle('5. PROPIEDADES COMPARABLES');
     checkY(10);
     doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
@@ -1140,8 +1195,14 @@ function generatePDF() {
     y+=4;
   }
 
+  if(pdfOn('sec-reporte')){
   secTitle('6. MARKET VALUATION — REPORTE INMOBILIARIO');
-  if(d.reporte?.sup||d.reporte?.m2||d.reporte?.total){
+  if(riShot){
+    let iw=CW, ih=CW*riShot.h/riShot.w; const maxH=150; if(ih>maxH){ ih=maxH; iw=maxH*riShot.w/riShot.h; }
+    checkY(ih+4);
+    try{ doc.addImage(riShot.data, riShot.fmt, M, y, iw, ih); y+=ih+4; }
+    catch(e){ doc.setFontSize(8); doc.setTextColor(200,60,40); doc.text('No se pudo insertar la imagen del reporte',M+2,y); y+=6; }
+  } else if(d.reporte?.sup||d.reporte?.m2||d.reporte?.total){
     checkY(10);
     doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(PR,PG,PB);
@@ -1154,12 +1215,16 @@ function generatePDF() {
   }
   if(d.reporte?.notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.reporte.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
   y+=3;
+  }
 
+  if(pdfOn('sec-8')){
   secTitle('8. ANÁLISIS DE MERCADO');
   twoCol([['Publicado m² rango:',`USD ${d.acm.pub_m2_min||'—'} – ${d.acm.pub_m2_max||'—'}`],['Publicado m² prom.:',`USD ${d.acm.pub_m2_prom||'—'}`],['Publicado total prom.:',`USD ${d.acm.pub_tot_prom||'—'}`],['Vendido m² rango:',`USD ${d.acm.vend_m2_min||'—'} – ${d.acm.vend_m2_max||'—'}`],['Vendido m² prom.:',`USD ${d.acm.vend_m2_prom||'—'}`],['Días promedio:',d.acm.dias?`${d.acm.dias} días`:''],['Margen neg.:',d.acm.margen?`${d.acm.margen}%`:''],['Tendencia:',d.acm.tendencia]]);
   if(d.acm.notas){checkY(10);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize(d.acm.notas,CW);doc.text(lines,M,y);y+=lines.length*5+2;}
   y+=2;
+  }
 
+  if(pdfOn('sec-9')){
   secTitle('9. VENTANA DE VENTA');
   checkY(36);
   doc.setFillColor(238,244,249); doc.rect(M,y,CW,7,'F');
@@ -1179,6 +1244,7 @@ function generatePDF() {
     doc.text(`PRECIO ACORDADO: USD ${d.ventana.precio_acordado}`,M+3,y+7.5);y+=15;
   }
   if(d.ventana.compromisos){checkY(14);doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(100,90,80);const lines=doc.splitTextToSize('Compromisos: '+d.ventana.compromisos,CW);doc.text(lines,M,y);y+=lines.length*5+4;}
+  }
 
   // FOOTER — pegado al fondo de cada página
   const total=doc.getNumberOfPages();

@@ -1164,6 +1164,11 @@ def nombre_unico(directorio: Path, nombre_base: str) -> Path:
 
 
 def git_push(repo: Path, mensaje: str):
+    # ponytail: limpia un index.lock viejo antes de operar (single-user, no hay git concurrente)
+    lock = repo / '.git' / 'index.lock'
+    if lock.exists():
+        try: lock.unlink()
+        except OSError: pass
     subprocess.run(['git', 'add', '.'], cwd=repo, check=True, capture_output=True)
     subprocess.run(['git', 'commit', '-m', mensaje], cwd=repo, check=True, capture_output=True)
     subprocess.run(['git', 'push'], cwd=repo, check=True, capture_output=True)
@@ -1484,8 +1489,12 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
     else:
         desc_html = '        <p>Consultá más información sobre esta propiedad.</p>'
 
+    _og_parts = [tipo, f"{ambientes} amb" if ambientes else "", f"{barrio}, CABA" if barrio else "", precio]
+    og_desc = _html_esc.escape(" · ".join(p for p in _og_parts if p), quote=True)
+
     return TPL.format(
         title=title,
+        og_desc=og_desc,
         wa_url=wa_url(direccion),
         mapa_url=mapa_url(direccion, barrio),
         operacion=operacion,
