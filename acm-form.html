@@ -450,7 +450,9 @@ const AR_IG=1.0000;
           </div>
         </div>
         <div class="field-row3">
-          <div class="field"><label>Sup. Hom. (m²)</label><input type="number" id="sup" placeholder="75"></div>
+          <div class="field"><label>M² cubierta</label><input type="number" id="sup_cub" placeholder="60" oninput="calcHom()"></div>
+          <div class="field"><label>M² total</label><input type="number" id="sup_tot" placeholder="70" oninput="calcHom()"></div>
+          <div class="field"><label>M² homogénea (auto)</label><input type="number" id="sup" placeholder="65" readonly style="background:#eef1f5;color:#555"></div>
           <div class="field"><label>Ambientes</label><input type="number" id="amb" placeholder="3" min="1" max="10"></div>
           <div class="field"><label>Baños</label><input type="number" id="banos" placeholder="1" min="1" max="5"></div>
         </div>
@@ -602,15 +604,15 @@ const AR_IG=1.0000;
           <div><div class="sublabel">Prom.</div><input type="text" id="pub_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
         </div>
         <div class="range-row">
-          <div class="field"><label>Precio publicado Mín (USD)</label><input type="number" id="pub_tot_min" placeholder="180.000" oninput="calcProm('pub_tot')"></div>
-          <div class="field"><label>Precio publicado Máx (USD)</label><input type="number" id="pub_tot_max" placeholder="240.000" oninput="calcProm('pub_tot')"></div>
+          <div class="field"><label>Valor publicado Mín (USD)</label><input type="number" id="pub_tot_min" placeholder="180.000" oninput="calcProm('pub_tot')"></div>
+          <div class="field"><label>Valor publicado Máx (USD)</label><input type="number" id="pub_tot_max" placeholder="240.000" oninput="calcProm('pub_tot')"></div>
           <div><div class="sublabel">Prom.</div><input type="text" id="pub_tot_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
         </div>
         <div class="divider"></div>
-        <div class="sublabel">Vendidos — Rango de precio (USD)</div>
+        <div class="sublabel">Vendidos — Rango de valor (USD)</div>
         <div class="range-row">
-          <div class="field"><label>Mín</label><input type="number" id="vend_m2_min" placeholder="2.100" oninput="calcProm('vend_m2')"></div>
-          <div class="field"><label>Máx</label><input type="number" id="vend_m2_max" placeholder="2.700" oninput="calcProm('vend_m2')"></div>
+          <div class="field"><label>Mín</label><input type="number" id="vend_m2_min" placeholder="100.000" oninput="calcProm('vend_m2')"></div>
+          <div class="field"><label>Máx</label><input type="number" id="vend_m2_max" placeholder="120.000" oninput="calcProm('vend_m2')"></div>
           <div><div class="sublabel">Prom.</div><input type="text" id="vend_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
         </div>
         <div class="field-row">
@@ -979,6 +981,14 @@ function calcProm(key) {
   if (el && !el.dataset.manual) el.value = (min&&max) ? Math.round((min+max)/2).toLocaleString('es-AR') : '';
 }
 
+// M² homogénea = media entre cubierta y total (auto)
+function calcHom(){
+  const c=parseFloat(document.getElementById('sup_cub')?.value)||0;
+  const t=parseFloat(document.getElementById('sup_tot')?.value)||0;
+  const el=document.getElementById('sup');
+  if(el) el.value=(c&&t)?Math.round((c+t)/2):'';
+}
+
 // ── SCREENSHOT REPORTE INMOBILIARIO (se incrusta en el PDF) ──
 let riShot = null; // {data, w, h, fmt}
 function onRiShot(input){
@@ -1053,7 +1063,7 @@ function collect() {
     fecha:g('fecha'),agente:g('agente'),
     cliente:{nombre:g('cliente_nombre'),cel:g('cliente_cel'),mail:g('cliente_mail')},
     operacion:{tipo:g('tipo_op')==='otro'?g('tipo_op_otro'):g('tipo_op'),motivo:g('motivo'),urgencia:g('urgencia'),precio_esperado:g('precio_esperado')},
-    propiedad:{direccion:g('prop_dir'),barrio:g('prop_barrio'),tipo:g('prop_tipo'),sup:g('sup'),amb:g('amb'),banos:g('banos'),antig:g('antig'),piso:g('piso'),orientacion:g('orientacion'),expensas:g('expensas'),cochera:g('cochera'),apto_credito:g('apto_credito'),notas:g('prop_notas')},
+    propiedad:{direccion:g('prop_dir'),barrio:g('prop_barrio'),tipo:g('prop_tipo'),sup:g('sup'),sup_cub:g('sup_cub'),sup_tot:g('sup_tot'),amb:g('amb'),banos:g('banos'),antig:g('antig'),piso:g('piso'),orientacion:g('orientacion'),expensas:g('expensas'),cochera:g('cochera'),apto_credito:g('apto_credito'),notas:g('prop_notas')},
     secundarias:ATRIBUTOS.map((a,i)=>({atributo:a,nivel:ratings[i]!==undefined?NIVELES[ratings[i]]:''})),
     objeciones:OBJECIONES.filter((_,i)=>checked[i]),
     objeciones_notas:g('objeciones_notas'),
@@ -1131,7 +1141,7 @@ function generatePDF() {
 
   if(pdfOn('sec-3')){
     secTitle('2. PROPIEDAD');
-    const pairs=[['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Antigüedad:',d.propiedad.antig?d.propiedad.antig+' años':''],['Ambientes:',d.propiedad.amb],['Sup. Hom.:',d.propiedad.sup?d.propiedad.sup+' m²':''],['Orientación:',d.propiedad.orientacion],['Baños:',d.propiedad.banos],['Expensas:',d.propiedad.expensas?'ARS '+d.propiedad.expensas:''],['Cochera:',d.propiedad.cochera],['Apto crédito:',d.propiedad.apto_credito]];
+    const pairs=[['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Antigüedad:',d.propiedad.antig?d.propiedad.antig+' años':''],['M² cubierta:',d.propiedad.sup_cub?d.propiedad.sup_cub+' m²':''],['M² total:',d.propiedad.sup_tot?d.propiedad.sup_tot+' m²':''],['M² homog.:',d.propiedad.sup?d.propiedad.sup+' m²':''],['Ambientes:',d.propiedad.amb],['Orientación:',d.propiedad.orientacion],['Baños:',d.propiedad.banos],['Expensas:',d.propiedad.expensas?'ARS '+d.propiedad.expensas:''],['Cochera:',d.propiedad.cochera],['Apto crédito:',d.propiedad.apto_credito]];
     doc.setFontSize(9);
     let valW=Math.max(doc.getTextWidth('Dirección:'),Math.max.apply(null,pairs.map(p=>doc.getTextWidth(p[0]))))+3;
     if(d.propiedad.direccion){ checkY(7); kvAt('Dirección:',d.propiedad.direccion,M,M+valW); y+=7; }
@@ -1185,8 +1195,8 @@ function generatePDF() {
   }
 
   {
-    const pub=[['Rango m²:',rng(d.acm.pub_m2_min,d.acm.pub_m2_max)],['Rango precio:',rng(d.acm.pub_tot_min,d.acm.pub_tot_max)],['Promedio precio:',usd(d.acm.pub_tot_prom)]].filter(r=>r[1]);
-    const ven=[['Rango precio:',rng(d.acm.vend_m2_min,d.acm.vend_m2_max)],['Promedio precio:',usd(d.acm.vend_m2_prom)]].filter(r=>r[1]);
+    const pub=[['Rango m²:',rng(d.acm.pub_m2_min,d.acm.pub_m2_max)],['Rango valor:',rng(d.acm.pub_tot_min,d.acm.pub_tot_max)],['Promedio valor:',usd(d.acm.pub_tot_prom)]].filter(r=>r[1]);
+    const ven=[['Rango valor:',rng(d.acm.vend_m2_min,d.acm.vend_m2_max)],['Promedio valor:',usd(d.acm.vend_m2_prom)]].filter(r=>r[1]);
     const merc=[['Días promedio',d.acm.dias?d.acm.dias+' días':''],['Margen neg.',d.acm.margen?d.acm.margen+'%':''],['Tendencia',d.acm.tendencia||'']].filter(m=>m[1]);
     if(pdfOn('sec-8') && (pub.length||ven.length||merc.length)){
       secTitle('8. ANÁLISIS DE MERCADO');
@@ -1240,30 +1250,23 @@ function generatePDF() {
   }
 
   // CONTACTO (final) — título+contenido juntos
-  checkY(60);
+  checkY(58);
   secTitle('CONTACTO');
   const py=y;
-  try{ doc.addImage(IMG_FOTO,'PNG',M,py,27,27); }catch(e){}
-  const cx=M+34;
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(PR,PG,PB); doc.text('Nahuel Lim',cx,py+6);
-  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(LBL[0],LBL[1],LBL[2]); doc.text('Asesor Inmobiliario',cx,py+11.5);
-  doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(110,110,120); doc.text('Cualquier consulta, estoy a un mensaje. Te acompaño en cada paso.',cx,py+17.5);
-  const iy=py+21.5, isz=5.4, gp=7;
-  let ix=cx;
-  try{ doc.addImage(IMG_WA,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix,iy,isz,isz,{url:WA_URL}); ix+=isz+gp;
-  try{ doc.addImage(IMG_IG,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix,iy,isz,isz,{url:IG_URL}); ix+=isz+gp;
-  try{ doc.addImage(IMG_MAIL,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix,iy,isz,isz,{url:'mailto:nahuel.lim@gmail.com'});
-  const ay=Math.max(py+27,iy+isz)+8;
-  doc.setDrawColor(225,228,233); doc.setLineWidth(0.3); doc.line(M,ay-5,W-M,ay-5);
-  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(PR,PG,PB);
-  doc.text('Century 21 Evolución Inmobiliaria S.A.',M,ay);
-  doc.setFont('helvetica','normal'); doc.setTextColor(LBL[0],LBL[1],LBL[2]);
+  try{ doc.addImage(IMG_FOTO,'PNG',M,py,29,29); }catch(e){}
+  const cx=M+36;
+  doc.setFont('helvetica','bold'); doc.setFontSize(13.5); doc.setTextColor(PR,PG,PB); doc.text('Nahuel Lim',cx,py+6.5);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(LBL[0],LBL[1],LBL[2]); doc.text('Asesor Inmobiliario',cx,py+12);
   const MAPS='https://maps.google.com/?q=Pedro+Goyena+172+Caballito+CABA';
-  doc.textWithLink('Pedro Goyena 172, Caballito, CABA',M,ay+5.5,{url:MAPS});
-  const axw=doc.getTextWidth('Pedro Goyena 172, Caballito, CABA');
-  doc.text('    ·    ',M+axw,ay+5.5);
-  doc.textWithLink('nahuel.lim@gmail.com',M+axw+doc.getTextWidth('    ·    '),ay+5.5,{url:'mailto:nahuel.lim@gmail.com'});
-  y=ay+11;
+  doc.setFontSize(8.5); doc.setTextColor(LBL[0],LBL[1],LBL[2]);
+  doc.textWithLink('Century 21 Evolución Inmobiliaria S.A. · Pedro Goyena 172, Caballito, CABA',cx,py+17.5,{url:MAPS});
+  doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(110,110,120); doc.text('Cualquier consulta, estoy a un mensaje. Te acompaño en cada paso.',cx,py+23);
+  const iy=py+27, isz=7.5, gp=6, pad=2.2;
+  let ix=cx;
+  try{ doc.addImage(IMG_WA,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix-pad,iy-pad,isz+pad*2,isz+pad*2,{url:WA_URL}); ix+=isz+gp;
+  try{ doc.addImage(IMG_IG,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix-pad,iy-pad,isz+pad*2,isz+pad*2,{url:IG_URL}); ix+=isz+gp;
+  try{ doc.addImage(IMG_MAIL,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix-pad,iy-pad,isz+pad*2,isz+pad*2,{url:'mailto:nahuel.lim@gmail.com'});
+  y=py+40;
 
   // FOOTER (legal + página, centrado)
   const total=doc.getNumberOfPages();
