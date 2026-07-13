@@ -449,18 +449,18 @@ const AR_IG=1.0000;
             </select>
           </div>
         </div>
-        <div class="field-row3">
-          <div class="field"><label>M² cubierta</label><input type="number" id="sup_cub" placeholder="60" oninput="calcHom()"></div>
-          <div class="field"><label>M² total</label><input type="number" id="sup_tot" placeholder="70" oninput="calcHom()"></div>
-          <div class="field"><label>M² homogénea (auto)</label><input type="number" id="sup" placeholder="65" readonly style="background:#eef1f5;color:#555"></div>
-          <div class="field"><label>Ambientes</label><input type="number" id="amb" placeholder="3" min="1" max="10"></div>
-          <div class="field"><label>Baños</label><input type="number" id="banos" placeholder="1" min="1" max="5"></div>
-        </div>
         <div class="field-row">
           <div class="field"><label>Antigüedad (años)</label><input type="number" id="antig" placeholder="35"></div>
-          <div class="field"><label>Piso</label><input type="text" id="piso" placeholder="4° / PB"></div>
+          <div class="field"><label>Piso</label><input type="number" id="piso" placeholder="4"></div>
         </div>
         <div class="field-row">
+          <div class="field">
+            <label>Disposición</label>
+            <select id="prop_disposicion">
+              <option value="">Sin definir</option>
+              <option>Frente</option><option>Contrafrente</option><option>Lateral</option><option>Interno</option>
+            </select>
+          </div>
           <div class="field">
             <label>Orientación</label>
             <select id="orientacion">
@@ -469,13 +469,65 @@ const AR_IG=1.0000;
               <option>Noreste</option><option>Noroeste</option><option>Sureste</option><option>Suroeste</option>
             </select>
           </div>
+        </div>
+        <div class="field-row3">
+          <div class="field"><label>M² cubierta</label><input type="number" id="sup_cub" placeholder="60" oninput="calcHom()"></div>
+          <div class="field"><label>M² total</label><input type="number" id="sup_tot" placeholder="70" oninput="calcHom()"></div>
+          <div class="field"><label>M² homogénea (auto)</label><input type="number" id="sup" placeholder="65" readonly style="background:#eef1f5;color:#555"></div>
+        </div>
+        <div class="field-row3">
+          <div class="field"><label>Ambientes</label><input type="number" id="amb" placeholder="3" min="1" max="10"></div>
+          <div class="field"><label>Dormitorios</label><input type="number" id="dormitorios" placeholder="2" min="0" max="10"></div>
+          <div class="field"><label>Baños</label><input type="number" id="banos" placeholder="1" min="1" max="5"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Toilette</label><input type="number" id="prop_toilette" placeholder="0" min="0" max="5"></div>
+          <div class="field">
+            <label>Cocina</label>
+            <select id="prop_cocina">
+              <option value="">Sin definir</option>
+              <option>Integrada</option><option>Semi integrada</option><option>Separada</option><option>Separada con comedor</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Espacio exterior</label>
+          <div style="display:flex;gap:18px;flex-wrap:wrap;padding-top:6px">
+            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="espacio-libre" value="Balcón"> Balcón</label>
+            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="espacio-libre" value="Patio"> Patio</label>
+            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="espacio-libre" value="Terraza"> Terraza</label>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Expensas (ARS)</label><input type="text" id="expensas" placeholder="85.000"></div>
           <div class="field">
             <label>Cochera</label>
             <select id="cochera"><option>No</option><option>Sí fija</option><option>Sí rotativa</option></select>
           </div>
         </div>
         <div class="field-row">
-          <div class="field"><label>Expensas (ARS)</label><input type="text" id="expensas" placeholder="85.000"></div>
+          <div class="field">
+            <label>Encargado</label>
+            <select id="prop_encargado">
+              <option value="">Sin definir</option>
+              <option>Con vivienda</option><option>Media jornada</option><option>Jornada completa</option><option>Limpieza externa</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Seguridad</label>
+            <select id="prop_seguridad">
+              <option value="">Sin definir</option>
+              <option>Sí</option><option>No</option><option>Nocturno</option><option>Totem</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Amenities</label>
+            <select id="prop_amenities">
+              <option value="">Sin definir</option><option>Sí</option><option>No</option>
+            </select>
+          </div>
           <div class="field">
             <label>Apto crédito</label>
             <select id="apto_credito">
@@ -484,8 +536,20 @@ const AR_IG=1.0000;
           </div>
         </div>
         <div class="field">
+          <label>Estado de conservación</label>
+          <select id="prop_estado">
+            <option value="">Sin definir</option>
+            <option>Requiere reciclaje integral</option>
+            <option>Requiere algunas mejoras</option>
+            <option>De época en buen estado</option>
+            <option>Bien mantenido</option>
+            <option>Excelente estado</option>
+            <option>A estrenar</option>
+          </select>
+        </div>
+        <div class="field">
           <label>Notas de la propiedad</label>
-          <textarea id="prop_notas" placeholder="Amenities, estado general, detalles relevantes..."></textarea>
+          <textarea id="prop_notas" placeholder="Detalla amenities: SUM, pileta, parrilla, gym, otros. Cochera detalla: Cubierta, Descubierta, Fija, Movil, PB, subsuelo, Espacio guarda coche. Detalla estado de conservación u otras observaciones. ¿Tiene dependencia?"></textarea>
         </div>
       </div>
     </div>
@@ -1063,7 +1127,7 @@ function collect() {
     fecha:g('fecha'),agente:g('agente'),
     cliente:{nombre:g('cliente_nombre'),cel:g('cliente_cel'),mail:g('cliente_mail')},
     operacion:{tipo:g('tipo_op')==='otro'?g('tipo_op_otro'):g('tipo_op'),motivo:g('motivo'),urgencia:g('urgencia'),precio_esperado:g('precio_esperado')},
-    propiedad:{direccion:g('prop_dir'),barrio:g('prop_barrio'),tipo:g('prop_tipo'),sup:g('sup'),sup_cub:g('sup_cub'),sup_tot:g('sup_tot'),amb:g('amb'),banos:g('banos'),antig:g('antig'),piso:g('piso'),orientacion:g('orientacion'),expensas:g('expensas'),cochera:g('cochera'),apto_credito:g('apto_credito'),notas:g('prop_notas')},
+    propiedad:{direccion:g('prop_dir'),barrio:g('prop_barrio'),tipo:g('prop_tipo'),sup:g('sup'),sup_cub:g('sup_cub'),sup_tot:g('sup_tot'),amb:g('amb'),banos:g('banos'),dormitorios:g('dormitorios'),antig:g('antig'),piso:g('piso'),orientacion:g('orientacion'),expensas:g('expensas'),cochera:g('cochera'),apto_credito:g('apto_credito'),cocina:g('prop_cocina'),toilette:g('prop_toilette'),amenities:g('prop_amenities'),disposicion:g('prop_disposicion'),seguridad:g('prop_seguridad'),encargado:g('prop_encargado'),espacio_libre:Array.from(document.querySelectorAll('.espacio-libre:checked')).map(c=>c.value).join(', '),estado:g('prop_estado'),notas:g('prop_notas')},
     secundarias:ATRIBUTOS.map((a,i)=>({atributo:a,nivel:ratings[i]!==undefined?NIVELES[ratings[i]]:''})),
     objeciones:OBJECIONES.filter((_,i)=>checked[i]),
     objeciones_notas:g('objeciones_notas'),
@@ -1141,7 +1205,7 @@ function generatePDF() {
 
   if(pdfOn('sec-3')){
     secTitle('2. PROPIEDAD');
-    const pairs=[['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Antigüedad:',d.propiedad.antig?d.propiedad.antig+' años':''],['M² cubierta:',d.propiedad.sup_cub?d.propiedad.sup_cub+' m²':''],['M² total:',d.propiedad.sup_tot?d.propiedad.sup_tot+' m²':''],['M² homog.:',d.propiedad.sup?d.propiedad.sup+' m²':''],['Ambientes:',d.propiedad.amb],['Orientación:',d.propiedad.orientacion],['Baños:',d.propiedad.banos],['Expensas:',d.propiedad.expensas?'ARS '+d.propiedad.expensas:''],['Cochera:',d.propiedad.cochera],['Apto crédito:',d.propiedad.apto_credito]];
+    const pairs=[['Barrio:',d.propiedad.barrio],['Tipología:',d.propiedad.tipo],['Antigüedad:',d.propiedad.antig?d.propiedad.antig+' años':''],['Piso:',d.propiedad.piso],['Disposición:',d.propiedad.disposicion],['Orientación:',d.propiedad.orientacion],['M² cubierta:',d.propiedad.sup_cub?d.propiedad.sup_cub+' m²':''],['M² total:',d.propiedad.sup_tot?d.propiedad.sup_tot+' m²':''],['M² homog.:',d.propiedad.sup?d.propiedad.sup+' m²':''],['Ambientes:',d.propiedad.amb],['Dormitorios:',d.propiedad.dormitorios],['Baños:',d.propiedad.banos],['Toilette:',d.propiedad.toilette],['Cocina:',d.propiedad.cocina],['Espacio exterior:',d.propiedad.espacio_libre],['Expensas:',d.propiedad.expensas?'ARS '+d.propiedad.expensas:''],['Cochera:',d.propiedad.cochera],['Encargado:',d.propiedad.encargado],['Seguridad:',d.propiedad.seguridad],['Amenities:',d.propiedad.amenities],['Apto crédito:',d.propiedad.apto_credito],['Estado:',d.propiedad.estado]];
     doc.setFontSize(9);
     let valW=Math.max(doc.getTextWidth('Dirección:'),Math.max.apply(null,pairs.map(p=>doc.getTextWidth(p[0]))))+3;
     if(d.propiedad.direccion){ checkY(7); kvAt('Dirección:',d.propiedad.direccion,M,M+valW); y+=7; }
@@ -1435,6 +1499,8 @@ function populateForm(d) {
   s('banos', p.banos||d.banos); s('antig', p.antig||d.antig); s('piso', p.piso||d.piso);
   s('orientacion', p.orientacion||d.orientacion); s('cochera', p.cochera||d.cochera);
   s('expensas', p.expensas||d.expensas); s('apto_credito', p.apto_credito||d.apto_credito);
+  s('dormitorios',p.dormitorios); s('prop_cocina',p.cocina);s('prop_toilette',p.toilette);s('prop_amenities',p.amenities);s('prop_disposicion',p.disposicion);s('prop_seguridad',p.seguridad);s('prop_encargado',p.encargado);s('prop_estado',p.estado);
+  if(p.espacio_libre){const _s=String(p.espacio_libre).split(',').map(x=>x.trim());document.querySelectorAll('.espacio-libre').forEach(c=>{c.checked=_s.includes(c.value);});}
   s('prop_notas', p.notas||d.prop_notas);
   // S4 — ratings
   if (d.secundarias?.length) {
