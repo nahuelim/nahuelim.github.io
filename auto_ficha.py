@@ -311,7 +311,7 @@ HTML = r"""<!DOCTYPE html>
           <span id="btn-extraer-loader" class="loader" style="display:none"></span>
         </button>
       </div>
-      <p class="field-hint" id="url-hint">ZonaProp: extracción automática completa. ML: pegá la URL del aviso, extracción automática vía API. C21: guardá con Cmd+S y pegá el path.</p>
+      <p class="field-hint" id="url-hint">ZonaProp: extracción automática completa. ML: pegá la URL (o guardá con Cmd+S y pegá el path si la bloquea). C21: guardá con Cmd+S y pegá el path.</p>
     </div>
   </div>
 
@@ -493,7 +493,7 @@ function setPortal(p) {
   } else {
     urlSection.style.display = 'block';
     if (p === 'zonaprop') hint.textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
-    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL del aviso directamente. Extracción automática completa vía API (datos + fotos).';
+    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL del aviso. Si ML la bloquea, guardá la página con Cmd+S («solo HTML») y pegá el path del archivo.';
     else if (p === 'c21') hint.textContent = 'Century 21: guardá la página con Cmd+S y pegá el path al archivo. El precio completalo manualmente.';
   }
 }
@@ -914,117 +914,84 @@ def extraer_zonaprop(url: str) -> dict:
 
     datos['badges'] = detectar_badges(datos)
     return datos
-def extraer_ml(url: str) -> dict:
-    """
-    Llama a la API pública de MercadoLibre.
-    Acepta cualquier URL de ML (ej: https://inmuebles.mercadolibre.com.ar/...MLA123456789-...)
-    Extrae el item ID y consulta api.mercadolibre.com/items/{ID}
-    Gratis, sin auth, sin Cmd+S.
-    """
-    # Extraer ID del item de la URL (formato MLA + dígitos)
-    id_m = re.search(r'MLA-?(\d+)', url)
-    if not id_m:
-        raise ValueError("No se encontró un ID de MercadoLibre en la URL. Asegurate de pegar la URL completa del aviso (debe contener MLAxxxxxxxx).")
-    item_id = f"MLA{id_m.group(1)}"
-
-    # Llamar API pública — no requiere auth para datos básicos
-    api_url = f"https://api.mercadolibre.com/items/{item_id}"
-    r = requests.get(api_url, timeout=20)
-    r.raise_for_status()
-    item = r.json()
-
-    # También traer descripción desde endpoint separado
-    desc_r = requests.get(f"{api_url}/description", timeout=20)
-    descripcion = ''
-    if desc_r.status_code == 200:
-        descripcion = desc_r.json().get('plain_text', '')
-
+def _parse_ml_html(html: str) -> dict:
+    """Extrae datos del HTML de un aviso de MercadoLibre (specs, precio, fotos, badges)."""
     datos = {'operacion': 'Venta', 'fotos': []}
-
-    # Tipo y operación desde título / categoría
-    titulo = item.get('title', '')
-    TIPO_MAP = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa',
-                'local': 'Local', 'oficina': 'Oficina', 'terreno': 'Terreno',
-                'duplex': 'Duplex', 'loft': 'Loft'}
-    datos['tipo'] = 'Departamento'
-    for k, v in TIPO_MAP.items():
-        if k in titulo.lower():
-            datos['tipo'] = v
-            break
-
-    # Precio
-    precio_val = item.get('price', '')
-    moneda = item.get('currency_id', '')
-    sym = 'USD' if moneda in ('USD', 'U$S', 'US$') else '$'
-    if precio_val:
-        datos['precio'] = f"{sym} {int(precio_val):,}".replace(',', '.')
-    else:
-        datos['precio'] = ''
-
-    # Ubicación
-    loc = item.get('location', {})
-    calle = loc.get('address_line', '')
-    barrio = (loc.get('neighborhood', {}) or {}).get('name', '')
-    if not barrio:
-        barrio = (loc.get('city', {}) or {}).get('name', '')
-    datos['direccion'] = calle
-    datos['barrio'] = barrio
-
-    # Atributos (ambientes, dorms, baños, sup, antigüedad, expensas, etc.)
-    attrs = {a['id']: a.get('value_name', '') or str(a.get('value_struct', {}).get('number', '')) 
-             for a in item.get('attributes', []) if a.get('value_name') or a.get('value_struct')}
-
-    def num(val):
-        m = re.search(r'\d+', str(val).replace('.',''))
+    def og(p):
+        m = re.search(r'<meta property="' + re.escape(p) + r'" content="([^"]*)"', html)
+        return _html_esc.unescape(m.group(1)) if m else ''
+    title = og('og:title')
+    pm = re.search(r'-\s*(US\$|U\$S|\$)\s*([\d.,]+)\s*$', title)
+    datos['precio'] = (("USD" if pm.group(1).upper() in ('US$', 'U$S') else "$") + " " + pm.group(2)) if pm else ''
+    attrs = {}
+    for k, v in re.findall(r'\{"id":"([^"]+)","text":"([^"]*)"\}', html):
+        attrs.setdefault(k, _html_esc.unescape(v))
+    g = lambda k: attrs.get(k, '')
+    def num(s):
+        m = re.search(r'[\d.]+', (s or '').replace(' ', ''))
         return m.group(0) if m else ''
-
-    datos['ambientes']    = num(attrs.get('ROOMS', ''))
-    datos['dormitorios']  = num(attrs.get('BEDROOMS', ''))
-    datos['banos']        = num(attrs.get('FULL_BATHROOMS', '') or attrs.get('BATHROOMS', ''))
-    datos['toilette']     = num(attrs.get('HALF_BATHROOMS', ''))
-    datos['sup_total']    = num(attrs.get('TOTAL_AREA', ''))
-    datos['sup_cubierta'] = num(attrs.get('COVERED_AREA', ''))
-    datos['antiguedad']   = num(attrs.get('PROPERTY_AGE', ''))
-    datos['disposicion']  = attrs.get('DISPOSITION', '')
-    datos['orientacion']  = attrs.get('ORIENTATION', '')
-
-    # Expensas
-    exp_raw = attrs.get('EXPENSES', '') or attrs.get('MAINTENANCE_FEE', '')
-    if exp_raw and exp_raw not in ('0', '0 ARS', ''):
-        datos['expensas'] = f"$ {num(exp_raw)}" if num(exp_raw) else exp_raw
-    else:
-        datos['expensas'] = ''
-
-    # Descripción
-    datos['descripcion'] = descripcion.strip()
-
-    # Fotos en alta resolución
-    pictures = item.get('pictures', [])
-    fotos = []
-    for pic in pictures:
-        url_foto = pic.get('url', '') or pic.get('secure_url', '')
-        if url_foto:
-            # ML API devuelve URLs con sufijo -F (full) o -O (original)
-            url_big = re.sub(r'-[A-Z]\.(?:jpg|webp|jpeg)$', '-O.jpg', url_foto, flags=re.IGNORECASE)
-            fotos.append(url_big)
-    datos['fotos'] = fotos
-
-    # Inmobiliaria — seller_contact en la respuesta de la API
-    seller = item.get('seller_contact', {}) or {}
-    datos['inmobiliaria'] = seller.get('contact', '') or seller.get('other_info', '') or ''
-    if not datos['inmobiliaria']:
-        # Fallback: seller address o company_name si existe
-        datos['inmobiliaria'] = item.get('official_store_name', '') or ''
-
-    # WhatsApp/telefono y fecha publicacion — no disponibles via API publica de ML
+    datos['tipo'] = g('Tipo de departamento') or 'Departamento'
+    datos['ambientes'] = g('Ambientes')
+    datos['dormitorios'] = g('Dormitorios')
+    datos['banos'] = g('Baños')
+    datos['sup_total'] = num(g('Superficie total'))
+    datos['sup_cubierta'] = num(g('Superficie cubierta'))
+    datos['antiguedad'] = num(g('Antigüedad'))
+    datos['orientacion'] = g('Orientación')
+    datos['disposicion'] = g('Disposición')
+    datos['expensas'] = num(g('Expensas')) if g('Expensas') else ''
+    nb = re.search(r'"neighborhood":"([^"]+)"', html)
+    datos['barrio'] = nb.group(1) if nb else ''
+    datos['direccion'] = ''
+    datos['descripcion'] = og('og:description')
+    pics = []
+    for u in re.findall(r'https://http2\.mlstatic\.com/(D_NQ_NP_[\w-]+\.webp)', html):
+        full = 'https://http2.mlstatic.com/' + re.sub(r'^D_NQ_NP_', 'D_NQ_NP_2X_', u)
+        if full not in pics:
+            pics.append(full)
+    datos['fotos'] = pics
+    tl = (title + ' ' + datos['descripcion']).lower()
+    badges = []
+    if any(w in tl for w in ['apto cred', 'apto créd', 'crédito', 'credito']):
+        badges.append('Apto crédito')
+    for spec, lbl in [('Balcón', 'Balcón'), ('Ascensor', 'Ascensor'), ('Pileta', 'Pileta'), ('Parrilla', 'Parrilla'), ('Terraza', 'Terraza'), ('Seguridad', 'Seguridad'), ('Aire acondicionado', 'Aire acondicionado'), ('Dormitorio en suite', 'Suite')]:
+        if g(spec).strip().lower() in ('sí', 'si'):
+            badges.append(lbl)
+    if num(g('Cocheras')) not in ('', '0'):
+        badges.append('Cochera')
+    datos['badges'] = badges[:6]
+    datos['inmobiliaria'] = ''
     datos['whatsapp_publicador'] = ''
-    datos['fecha_publicacion'] = ''
-
-    datos['badges'] = detectar_badges(datos)
     return datos
 
 
-# ─── EXTRACCIÓN C21 ────────────────────────────────────────────────────────────
+def extraer_ml(url_or_path: str) -> dict:
+    """Extrae un aviso de MercadoLibre desde su página HTML.
+    Acepta la URL del aviso (la descarga) o el path a la página guardada con Cmd+S.
+    (ML cerró el acceso libre a su API, por eso se lee la página en vez de la API.)"""
+    src = (url_or_path or '').strip()
+    p = Path(src.replace('file://', ''))
+    if p.exists() and p.is_file():
+        html = p.read_text(encoding='utf-8', errors='ignore')
+    else:
+        if not re.search(r'MLA-?\d+', src):
+            raise ValueError("Pegá la URL del aviso de ML (debe contener MLAxxxxxxxx) o el path de la página guardada con Cmd+S.")
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept-Language': 'es-AR,es;q=0.9',
+        }
+        try:
+            r = requests.get(src, headers=headers, timeout=15)
+            r.raise_for_status()
+            html = r.text
+        except Exception:
+            raise ValueError("No pude descargar la página de ML (a veces bloquea pedidos automáticos). Abrí el aviso, guardalo con Cmd+S («Página web, solo HTML») y pegá el path del archivo acá. También podés usar la pestaña Manual.")
+    datos = _parse_ml_html(html)
+    if not (datos.get('precio') or datos.get('ambientes') or datos.get('barrio')):
+        raise ValueError("No pude leer los datos del aviso de ML. Guardá la página con Cmd+S y pegá el path del archivo, o usá la pestaña Manual.")
+    return datos
+
+
 def extraer_c21(html_path_or_url: str) -> dict:
     """C21 es SPA — extrae desde meta OG tags. Acepta HTML guardado o URL."""
     from pathlib import Path as _Path
