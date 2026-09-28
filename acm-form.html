@@ -6,35 +6,36 @@
 <title>ACM Tool — Nahuel Lim</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --primary: #003153;
-  --primary-hover: #004070;
-  --primary-pale: #eef4f9;
-  --orange: #E8630A;
-  --orange-pale: #fef3ec;
-  --bg: #f0f2f5;
+  --primary: #005941;
+  --primary-hover: #004330;
+  --primary-pale: #E3EEE9;
+  --orange: #5B4700;
+  --orange-pale: #F3EEDF;
+  --bg: #F7F4EC;
   --white: #ffffff;
-  --text: #1a2332;
-  --muted: #6b7280;
-  --border: #dde1e7;
-  --green: #16a34a;
-  --red: #dc2626;
+  --text: #14231D;
+  --muted: #434C47;
+  --border: #DDD6C6;
+  --green: #005941;
+  --red: #991B1B;
   /* agent */
-  --agent-bg: #0d1e30;
-  --agent-surface: #152840;
-  --agent-border: #1e3a5a;
-  --agent-text: #cdd8e3;
-  --agent-muted: #7a9ab8;
+  --agent-bg: #14231D;
+  --agent-surface: #1D3029;
+  --agent-border: #2E4A3F;
+  --agent-text: #E3EEE9;
+  --agent-muted: #B8C2BC;
 }
+.topbar,.status-bar,.modal-box,.section.agent-section{--orange:#BEAF87}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
 
 /* ── LOGIN ── */
 #login-screen{
   position:fixed;inset:0;
-  background:#f8f9fb;
+  background:#F7F4EC;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:24px;z-index:1000;padding:40px;
 }
@@ -45,8 +46,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   display:flex;align-items:center;justify-content:center;
   font-family:'Inter',sans-serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:1px;
 }
-.login-brand{font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--primary);opacity:.7}
-.login-title{font-size:26px;font-weight:700;color:var(--text);text-align:center;line-height:1.2;letter-spacing:-.3px}
+.login-brand{font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--primary)}
+.login-title{font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:400;color:var(--text);text-align:center;line-height:1.2;letter-spacing:-.3px}
 .login-title span{color:var(--orange)}
 .login-box{width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px}
 .login-input{
@@ -75,7 +76,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── TOPBAR ── */
 .topbar{
   position:fixed;top:0;left:0;right:0;z-index:100;
-  background:var(--primary);
+  background:#14231D;
   border-bottom:2px solid var(--orange);
   padding:11px 16px;
   display:flex;align-items:center;justify-content:space-between;
@@ -87,14 +88,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--primary);letter-spacing:0;
 }
 .topbar-brand{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.2px}
-.topbar-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:1px}
+.topbar-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.92);margin-top:1px}
 .topbar-actions{display:flex;gap:8px;align-items:center}
 .btn-sm{padding:7px 12px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;cursor:pointer;border:none;transition:all .2s}
 .btn-sm:active{opacity:.75}
-.btn-ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+.btn-ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.92)}
 .btn-ghost:hover{background:rgba(255,255,255,.15)}
-.btn-agent{background:transparent;border:1px solid rgba(232,99,10,.5);color:rgba(232,99,10,.9);display:flex;align-items:center;gap:5px}
-.btn-agent.active{background:var(--orange);color:#fff;border-color:var(--orange)}
+.btn-agent{background:transparent;border:1px solid rgba(190,175,135,.5);color:var(--orange);display:flex;align-items:center;gap:5px}
+.btn-agent.active{background:var(--orange);color:#14231D;border-color:var(--orange)}
 .agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
 /* ── PROGRESS ── */
@@ -114,7 +115,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 }
 .section-num{
   width:27px;height:27px;border-radius:50%;
-  background:var(--primary-pale);border:1.5px solid rgba(0,49,83,.3);
+  background:var(--primary-pale);border:1.5px solid rgba(20,35,29,.3);
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;color:var(--primary);flex-shrink:0;
 }
@@ -129,7 +130,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── AGENT BADGE ── */
 .agent-badge{
   display:inline-flex;align-items:center;gap:4px;
-  background:rgba(232,99,10,.12);border:1px solid rgba(232,99,10,.4);
+  background:rgba(190,175,135,.12);border:1px solid rgba(190,175,135,.4);
   border-radius:4px;padding:2px 7px;
   font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--orange);font-weight:600;
 }
@@ -191,7 +192,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 }
 .check-item.checked{border-color:var(--primary);background:var(--primary-pale)}
 .section.agent-section .check-item{background:var(--agent-surface);border-color:var(--agent-border)}
-.section.agent-section .check-item.checked{border-color:var(--orange);background:rgba(232,99,10,.08)}
+.section.agent-section .check-item.checked{border-color:var(--orange);background:rgba(190,175,135,.08)}
 .check-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
 .check-item.checked .check-box{background:var(--primary);border-color:var(--primary)}
 .section.agent-section .check-item.checked .check-box{background:var(--orange);border-color:var(--orange)}
@@ -205,7 +206,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── RANGE ── */
 .range-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end}
 .range-result{
-  background:var(--primary-pale);border:1.5px solid rgba(0,49,83,.25);
+  background:var(--primary-pale);border:1.5px solid rgba(20,35,29,.25);
   border-radius:8px;padding:11px 10px;
   font-weight:700;font-size:14px;color:var(--primary);text-align:center;
 }
@@ -213,12 +214,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── CALLOUT ── */
 .callout{background:var(--orange-pale);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5}
 .callout strong{color:var(--orange)}
-.section.agent-section .callout{background:rgba(232,99,10,.07);border-color:var(--orange);color:var(--agent-muted)}
+.section.agent-section .callout{background:rgba(190,175,135,.07);border-color:var(--orange);color:var(--agent-muted)}
 .section.agent-section .callout strong{color:var(--orange)}
 
 /* ── TESTIGOS ── */
 .testigos-table{width:100%;border-collapse:collapse;font-size:12px}
-.testigos-table th{background:var(--primary-pale);padding:7px 8px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--primary);text-align:left;font-weight:600;border-bottom:1.5px solid rgba(0,49,83,.2)}
+.testigos-table th{background:var(--primary-pale);padding:7px 8px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--primary);text-align:left;font-weight:600;border-bottom:1.5px solid rgba(20,35,29,.2)}
 .testigos-table td{padding:8px 6px;border-bottom:1px solid var(--bg)}
 .testigos-table td input{
   background:transparent;border:none;border-bottom:1px solid var(--border);
@@ -228,7 +229,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .testigos-table td input:focus{border-color:var(--primary)}
 .btn-add-row{
   margin-top:8px;padding:7px 14px;border-radius:6px;
-  background:var(--primary-pale);border:1px solid rgba(0,49,83,.2);
+  background:var(--primary-pale);border:1px solid rgba(20,35,29,.2);
   color:var(--primary);font-size:12px;font-weight:600;font-family:'Inter',sans-serif;
   cursor:pointer;display:flex;align-items:center;gap:5px;
 }
@@ -236,7 +237,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── VENTANA ── */
 .ventana-table{width:100%;border-collapse:collapse;font-size:13px}
-.ventana-table th{background:var(--primary);padding:8px 10px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.75);text-align:left;font-weight:600}
+.ventana-table th{background:var(--primary);padding:8px 10px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.92);text-align:left;font-weight:600}
 .ventana-table td{padding:9px 8px;border-bottom:1px solid var(--bg)}
 .ventana-table td.label{font-weight:600;font-size:13px}
 .ventana-table td input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;width:100%;outline:none;padding:5px 8px;border-radius:5px;transition:border-color .2s}
@@ -245,14 +246,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── STATUS BAR ── */
 .status-bar{
   position:fixed;bottom:0;left:0;right:0;
-  background:var(--primary);border-top:2px solid var(--orange);
+  background:#14231D;border-top:2px solid var(--orange);
   padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:100;
 }
-.status-info{font-size:11px;color:rgba(255,255,255,.4);flex:1}
+.status-info{font-size:11px;color:rgba(255,255,255,.92);flex:1}
 .btn-full{padding:12px 18px;border-radius:8px;font-weight:600;font-size:12px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;cursor:pointer;border:none}
 .btn-full:active{opacity:.8}
 .btn-pdf{background:rgba(255,255,255,.1);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
-.btn-save{background:var(--orange);color:#fff}
+.btn-save{background:var(--orange);color:#14231D}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;padding:9px 20px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:200;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.2)}
@@ -267,21 +268,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .draft-item{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:12px 14px;cursor:pointer;transition:background .15s}
 .draft-item:hover{background:rgba(255,255,255,.15)}
 .draft-item-name{font-size:14px;font-weight:600;color:#fff}
-.draft-item-meta{font-size:11px;color:rgba(255,255,255,.45);margin-top:3px}
-.draft-item-load{float:right;background:var(--orange);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.draft-item-meta{font-size:11px;color:rgba(255,255,255,.92);margin-top:3px}
+.draft-item-load{float:right;background:var(--orange);color:#14231D;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
 #modal.show{opacity:1;pointer-events:all}
 .modal-box{background:var(--primary);border-radius:16px 16px 0 0;padding:28px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform .35s ease}
 #modal.show .modal-box{transform:translateY(0)}
 .modal-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:5px;letter-spacing:-.2px}
-.modal-sub{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:20px}
+.modal-sub{font-size:12px;color:rgba(255,255,255,.92);margin-bottom:20px}
 .modal-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.modal-field label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.modal-field label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.92)}
 .modal-field input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-size:13px;padding:11px 12px;border-radius:8px;outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
 .modal-field input:focus{border-color:var(--orange)}
 .modal-actions{display:flex;gap:8px;margin-top:20px}
 .modal-btn{flex:1;padding:13px;border-radius:8px;font-weight:600;font-size:12px;letter-spacing:.5px;text-transform:uppercase;font-family:'Inter',sans-serif;cursor:pointer;border:none}
-.btn-cancel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5)}
-.btn-confirm{background:var(--orange);color:#fff}
+.btn-cancel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.92)}
+.btn-confirm{background:var(--orange);color:#14231D}
 .divider{height:1px;background:var(--border);margin:4px 0}
 .section.agent-section .divider{background:var(--agent-border)}
 .sublabel{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:4px 0 2px}
@@ -306,7 +307,7 @@ const AR_IG=1.0000;
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-logo-wrap">
-    <div class="login-monogram">NL</div>
+    <div class="login-monogram"><img src="assets/nl-mono-crema.svg" alt="NL" style="width:34px;height:auto"></div>
     <div class="login-brand">Nahuel Lim · Real Estate</div>
   </div>
   <h1 class="login-title">Herramienta <span>ACM</span></h1>
@@ -321,9 +322,9 @@ const AR_IG=1.0000;
 <div id="app">
   <div class="topbar">
     <div class="topbar-left">
-      <div class="topbar-monogram">NL</div>
+      <div class="topbar-monogram"><img src="assets/nl-mono-verde.svg" alt="NL" style="width:18px;height:auto"></div>
       <div>
-        <div class="topbar-brand">Nahuel Lim <span style="color:rgba(255,255,255,.35);font-weight:400;margin:0 4px">|</span> <span style="color:var(--orange);font-weight:600">Century 21 Evolución</span></div>
+        <div class="topbar-brand">Nahuel Lim <span style="color:rgba(255,255,255,.92);font-weight:400;margin:0 4px">|</span> <span style="color:var(--orange);font-weight:600">Century 21 Evolución</span></div>
         <div class="topbar-label">ACM · Prelisting</div>
       </div>
     </div>
@@ -473,7 +474,7 @@ const AR_IG=1.0000;
         <div class="field-row3">
           <div class="field"><label>M² cubierta</label><input type="number" id="sup_cub" placeholder="60" oninput="calcHom()"></div>
           <div class="field"><label>M² total</label><input type="number" id="sup_tot" placeholder="70" oninput="calcHom()"></div>
-          <div class="field"><label>M² homogénea (auto)</label><input type="number" id="sup" placeholder="65" readonly style="background:#eef1f5;color:#555"></div>
+          <div class="field"><label>M² homogénea (auto)</label><input type="number" id="sup" placeholder="65" oninput="this.dataset.manual='1'" style="background:#EFEBE0;color:#434C47"></div>
         </div>
         <div class="field-row3">
           <div class="field"><label>Ambientes</label><input type="number" id="amb" placeholder="3" min="1" max="10"></div>
@@ -493,9 +494,9 @@ const AR_IG=1.0000;
         <div class="field">
           <label>Espacio exterior</label>
           <div style="display:flex;gap:18px;flex-wrap:wrap;padding-top:6px">
-            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="espacio-libre" value="Balcón"> Balcón</label>
-            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="espacio-libre" value="Patio"> Patio</label>
-            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" class="espacio-libre" value="Terraza"> Terraza</label>
+            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 4px"><input type="checkbox" class="espacio-libre" value="Balcón"> Balcón</label>
+            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 4px"><input type="checkbox" class="espacio-libre" value="Patio"> Patio</label>
+            <label style="font-weight:400;font-size:13px;text-transform:none;letter-spacing:0;display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 4px"><input type="checkbox" class="espacio-libre" value="Terraza"> Terraza</label>
           </div>
         </div>
         <div class="field-row">
@@ -539,12 +540,12 @@ const AR_IG=1.0000;
           <label>Estado de conservación</label>
           <select id="prop_estado">
             <option value="">Sin definir</option>
-            <option>Requiere reciclaje integral</option>
-            <option>Requiere algunas mejoras</option>
-            <option>De época en buen estado</option>
-            <option>Bien mantenido</option>
-            <option>Excelente estado</option>
-            <option>A estrenar</option>
+            <option value="10">10 — A estrenar</option>
+            <option value="9">9 — Excelente estado</option>
+            <option value="7">7 — Bien mantenido</option>
+            <option value="6">6 — De época, buen estado</option>
+            <option value="4">4 — Requiere algunas mejoras</option>
+            <option value="2">2 — Requiere reciclaje integral</option>
           </select>
         </div>
         <div class="field">
@@ -563,7 +564,7 @@ const AR_IG=1.0000;
       </div>
       <div class="section-body" id="body-sec-4">
         <table class="rating-table">
-          <thead><tr><th>Atributo</th><th>A&nbsp;mej.</th><th>Reg</th><th>Bueno</th><th>M.Bueno</th><th>Exc.</th></tr></thead>
+          <thead><tr><th>Atributo</th><th>Malo</th><th>Reg</th><th>Bueno</th><th>Exc.</th></tr></thead>
           <tbody id="rating-body"></tbody>
         </table>
       </div>
@@ -597,11 +598,12 @@ const AR_IG=1.0000;
         <table class="testigos-table" id="testigos-table">
           <thead>
             <tr>
-              <th style="width:30%">Dirección / Ref.</th>
-              <th style="width:12%">m²</th>
-              <th style="width:15%">USD/m²</th>
-              <th style="width:18%">Total USD</th>
-              <th style="width:25%">Link</th>
+              <th style="width:24%">Dirección / Ref.</th>
+              <th style="width:10%">m² hom.</th>
+              <th style="width:10%">Estado</th>
+              <th style="width:14%">USD/m²</th>
+              <th style="width:16%">Total USD</th>
+              <th style="width:26%">Link</th>
             </tr>
           </thead>
           <tbody id="testigos-body"></tbody>
@@ -627,12 +629,12 @@ const AR_IG=1.0000;
           <label>Screenshot del reporte (opcional)</label>
           <input type="file" id="ri_screenshot" accept="image/*" onchange="onRiShot(this)">
           <div class="sublabel" style="margin-top:3px">Si subís la imagen, va directo al PDF. Si no, se usan los campos de abajo.</div>
-          <img id="ri_shot_preview" style="display:none;max-width:100%;margin-top:8px;border:1px solid #d5dce5;border-radius:6px">
+          <img id="ri_shot_preview" style="display:none;max-width:100%;margin-top:8px;border:1px solid #DDD6C6;border-radius:6px">
         </div>
         <table class="testigos-table" style="margin-top:8px">
           <thead>
             <tr>
-              <th>Superficie (m²)</th>
+              <th>Sup. homogeneizada</th>
               <th>ValorRI (USD)</th>
               <th>Valor m² (USD)</th>
             </tr>
@@ -665,19 +667,20 @@ const AR_IG=1.0000;
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="pub_m2_min" placeholder="2.400" oninput="calcProm('pub_m2')"></div>
           <div class="field"><label>Máx</label><input type="number" id="pub_m2_max" placeholder="3.200" oninput="calcProm('pub_m2')"></div>
-          <div><div class="sublabel">Prom.</div><input type="text" id="pub_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
+          <div><div class="sublabel">Prom.</div><input type="text" id="pub_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #DDD6C6;border-radius:6px;font-size:14px;color:#005941"></div>
         </div>
         <div class="range-row">
           <div class="field"><label>Valor publicado Mín (USD)</label><input type="number" id="pub_tot_min" placeholder="180.000" oninput="calcProm('pub_tot')"></div>
           <div class="field"><label>Valor publicado Máx (USD)</label><input type="number" id="pub_tot_max" placeholder="240.000" oninput="calcProm('pub_tot')"></div>
-          <div><div class="sublabel">Prom.</div><input type="text" id="pub_tot_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
+          <div><div class="sublabel">Prom.</div><input type="text" id="pub_tot_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #DDD6C6;border-radius:6px;font-size:14px;color:#005941"></div>
         </div>
         <div class="divider"></div>
-        <div class="sublabel">Vendidos — Rango de valor (USD)</div>
+        <div class="callout" style="font-size:11px;margin-bottom:4px">No hay dato público de cierres en CABA — esto es tu estimación propia, no un promedio de mercado real.</div>
+        <div class="sublabel">Vendidos — estimación propia (USD)</div>
         <div class="range-row">
           <div class="field"><label>Mín</label><input type="number" id="vend_m2_min" placeholder="100.000" oninput="calcProm('vend_m2')"></div>
           <div class="field"><label>Máx</label><input type="number" id="vend_m2_max" placeholder="120.000" oninput="calcProm('vend_m2')"></div>
-          <div><div class="sublabel">Prom.</div><input type="text" id="vend_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #d5dce5;border-radius:6px;font-size:14px;color:#003153"></div>
+          <div><div class="sublabel">Prom.</div><input type="text" id="vend_m2_prom" placeholder="auto" oninput="this.dataset.manual='1'" style="width:100%;text-align:center;font-weight:700;padding:6px 4px;border:1.5px solid #DDD6C6;border-radius:6px;font-size:14px;color:#005941"></div>
         </div>
         <div class="field-row">
           <div class="field"><label>Días prom. en mercado</label><input type="number" id="acm_dias" placeholder="75"></div>
@@ -706,19 +709,20 @@ const AR_IG=1.0000;
           <thead><tr><th>Escenario</th><th>Total USD</th></tr></thead>
           <tbody>
             <tr>
-              <td class="label" style="color:var(--primary);font-weight:700">Valor Cierre (piso)</td>
+              <td class="label" style="color:var(--primary);font-weight:700">Región de Venta</td>
               <td><input type="text" id="v_cierre_tot" placeholder="176.000"></td>
             </tr>
             <tr>
-              <td class="label">Lanzamiento Competitivo</td>
+              <td class="label">Región de Prueba (Lanzamiento)</td>
               <td><input type="text" id="v_lanch_tot" placeholder="195.000"></td>
             </tr>
             <tr>
-              <td class="label" style="color:var(--muted)">Publicado promedio (techo)</td>
+              <td class="label" style="color:var(--muted)">Región de Espera (uso interno)</td>
               <td><input type="text" id="v_pub_tot" placeholder="210.000"></td>
             </tr>
           </tbody>
         </table>
+        <div class="callout" style="font-size:11px;margin:6px 0">La Región de Espera es de uso interno — no la muestres como número fijo al cliente, se maneja en la conversación.</div>
         <div class="field highlight-field" style="margin-top:8px">
           <label>Precio acordado de lanzamiento (USD)</label>
           <input type="text" id="precio_acordado" placeholder="195.000">
@@ -891,7 +895,7 @@ const PASSWORD = "2025"; // cambiá antes de subir
 const BARRIOS_CABA = ["Agronomía","Almagro","Balvanera","Barracas","Belgrano","Boedo","Caballito","Chacarita","Coghlan","Colegiales","Constitución","Flores","Floresta","La Boca","La Paternal","Liniers","Mataderos","Monte Castro","Montserrat","Nueva Pompeya","Núñez","Palermo","Parque Avellaneda","Parque Chacabuco","Parque Chas","Parque Patricios","Puerto Madero","Recoleta","Retiro","Saavedra","San Cristóbal","San Nicolás","San Telmo","Vélez Sársfield","Versalles","Villa Crespo","Villa del Parque","Villa Devoto","Villa Gral. Mitre","Villa Lugano","Villa Luro","Villa Ortúzar","Villa Pueyrredón","Villa Real","Villa Riachuelo","Villa Santa Rita","Villa Soldati","Villa Urquiza"];
 
 const ATRIBUTOS = ["Luminosidad","Ventilación","Accesibilidad (ascensor)","Distribución interna","Mantenimiento / modernización","Visuales y orientación","Aire libre (balcón/terraza)","Conectividad y transporte"];
-const NIVELES = ["A mejorar","Regular","Bueno","Muy bueno","Excelente"];
+const NIVELES = ["Malo","Regular","Bueno","Excelente"];
 
 const OBJECIONES = ["Sin ascensor / acceso solo por escalera","Sin luz natural — contrafrente o pozo de luz","Sin visual / da a medianera o pared ciega","Zona conflictiva o cerca de cancha / estadio","Estado de mantenimiento regular o malo","Escaleras internas (PH de dos plantas, duplex)","Distribución disfuncional o poco práctica","Obras linderas activas en este momento","Problemas estructurales o de humedad en el edificio","Expensas altas respecto del promedio de la zona","Sin espacios exteriores (balcón/terraza)"];
 
@@ -1023,6 +1027,7 @@ function addTestigoRow() {
   tr.innerHTML = `
     <td><input type="text" placeholder="Ej: Gurruchaga 1200 3A" id="t_dir_${n}"></td>
     <td><input type="number" placeholder="65" id="t_sup_${n}" oninput="calcTestigoM2(${n})"></td>
+    <td><input type="number" placeholder="7" min="1" max="10" id="t_estado_${n}"></td>
     <td><input type="number" placeholder="2600" id="t_m2_${n}" oninput="calcTestigoTotal(${n})"></td>
     <td><input type="text" placeholder="169.000" id="t_tot_${n}" oninput="this.dataset.manual='1'"></td>
     <td><input type="url" placeholder="zonaprop.com..." id="t_link_${n}"></td>
@@ -1050,7 +1055,7 @@ function calcHom(){
   const c=parseFloat(document.getElementById('sup_cub')?.value)||0;
   const t=parseFloat(document.getElementById('sup_tot')?.value)||0;
   const el=document.getElementById('sup');
-  if(el) el.value=(c&&t)?Math.round((c+t)/2):'';
+  if(el && !el.dataset.manual) el.value=(c&&t)?Math.round((c+t)/2):'';
 }
 
 // ── SCREENSHOT REPORTE INMOBILIARIO (se incrusta en el PDF) ──
@@ -1082,7 +1087,7 @@ function injectPdfToggles(){
     const chev=header.querySelector('.section-chevron');
     const lbl=document.createElement('label');
     lbl.title='Incluir esta sección en el PDF del cliente';
-    lbl.style.cssText='margin-left:auto;margin-right:12px;font-size:11px;font-weight:600;color:#003153;display:flex;align-items:center;gap:5px;cursor:pointer';
+    lbl.style.cssText='margin-left:auto;margin-right:12px;font-size:11px;font-weight:600;color:#005941;display:flex;align-items:center;gap:5px;cursor:pointer';
     lbl.addEventListener('click', e=>e.stopPropagation());
     const chk = (id==='sec-2') ? '' : 'checked';  // Contextual arranca destildada
     lbl.innerHTML='<input type="checkbox" id="pdf-'+id+'" '+chk+' style="cursor:pointer"> PDF';
@@ -1121,7 +1126,7 @@ function collect() {
   const testigos = [];
   for(let i=1;i<=testigoCount;i++){
     const dir=g(`t_dir_${i}`);
-    if(dir) testigos.push({dir,sup:g(`t_sup_${i}`),m2:g(`t_m2_${i}`),tot:g(`t_tot_${i}`),link:g(`t_link_${i}`)});
+    if(dir) testigos.push({dir,sup:g(`t_sup_${i}`),estado:g(`t_estado_${i}`),m2:g(`t_m2_${i}`),tot:g(`t_tot_${i}`),link:g(`t_link_${i}`)});
   }
   return {
     fecha:g('fecha'),agente:g('agente'),
@@ -1251,7 +1256,7 @@ function generatePDF() {
     } else if(d.reporte.sup||d.reporte.m2||d.reporte.total){
       checkY(18); doc.setFillColor(238,244,249); doc.rect(M,y,CW,8,'F');
       doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(PR,PG,PB);
-      doc.text('Superficie (m²)',M+3,y+5.3); doc.text('ValorRI (USD)',M+CW/3+3,y+5.3); doc.text('Valor m² (USD)',M+CW*2/3+3,y+5.3); y+=8;
+      doc.text('Sup. homogeneizada',M+3,y+5.3); doc.text('ValorRI (USD)',M+CW/3+3,y+5.3); doc.text('Valor m² (USD)',M+CW*2/3+3,y+5.3); y+=8;
       doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(VAL[0],VAL[1],VAL[2]);
       doc.text(d.reporte.sup||'',M+3,y+5); doc.text(d.reporte.total||'',M+CW/3+3,y+5); doc.text(d.reporte.m2||'',M+CW*2/3+3,y+5); y+=10;
     } else { doc.setFontSize(9); doc.setTextColor(140,130,120); doc.text('Sin datos del reporte',M,y); y+=7; }
@@ -1271,7 +1276,7 @@ function generatePDF() {
         if(ven.length){ doc.setFillColor(238,244,249); doc.rect(xR,y,colW,7,'F'); }
         doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(PR,PG,PB);
         if(pub.length) doc.text('PUBLICADO',xL+3,y+4.8);
-        if(ven.length) doc.text('VENDIDO',xR+3,y+4.8); y+=11;
+        if(ven.length) doc.text('VENDIDO (estim.)',xR+3,y+4.8); y+=11;
         const rows=Math.max(pub.length,ven.length);
         for(let i=0;i<rows;i++){ checkY(7);
           if(pub[i]) kvAt(pub[i][0],pub[i][1],xL+3,xL+3+31);
@@ -1292,7 +1297,7 @@ function generatePDF() {
   }
 
   {
-    const vrows=[['Valor Cierre (piso)',d.ventana.cierre_tot,[PR,PG,PB]],['Lanzamiento Competitivo',d.ventana.lanch_tot,[20,30,50]],['Publicado promedio (techo)',d.ventana.pub_tot,[120,120,130]]].filter(r=>r[1]);
+    const vrows=[['Región de Venta',d.ventana.cierre_tot,[PR,PG,PB]],['Región de Prueba (Lanzamiento)',d.ventana.lanch_tot,[20,30,50]]].filter(r=>r[1]);
     if(pdfOn('sec-9') && (vrows.length||d.ventana.precio_acordado||d.ventana.compromisos)){
       secTitle('9. VENTANA DE VENTA');
       if(vrows.length){
@@ -1301,7 +1306,7 @@ function generatePDF() {
         doc.text('Escenario',M+3,y+5.3); doc.text('Total USD',M+120,y+5.3); y+=8;
         vrows.forEach((r,i)=>{ checkY(9);
           doc.setFillColor(i%2===0?245:255,i%2===0?248:255,i%2===0?252:255); doc.rect(M,y,CW,8,'F');
-          doc.setFont('helvetica',r[0]==='Lanzamiento Competitivo'?'bold':'normal'); doc.setFontSize(9); doc.setTextColor(r[2][0],r[2][1],r[2][2]);
+          doc.setFont('helvetica',r[0]==='Región de Prueba (Lanzamiento)'?'bold':'normal'); doc.setFontSize(9); doc.setTextColor(r[2][0],r[2][1],r[2][2]);
           doc.text(String(r[0]).substring(0,60),M+3,y+5.3); doc.setTextColor(VAL[0],VAL[1],VAL[2]);
           doc.text('USD '+r[1],M+120,y+5.3); y+=8; });
         y+=3;
@@ -1398,7 +1403,7 @@ function renderDraftList() {
   const listDiv = document.getElementById('draft-list');
   const drafts = getDraftsFromLS();
   if (!drafts.length) {
-    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">No hay borradores guardados en este dispositivo.<br><br>Si guardaste desde otro dispositivo, buscalos en Sheets abajo.</div>';
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:13px;padding:8px 0">No hay borradores guardados en este dispositivo.<br><br>Si guardaste desde otro dispositivo, buscalos en Sheets abajo.</div>';
     return;
   }
   listDiv.innerHTML = '';
@@ -1431,15 +1436,15 @@ async function loadDraftsFromSheets() {
   localStorage.setItem('acm_webhook', url);
   document.getElementById('webhook-url').value = url;
   const listDiv = document.getElementById('draft-list');
-  listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">Buscando en Sheets...</div>';
+  listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:13px;padding:8px 0">Buscando en Sheets...</div>';
   try {
     const res = await fetch(url);
     const json = await res.json();
     if (!json.drafts || !json.drafts.length) {
-      listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">No hay borradores en Sheets.</div>';
+      listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:13px;padding:8px 0">No hay borradores en Sheets.</div>';
       return;
     }
-    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:11px;margin-bottom:8px">BORRADORES EN SHEETS</div>';
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:11px;margin-bottom:8px">BORRADORES EN SHEETS</div>';
     json.drafts.forEach((d, i) => {
       const div = document.createElement('div');
       div.className = 'draft-item';
@@ -1452,7 +1457,7 @@ async function loadDraftsFromSheets() {
     });
     listDiv._sheets_drafts = json.drafts;
   } catch(e) {
-    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.4);font-size:13px;padding:8px 0">Error al conectar. Verificá la URL.</div>';
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:13px;padding:8px 0">Error al conectar. Verificá la URL.</div>';
   }
 }
 
@@ -1506,7 +1511,7 @@ function populateForm(d) {
   if (d.secundarias?.length) {
     d.secundarias.forEach((item, ai) => {
       if (item.nivel) {
-        const li = ['Reg','Bueno','M.Bueno','Exc.'].indexOf(item.nivel);
+        const li = ['Malo','Regular','Bueno','Excelente'].indexOf(item.nivel);
         if (li >= 0) selectRating(ai, li);
       }
     });
@@ -1529,6 +1534,7 @@ function populateForm(d) {
     d.testigos.forEach(t => {
       addTestigoRow();
       s(`t_dir_${testigoCount}`, t.dir); s(`t_sup_${testigoCount}`, t.sup);
+      s(`t_estado_${testigoCount}`, t.estado);
       s(`t_m2_${testigoCount}`, t.m2); s(`t_tot_${testigoCount}`, t.tot);
       s(`t_link_${testigoCount}`, t.link);
     });

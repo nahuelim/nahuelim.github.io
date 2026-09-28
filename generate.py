@@ -44,23 +44,25 @@ TEMPLATE = '''<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 <link rel="icon" type="image/svg+xml" href="https://nahuelim.github.io/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
 :root{{
-  --primary:#003153;--primary-dark:#00243d;
-  --orange:#E8630A;--orange-lt:#fef3eb;--orange-dk:#c4520a;
-  --bg:#f2f3f5;--white:#fff;--text:#1c1c1c;--muted:#6b7280;--border:#e2e4e8;
+  --primary:#005941;--primary-dark:#14231D;--dorado:#BEAF87;
+  --orange:#5B4700;--orange-lt:#F3EEDF;--orange-dk:#5B4700;
+  --bg:#F7F4EC;--white:#fff;--text:#14231D;--muted:#434C47;--border:#DDD6C6;
   --r:10px;--bar-h:62px;
 }}
-body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}}
-.bar{{background:var(--primary);height:var(--bar-h);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.35)}}
+body{{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}}
+.bar{{background:var(--primary-dark);height:var(--bar-h);padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.35)}}
 .bar-l{{display:flex;align-items:center;gap:14px;min-width:0;flex:1;overflow:hidden}}
-.logo-nl{{height:30px;flex-shrink:0;object-fit:contain}}
-.logo-c21{{height:14px;flex-shrink:0;object-fit:contain;opacity:.7}}
+.logo-nl{{height:40px;flex-shrink:0;object-fit:contain}}
+.logo-c21{{height:14px;flex-shrink:0;object-fit:contain}}
 .bar-sep{{width:1px;height:22px;background:rgba(255,255,255,.2);flex-shrink:0}}
 .bar-r{{flex-shrink:0;margin-left:12px}}
-.bwa{{display:inline-flex;align-items:center;gap:7px;background:#25D366;color:#fff;padding:9px 14px;border-radius:7px;text-decoration:none;font-weight:700;font-size:13px;transition:background .15s;white-space:nowrap}}
-.bwa:hover{{background:#1dba57}}
+.bwa{{display:inline-flex;align-items:center;gap:7px;background:rgba(20,35,29,.30);color:#fff;border:1px solid rgba(255,255,255,.18);padding:9px 14px;border-radius:7px;text-decoration:none;font-weight:700;font-size:13px;transition:background .15s;white-space:nowrap}}
+.bwa:hover{{background:rgba(20,35,29,.55)}}
 @media(max-width:480px){{.bar{{padding:0 14px}}.logo-nl{{height:24px}}.logo-c21{{height:11px}}.bar-sep{{height:18px}}.bwa{{padding:8px 12px;font-size:12px}}}}
 @media(max-width:360px){{.bwa span{{display:none}}.bwa{{padding:9px 12px}}}}
 .mosaic{{display:grid;grid-template-columns:60% 1fr;grid-template-rows:1fr;gap:3px;height:480px;background:var(--bg)}}
@@ -84,8 +86,8 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 .lb-thumbs{{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;max-width:90vw}}
 .lb-thumbs::-webkit-scrollbar{{display:none}}
 .lb-thumbs img{{width:58px;height:42px;object-fit:cover;border-radius:3px;cursor:pointer;opacity:.42;transition:opacity .15s;flex-shrink:0;border:2px solid transparent}}
-.lb-thumbs img.on{{opacity:1;border-color:var(--orange)}}
-.lb-cnt{{color:rgba(255,255,255,.5);font-size:12px;letter-spacing:.5px}}
+.lb-thumbs img.on{{opacity:1;border-color:var(--dorado)}}
+.lb-cnt{{color:rgba(255,255,255,.85);font-size:12px;letter-spacing:.5px}}
 .wrap{{max-width:1080px;margin:0 auto;padding:24px 18px 40px;display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start}}
 @media(max-width:800px){{.wrap{{grid-template-columns:1fr}}}}
 .col{{display:flex;flex-direction:column;gap:20px}}
@@ -94,44 +96,44 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var
 .sec-title{{font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.8px;margin-bottom:18px;display:flex;align-items:center;gap:10px}}
 .sec-title::after{{content:'';flex:1;height:1px;background:var(--border)}}
 .optag{{display:inline-block;background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}}
-.prop-address{{font-size:20px;font-weight:800;color:var(--primary);line-height:1.2;margin-bottom:2px}}
+.prop-address{{font-size:22px;font-weight:700;color:var(--primary);line-height:1.2;margin-bottom:2px}}
 .prop-barrio{{font-size:12px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}}
-.price{{font-size:38px;font-weight:800;color:var(--primary);letter-spacing:-.5px;line-height:1}}
+.price{{font-family:Fraunces,Georgia,serif;font-size:44px;font-weight:300;color:var(--primary);letter-spacing:-.5px;line-height:1}}
 .exps{{color:var(--muted);font-size:13px;margin-top:7px}}
 .exps b{{color:var(--text)}}
 .badges{{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}}
-.badge{{background:#f0f4f8;color:#1a2e42;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid #dde3ea}}
+.badge{{background:#E3EEE9;color:#14231D;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid #C9DBD2}}
 .badge.grn{{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}}
-.badge.org{{background:var(--orange-lt);color:var(--orange-dk);border-color:#f9c89e}}
+.badge.org{{background:var(--orange-lt);color:var(--orange-dk);border-color:#DDD0A8}}
 .fgrid{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}}
 @media(max-width:560px){{.fgrid{{grid-template-columns:repeat(2,1fr)}}}}
-.fi{{background:#f8f9fb;border-radius:8px;padding:16px 8px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:7px}}
-.fi-icon{{width:26px;height:26px;object-fit:contain;filter:invert(17%) sepia(62%) saturate(800%) hue-rotate(185deg) brightness(85%)}}
-.fi-val{{font-size:17px;font-weight:800;color:var(--primary)}}
+.fi{{background:#F7F4EC;border-radius:8px;padding:16px 8px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:7px}}
+.fi-icon{{width:26px;height:26px;object-fit:contain;filter:invert(24%) sepia(62%) saturate(900%) hue-rotate(125deg) brightness(78%)}}
+.fi-val{{font-size:18px;font-weight:700;color:var(--primary)}}
 .fi-lbl{{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;line-height:1.3}}
-.desc{{font-size:14px;line-height:1.8;color:#374151}}
+.desc{{font-size:15px;line-height:1.75;color:#14231D}}
 .desc p{{margin-bottom:10px}}
 .desc ul{{margin:6px 0 10px 18px;display:flex;flex-direction:column;gap:6px}}
-.desc-note{{font-size:11px;color:#9ca3af;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);line-height:1.65}}
-.scard{{background:var(--primary);border-radius:var(--r);padding:26px;box-shadow:0 4px 20px rgba(0,49,83,.3)}}
-.agent-photo{{width:74px;height:74px;border-radius:50%;border:2.5px solid var(--orange);display:block;margin:0 auto 14px;object-fit:cover}}
-.scard h3{{color:#fff;font-size:17px;font-weight:700;text-align:center}}
-.scard-role{{color:rgba(255,255,255,.45);font-size:12px;text-align:center;margin-top:3px}}
-.scard-logo{{display:flex;justify-content:center;align-items:center;margin:16px 0 0;height:18px;opacity:.7}}
-.scard-logo img{{height:18px;object-fit:contain}}
-.sdivider{{border:none;border-top:1px solid rgba(255,255,255,.1);margin:18px 0}}
-.bwa-big{{display:flex;align-items:center;justify-content:center;gap:10px;background:#25D366;color:#fff;padding:14px;border-radius:9px;text-decoration:none;font-weight:700;font-size:15px;width:100%;transition:background .15s}}
-.bwa-big:hover{{background:#1dba57}}
-.snote{{color:rgba(255,255,255,.3);font-size:11px;text-align:center;margin-top:10px}}
-.mapcard{{border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(0,49,83,.3)}}
+.desc-note{{font-size:12px;color:#434C47;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);line-height:1.65}}
+.scard{{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:26px;box-shadow:0 4px 20px rgba(20,35,29,.22)}}
+.agent-photo{{width:74px;height:74px;border-radius:50%;border:2.5px solid var(--dorado);display:block;margin:0 auto 14px;object-fit:cover}}
+.scard h3{{color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:19px;font-weight:700;text-align:center}}
+.scard-role{{color:var(--muted);font-size:12px;text-align:center;margin-top:3px}}
+.scard-logo{{display:flex;justify-content:center;align-items:center;margin:16px 0 0;height:40px}}
+.scard-logo img{{height:40px;object-fit:contain}}
+.sdivider{{border:none;border-top:1px solid var(--border);margin:18px 0}}
+.bwa-big{{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--primary);color:#F7F4EC;padding:14px;border-radius:9px;text-decoration:none;font-weight:700;font-size:15px;width:100%;transition:background .15s}}
+.bwa-big:hover{{background:#004330}}
+.snote{{color:var(--muted);font-size:11px;text-align:center;margin-top:10px}}
+.mapcard{{border-radius:var(--r);overflow:hidden;box-shadow:0 4px 20px rgba(20,35,29,.22)}}
 .mapcard iframe{{width:100%;height:360px;border:none;display:block}}
-.maplbl{{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid #e8eaed}}
+.maplbl{{background:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;border-top:1px solid #DDD6C6}}
 .maplbl svg{{flex-shrink:0;color:var(--orange)}}
-.maplbl-text b{{display:block;color:#1c1c1c;font-size:13px;font-weight:600;line-height:1.3}}
-.maplbl-text span{{color:#6b7280;font-size:11px}}
-footer{{background:var(--primary-dark);color:rgba(255,255,255,.38);text-align:center;padding:24px;font-size:12px;line-height:1.9}}
-footer strong{{color:rgba(255,255,255,.7)}}
-footer a{{color:var(--orange);text-decoration:none}}
+.maplbl-text b{{display:block;color:#14231D;font-size:13px;font-weight:600;line-height:1.3}}
+.maplbl-text span{{color:#434C47;font-size:11px}}
+footer{{background:var(--primary-dark);color:#B8C2BC;text-align:center;padding:24px;font-size:12px;line-height:1.9}}
+footer strong{{color:#F7F4EC}}
+footer a{{color:var(--dorado);text-decoration:none}}
 /* ── Mobile order & sticky bar ───────────────────────────── */
 @media(max-width:800px){{
   .wrap{{padding-bottom:80px}}
@@ -148,15 +150,15 @@ footer a{{color:var(--orange);text-decoration:none}}
   }}
   .sticky-wa-avatar{{
     width:40px;height:40px;border-radius:50%;
-    border:2px solid var(--orange);object-fit:cover;flex-shrink:0;
+    border:2px solid var(--dorado);object-fit:cover;flex-shrink:0;
   }}
   .sticky-wa-btn{{
     flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
-    background:#25D366;color:#fff;padding:12px 14px;
+    background:var(--primary);color:#F7F4EC;padding:12px 14px;
     border-radius:9px;text-decoration:none;font-weight:700;font-size:15px;
     transition:background .15s;
   }}
-  .sticky-wa-btn:hover{{background:#1dba57}}
+  .sticky-wa-btn:hover{{background:#004330}}
   .bar-r{{display:none}}
 }}
 </style>
@@ -241,7 +243,7 @@ footer a{{color:var(--orange);text-decoration:none}}
       <img src="https://nahuelim.github.io/assets/profile.jpg" alt="Nahuel Lim" class="agent-photo">
       <h3>Nahuel Lim</h3>
       <div class="scard-role">Asesor Inmobiliario</div>
-      <div class="scard-logo"><img src="https://nahuelim.github.io/assets/c21-logo.svg" alt="Century 21"></div>
+      <div class="scard-logo"><img src="https://nahuelim.github.io/assets/c21-evolucion-centro-tinta.svg" alt="Century 21 Evolución"></div>
       <hr class="sdivider">
       <a class="bwa-big" href="{wa_url}" target="_blank"><svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>&nbsp;Consultar por WhatsApp</a>
       <div class="snote">Consultame sin compromiso</div>
