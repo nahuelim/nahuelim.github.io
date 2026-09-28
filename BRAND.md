@@ -4,7 +4,7 @@ Referencia única de la marca personal. Si algo acá contradice otro lugar (Driv
 
 - **Design system visual:** https://claude.ai/artifact/NEtMoHjK4t3s2o8z6gNZk8
 - **Assets en uso:** carpeta `assets/` de este repo, publicados en `https://nahuelim.com.ar/assets/<archivo>`
-- **Copia de respaldo:** Google Drive → carpeta "Marca · Nahuel Lim" (el lockup de ahí es la versión vieja en Fraunces; el vigente es el de este repo)
+- **Copia de respaldo:** Google Drive → "4. NL" → "Marca · Nahuel Lim" (https://drive.google.com/drive/folders/1EhV_lXqBftSze9Vv0PvPdm5gKXPh-E27) (el lockup de ahí es la versión vieja en Fraunces; el vigente es el de este repo)
 
 ## Regla de contraste: AAA
 
