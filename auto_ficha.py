@@ -40,24 +40,37 @@ HTML = r"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Generador de Fichas · Nahuel Lim</title>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..500&family=Inter:wght@400;500;600;700&display=swap');
+  /* Marca Nahuel Lim — ver BRAND.md (AAA) */
   :root {
-    --primary: #003153;
-    --orange:  #E8630A;
-    --bg:      #f0f2f5;
+    --tinta:        #14231D;
+    --tinta-suave:  #434C47;
+    --verde:        #006A4E;
+    --verde-prof:   #005941;
+    --verde-claro:  #E3EEE9;
+    --crema:        #F7F4EC;
+    --dorado:       #BEAF87;
+    --dorado-osc:   #5B4700;
+    --linea:        #DDD6C6;
+
+    --primary: var(--verde-prof);
+    --orange:  var(--verde-prof);
+    --bg:      var(--crema);
     --white:   #fff;
-    --muted:   #6b7280;
-    --border:  #dde1e7;
-    --green:   #16a34a;
-    --red:     #dc2626;
+    --muted:   var(--tinta-suave);
+    --border:  var(--linea);
+    --green:   var(--verde-prof);
+    --red:     #8F1D1D;
+    --mono:    ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: #111; min-height: 100vh; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tinta); min-height: 100vh; }
 
   /* NAV */
   nav {
-    background: var(--primary);
+    background: var(--tinta);
     padding: 0 28px;
     height: 54px;
     display: flex;
@@ -65,14 +78,19 @@ HTML = r"""<!DOCTYPE html>
     justify-content: space-between;
   }
   nav .brand {
-    color: #fff;
+    color: var(--crema);
     font-weight: 600;
     font-size: 14px;
     letter-spacing: .04em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
+  nav .brand img { height: 26px; width: auto; display: block; }
   nav .badge {
-    background: var(--orange);
-    color: #fff;
+    background: transparent;
+    border: 1px solid var(--dorado);
+    color: var(--dorado);
     font-size: 10px;
     font-weight: 600;
     padding: 3px 9px;
@@ -89,9 +107,11 @@ HTML = r"""<!DOCTYPE html>
   }
 
   h1 {
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--primary);
+    font-family: 'Fraunces', serif;
+    font-variant-numeric: lining-nums;
+    font-size: 30px;
+    font-weight: 300;
+    color: var(--tinta);
     margin-bottom: 6px;
   }
   .subtitle {
@@ -105,7 +125,7 @@ HTML = r"""<!DOCTYPE html>
     background: var(--white);
     border-radius: 12px;
     padding: 24px;
-    box-shadow: 0 1px 6px rgba(0,0,0,.07);
+    border: 1px solid var(--linea);
     margin-bottom: 20px;
   }
 
@@ -129,7 +149,7 @@ HTML = r"""<!DOCTYPE html>
     border-radius: 8px;
     padding: 11px 14px;
     font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     outline: none;
     transition: border-color .15s;
     background: #fff;
@@ -137,7 +157,7 @@ HTML = r"""<!DOCTYPE html>
   input[type=text]:focus, input[type=number]:focus, select:focus, textarea:focus {
     border-color: var(--primary);
   }
-  textarea { resize: vertical; min-height: 120px; font-family: 'DM Mono', monospace; font-size: 13px; }
+  textarea { resize: vertical; min-height: 120px; font-family: var(--mono); font-size: 13px; }
 
   .btn {
     display: inline-flex;
@@ -154,10 +174,10 @@ HTML = r"""<!DOCTYPE html>
   }
   .btn:hover { opacity: .88; transform: translateY(-1px); }
   .btn:active { transform: translateY(0); }
-  .btn-primary   { background: var(--primary); color: #fff; }
-  .btn-orange    { background: var(--orange); color: #fff; }
-  .btn-outline   { background: transparent; border: 1.5px solid var(--border); color: #374151; }
-  .btn-green     { background: var(--green); color: #fff; }
+  .btn-primary   { background: var(--verde-prof); color: var(--crema); }
+  .btn-orange    { background: var(--verde-prof); color: var(--crema); }
+  .btn-outline   { background: transparent; border: 1.5px solid var(--linea); color: var(--tinta); }
+  .btn-green     { background: var(--verde-prof); color: var(--crema); }
   .btn-sm        { padding: 7px 14px; font-size: 13px; }
 
   /* PORTAL PILLS */
@@ -179,9 +199,9 @@ HTML = r"""<!DOCTYPE html>
     color: var(--muted);
   }
   .pill.active {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
+    background: var(--verde-prof);
+    border-color: var(--verde-prof);
+    color: var(--crema);
   }
 
   /* FORM GRID */
@@ -201,23 +221,23 @@ HTML = r"""<!DOCTYPE html>
     margin-top: 16px;
     display: none;
   }
-  .status.info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
-  .status.success { background: #f0fdf4; color: var(--green); border: 1px solid #bbf7d0; }
-  .status.error   { background: #fef2f2; color: var(--red); border: 1px solid #fecaca; }
+  .status.info    { background: #fff; color: var(--tinta); border: 1px solid var(--linea); }
+  .status.success { background: var(--verde-claro); color: var(--verde-prof); border: 1px solid #C5DCD2; }
+  .status.error   { background: #FBEDEA; color: var(--red); border: 1px solid #EBC7C0; }
 
   /* RESULT LINK */
   .result-box {
     margin-top: 20px;
     padding: 18px 20px;
-    background: var(--primary);
+    background: var(--tinta);
     border-radius: 10px;
     display: none;
   }
-  .result-box .lbl { color: rgba(255,255,255,.55); font-size: 12px; margin-bottom: 6px; }
+  .result-box .lbl { color: var(--dorado); font-size: 12px; margin-bottom: 6px; }
   .result-link {
-    font-family: 'DM Mono', monospace;
+    font-family: var(--mono);
     font-size: 14px;
-    color: #fff;
+    color: var(--crema);
     word-break: break-all;
   }
   .result-actions {
@@ -229,18 +249,18 @@ HTML = r"""<!DOCTYPE html>
 
   /* FOTOS PENDIENTES */
   .fotos-info {
-    background: #fffbeb;
-    border: 1px solid #fde68a;
+    background: #fff;
+    border: 1px solid var(--dorado);
     border-radius: 8px;
     padding: 14px 16px;
     font-size: 13px;
-    color: #92400e;
+    color: var(--dorado-osc);
     margin-top: 14px;
     display: none;
   }
   .fotos-info code {
-    font-family: 'DM Mono', monospace;
-    background: #fef3c7;
+    font-family: var(--mono);
+    background: var(--crema);
     padding: 1px 6px;
     border-radius: 4px;
   }
@@ -250,8 +270,8 @@ HTML = r"""<!DOCTYPE html>
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2.5px solid rgba(255,255,255,.3);
-    border-top-color: #fff;
+    border: 2.5px solid rgba(247,244,236,.3);
+    border-top-color: var(--crema);
     border-radius: 50%;
     animation: spin .6s linear infinite;
   }
@@ -269,7 +289,7 @@ HTML = r"""<!DOCTYPE html>
   @media screen and (max-width: 1400px) {
     nav { padding: 0 18px; height: 48px; }
     main { margin: 28px auto; }
-    h1 { font-size: 19px; }
+    h1 { font-size: 26px; }
     .card { padding: 18px; }
     .btn { padding: 9px 16px; font-size: 13px; }
   }
@@ -278,9 +298,9 @@ HTML = r"""<!DOCTYPE html>
 <body>
 
 <nav>
-  <span class="brand">NL · Generador de Fichas</span>
+  <span class="brand"><img src="/assets/nl-mono-crema.svg" alt="NL">Generador de Fichas</span>
   <div style="display:flex;align-items:center;gap:14px">
-    <a href="/" style="color:rgba(255,255,255,.75);font-size:13px;font-weight:500;text-decoration:none">Fichas</a>
+    <a href="/" style="color:var(--crema);font-size:13px;font-weight:500;text-decoration:none">Fichas</a>
     <span class="badge">Internal Tool</span>
   </div>
 </nav>
@@ -423,7 +443,7 @@ HTML = r"""<!DOCTYPE html>
       <div class="full">
         <label>Video (opcional)</label>
         <input type="text" id="f-video" placeholder="https://youtube.com/...  (o Instagram, Drive, etc.)">
-        <small style="display:block;margin-top:4px;color:#888;font-size:12px">Pegá el link normal de YouTube o Vimeo (se reproduce en un popup). Otras URLs abren en pestaña nueva.</small>
+        <small style="display:block;margin-top:4px;color:var(--tinta-suave);font-size:12px">Pegá el link normal de YouTube o Vimeo (se reproduce en un popup). Otras URLs abren en pestaña nueva.</small>
       </div>
 
       <div class="full">
@@ -468,8 +488,8 @@ HTML = r"""<!DOCTYPE html>
       <div class="lbl">Ficha publicada en</div>
       <div class="result-link" id="result-link"></div>
       <div class="result-actions">
-        <button class="btn btn-sm btn-outline" style="background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)" onclick="copiarLink()">Copiar link</button>
-        <a id="result-open" href="#" target="_blank" class="btn btn-sm btn-orange">Abrir ficha →</a>
+        <button class="btn btn-sm btn-outline" style="background:transparent;color:var(--crema);border-color:rgba(247,244,236,.35)" onclick="copiarLink()">Copiar link</button>
+        <a id="result-open" href="#" target="_blank" class="btn btn-sm" style="background:var(--crema);color:var(--tinta);text-decoration:none">Abrir ficha →</a>
       </div>
     </div>
   </div>
@@ -1255,6 +1275,12 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
 @app.route('/')
 def index():
     return render_template_string(HTML)
+
+
+@app.route('/assets/<path:fname>')
+def brand_assets(fname):
+    from flask import send_from_directory
+    return send_from_directory(REPO_PATH / "assets", fname)
 
 
 @app.route('/extraer', methods=['POST'])
