@@ -22,6 +22,7 @@ from collections import Counter as _Counter
 
 from flask import Flask, render_template_string, request, jsonify
 import requests
+from mapa import mapa_iframe, geocodificar
 from bs4 import BeautifulSoup
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
@@ -671,7 +672,8 @@ async function generarFicha() {
     const data = await resp.json();
     if (data.error) { showStatus('Error: ' + data.error, 'error'); return; }
 
-    showStatus('✓ Ficha publicada. GitHub Pages tarda ~30 segundos en actualizarse.', 'success');
+    if (data.aviso) showStatus('⚠ Ficha publicada, pero revisá el mapa: ' + data.aviso, 'error');
+    else showStatus('✓ Ficha publicada. GitHub Pages tarda ~30 segundos en actualizarse.', 'success');
     const box = document.getElementById('result-box');
     box.style.display = 'block';
     document.getElementById('result-link').textContent = data.url;
@@ -1134,14 +1136,6 @@ def wa_url(direccion: str) -> str:
     return f"https://wa.me/5491178268244?text={quote(msg)}"
 
 
-def mapa_url(direccion: str, barrio: str) -> str:
-    # Embed de Google Maps SIN API key. Normaliza "al NNN" -> "NNN" (altura CABA).
-    import re
-    dir_limpia = re.sub(r'\bal\s+(\d+)', r'\1', direccion, flags=re.IGNORECASE).strip()
-    q = quote(f"{dir_limpia}, {barrio}, Buenos Aires, Argentina")
-    return f"https://maps.google.com/maps?q={q}&z=17&output=embed"
-
-
 def nombre_unico(directorio: Path, nombre_base: str) -> Path:
     path = directorio / f"{nombre_base}.html"
     if not path.exists():
@@ -1360,7 +1354,8 @@ def generar():
     url_sheets  = f'https://nahuelim.com.ar/fichas/{out_path.name}'
     ficha_id = hashlib.md5(nombre_base.encode()).hexdigest()[:5]
     agregar_ficha_a_sheets(d, url_sheets, d.get('url_original', ''), ficha_id)
-    return jsonify({'url': url_publica, 'archivo': out_path.name})
+    _, aviso = geocodificar(d.get('direccion', '').strip(), d.get('barrio', '').strip())  # cacheado: sin 2ª llamada
+    return jsonify({'url': url_publica, 'archivo': out_path.name, 'aviso': aviso})
 
 
 def _video_embed_src(url: str):
@@ -1489,7 +1484,7 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
         title=title,
         og_desc=og_desc,
         wa_url=wa_url(direccion),
-        mapa_url=mapa_url(direccion, barrio),
+        mapa_iframe=mapa_iframe(direccion, barrio),
         operacion=operacion,
         precio=precio,
         expensas_html=expensas_html,

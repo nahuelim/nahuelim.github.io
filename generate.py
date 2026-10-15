@@ -11,6 +11,8 @@ import hashlib
 import time
 from pathlib import Path
 
+from mapa import mapa_iframe
+
 # ─── ÍCONOS CDN ────────────────────────────────────────────────────────────────
 CDN = "https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1"
 ICONOS = {
@@ -215,7 +217,7 @@ footer a{{color:var(--dorado);text-decoration:none}}
     </div></div>
 
     <div class="mapcard">
-      <iframe src="{mapa_url}" allowfullscreen loading="lazy" title="Ubicación"></iframe>
+      {mapa_iframe}
       <div class="maplbl">
         <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
         <div class="maplbl-text"><b>{direccion}</b><span>{barrio}, CABA</span></div>
@@ -407,25 +409,6 @@ def wa_url(direccion):
     return f"https://wa.me/5491178268244?text={quote(msg)}"
 
 
-# ─── GENERAR MAPA URL ──────────────────────────────────────────────────────────
-
-def _cargar_maps_key() -> str:
-    from pathlib import Path
-    key_file = Path.home() / "Documents" / "2. Inmobiliaria" / ".maps_api_key"
-    if key_file.exists():
-        return key_file.read_text().strip()
-    raise RuntimeError(f"No encontré la Google Maps API key en {key_file}")
-
-MAPS_API_KEY = _cargar_maps_key()
-
-def mapa_url(direccion, barrio):
-    from urllib.parse import quote
-    import re
-    dir_limpia = re.sub(r'\bal\s+(\d+)', r'\1', direccion, flags=re.IGNORECASE).strip()
-    q = quote(f"{dir_limpia}, {barrio}, Buenos Aires, Argentina")
-    return f"https://www.google.com/maps/embed/v1/place?key={MAPS_API_KEY}&q={q}&zoom=17"
-
-
 # ─── MAIN ──────────────────────────────────────────────────────────────────────
 def main():
     if len(sys.argv) < 2:
@@ -544,7 +527,7 @@ def main():
     html = TEMPLATE.format(
         title=title,
         wa_url=wa_url(direccion),
-        mapa_url=mapa_url(direccion, barrio),
+        mapa_iframe=mapa_iframe(direccion, barrio),
         operacion=operacion,
         precio=precio,
         expensas_html=expensas_html,
