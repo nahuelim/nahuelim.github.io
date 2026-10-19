@@ -16,7 +16,7 @@ TEMPLATE = '''<!DOCTYPE html>
 <meta name="twitter:image" content="{foto0}">
 <link rel="icon" type="image/svg+xml" href="https://nahuelim.github.io/assets/favicon.svg">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..500&family=Inter:wght@400;500;600;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
 :root{{
@@ -73,7 +73,7 @@ body{{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--te
 .optag{{display:inline-block;background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px}}
 .prop-address{{font-size:22px;font-weight:700;color:var(--primary);line-height:1.2;margin-bottom:2px}}
 .prop-barrio{{font-size:12px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}}
-.price{{font-family:Fraunces,Georgia,serif;font-size:44px;font-weight:300;color:var(--primary);letter-spacing:-.5px;line-height:1}}
+.price{{font-family:Montserrat,Inter,system-ui,sans-serif;font-size:40px;font-weight:700;color:var(--primary);letter-spacing:-.5px;line-height:1}}
 .exps{{color:var(--muted);font-size:13px;margin-top:7px}}
 .exps b{{color:var(--text)}}
 .badges{{display:flex;flex-wrap:wrap;gap:7px;margin-top:16px}}
