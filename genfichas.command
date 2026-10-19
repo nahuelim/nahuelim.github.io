@@ -11,14 +11,14 @@ else
 fi
 
 # Instalar dependencias si faltan
-$PYTHON -m pip install flask requests beautifulsoup4 -q 2>/dev/null || true
+"$PYTHON" -m pip install flask requests beautifulsoup4 -q 2>/dev/null || true
 
 # Matar instancia anterior
 lsof -ti:5050 | xargs kill -9 2>/dev/null || true
 sleep 1
 
 # Levantar servidor
-$PYTHON auto_ficha.py &
+"$PYTHON" auto_ficha.py &
 
 # Esperar hasta que responda (máx 15s)
 for i in {1..15}; do
