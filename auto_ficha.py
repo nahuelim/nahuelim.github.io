@@ -22,7 +22,7 @@ from collections import Counter as _Counter
 
 from flask import Flask, render_template_string, request, jsonify
 import requests
-from mapa import mapa_iframe, geocodificar
+from mapa import mapa_iframe, geocodificar, candidato
 from bs4 import BeautifulSoup
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────────
@@ -484,6 +484,7 @@ HTML = r"""<!DOCTYPE html>
     </button>
 
     <div id="status-msg" class="status"></div>
+    <div id="mapa-confirm" style="display:none;margin-top:12px"></div>
 
     <div class="result-box" id="result-box">
       <div class="lbl">Ficha publicada en</div>
@@ -612,7 +613,8 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 }
 
-async function generarFicha() {
+async function generarFicha(modo = 'auto') {
+  document.getElementById('mapa-confirm').style.display = 'none';
   const dir = document.getElementById('f-direccion').value.trim();
   const bar = document.getElementById('f-barrio').value.trim();
   if (!dir || !bar) { showStatus('Dirección y barrio son obligatorios.', 'error'); return; }
@@ -658,6 +660,7 @@ async function generarFicha() {
     inmobiliaria: window.scrapedInmo || '',
     whatsapp_publicador: window.scrapedWa || '',
     fotos: fotos,
+    mapa_modo: modo,
   };
 
   setBtnLoading('btn-generar', true);
@@ -671,6 +674,21 @@ async function generarFicha() {
     });
     const data = await resp.json();
     if (data.error) { showStatus('Error: ' + data.error, 'error'); return; }
+    if (data.confirmar_mapa) {
+      const c = data.confirmar_mapa;
+      showStatus('⚠ Todavía NO se publicó. ' + c.aviso, 'error');
+      const box = document.getElementById('mapa-confirm');
+      box.innerHTML = '<p style="margin:0 0 8px">¿Es esta la ubicación de <b>' + dir + '</b>?</p>' +
+        '<iframe src="https://maps.google.com/maps?q=' + Number(c.lat) + ',' + Number(c.lng) + '&z=17&output=embed" ' +
+        'style="width:100%;height:280px;border:0;border-radius:8px"></iframe>' +
+        '<div style="display:flex;gap:8px;margin-top:8px">' +
+        '<button class="btn btn-orange" style="flex:1" onclick="generarFicha(\'forzar\')">Sí, publicar con este mapa</button>' +
+        '<button class="btn" style="flex:1" onclick="document.getElementById(\'mapa-confirm\').style.display=\'none\';document.getElementById(\'f-direccion\').focus()">Corregir dirección</button>' +
+        '<button class="btn" style="flex:1" onclick="generarFicha(\'sin\')">Publicar sin mapa</button></div>';
+      box.style.display = 'block';
+      box.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
 
     if (data.aviso) showStatus('⚠ Ficha publicada, pero revisá el mapa: ' + data.aviso, 'error');
     else showStatus('✓ Ficha publicada. GitHub Pages tarda ~30 segundos en actualizarse.', 'success');
@@ -1315,6 +1333,15 @@ def generar():
         error_msg = 'No hay fotos. Para C21 copiá las imágenes a assets/fotos/slug/ antes de generar.' if portal == 'c21' else 'No hay fotos disponibles.'
         return jsonify({'error': error_msg}), 400
 
+    # Mapa: si Google devuelve algo que no valida, NO publicar todavía: el usuario ve el preview y decide
+    modo_mapa = d.get('mapa_modo', 'auto')  # auto | forzar (publicar con el mapa mostrado) | sin
+    dir_q, bar_q = d.get('direccion', '').strip(), d.get('barrio', '').strip()
+    if modo_mapa == 'auto':
+        coords, av = geocodificar(dir_q, bar_q)
+        cand = None if coords else candidato(dir_q, bar_q)
+        if cand:
+            return jsonify({'confirmar_mapa': {'lat': cand[0], 'lng': cand[1], 'aviso': av}})
+
     # Generar nombre de archivo — formato: tipo-direccion-Xamb[-hash]
     TIPO_SLUG = {
         'Departamento': 'dto', 'PH': 'ph', 'Casa': 'casa',
@@ -1354,7 +1381,9 @@ def generar():
     url_sheets  = f'https://nahuelim.com.ar/fichas/{out_path.name}'
     ficha_id = hashlib.md5(nombre_base.encode()).hexdigest()[:5]
     agregar_ficha_a_sheets(d, url_sheets, d.get('url_original', ''), ficha_id)
-    _, aviso = geocodificar(d.get('direccion', '').strip(), d.get('barrio', '').strip())  # cacheado: sin 2ª llamada
+    _, aviso = geocodificar(dir_q, bar_q)  # cacheado: sin 2ª llamada
+    if modo_mapa != 'auto':
+        aviso = ''  # el usuario ya decidió con el preview a la vista
     return jsonify({'url': url_publica, 'archivo': out_path.name, 'aviso': aviso})
 
 
@@ -1484,7 +1513,7 @@ def _render(d: dict, fotos: list, TPL: str) -> str:
         title=title,
         og_desc=og_desc,
         wa_url=wa_url(direccion),
-        mapa_iframe=mapa_iframe(direccion, barrio),
+        mapa_iframe='' if d.get('mapa_modo') == 'sin' else mapa_iframe(direccion, barrio, forzar=d.get('mapa_modo') == 'forzar'),
         operacion=operacion,
         precio=precio,
         expensas_html=expensas_html,

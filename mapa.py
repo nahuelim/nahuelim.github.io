@@ -65,7 +65,9 @@ def _es_caba(barrio):
 def _coincide(pedida, devuelta):
     """Cada palabra de la calle pedida está (casi) en la devuelta; tolera typos tipo Puyrredon/Pueyrredón."""
     td = _tokens(devuelta)
-    return all(w in td or difflib.get_close_matches(w, td, 1, 0.85) for w in _tokens(pedida))
+    ini = {w[0] for w in td}  # "J. B. Alberdi" == "Juan Bautista Alberdi"
+    return all(w in td or (len(w) == 1 and w in ini) or difflib.get_close_matches(w, td, 1, 0.85)
+               for w in _tokens(pedida))
 
 
 def _parse(direccion):
@@ -74,6 +76,9 @@ def _parse(direccion):
     d = re.sub(r"\bal\s+(\d+)", r"\1", d, flags=re.I).strip(" .")
     m = re.match(r"^(.+?)\s+(\d{1,5})$", d)
     return (m.group(1).strip(" ."), int(m.group(2))) if m else (None, None)
+
+
+_RECHAZADOS = {}  # ponytail: (direccion, barrio) -> coords que Google dio pero no pasaron la validación; para que el usuario decida
 
 
 @lru_cache(maxsize=256)
@@ -110,6 +115,7 @@ def geocodificar(direccion, barrio=""):
     if caba and not (BBOX[0] <= loc["lat"] <= BBOX[1] and BBOX[2] <= loc["lng"] <= BBOX[3]):
         mal.append("fuera de CABA")
     if mal:
+        _RECHAZADOS[(direccion, barrio)] = (loc["lat"], loc["lng"])
         return None, f"Sin mapa: Google devolvió «{x['formatted_address']}» ({', '.join(mal)})."
 
     # ponytail: solo advertencia; el barrio comercial (Caballito Sur, Barrio Norte) no es oficial, no puede bloquear
@@ -119,9 +125,17 @@ def geocodificar(direccion, barrio=""):
     return (loc["lat"], loc["lng"]), ""
 
 
-def mapa_iframe(direccion, barrio=""):
-    """HTML del <iframe> del mapa, o '' si no se pudo validar."""
+def candidato(direccion, barrio=""):
+    """Coords validadas, o las que Google dio y no pasaron la validación (hay que mostrarlas al usuario). None si no hay."""
+    coords, _ = geocodificar(direccion, barrio)
+    return coords or _RECHAZADOS.get((direccion, barrio))
+
+
+def mapa_iframe(direccion, barrio="", forzar=False):
+    """HTML del <iframe> del mapa, o '' si no se pudo validar. forzar=True: usa el candidato aunque no valide (el usuario lo aprobó)."""
     coords, aviso = geocodificar(direccion, barrio)
+    if forzar and not coords:
+        coords = candidato(direccion, barrio)
     if aviso:
         print(f"[mapa] {direccion}: {aviso}", flush=True)
     if not coords:
@@ -161,6 +175,8 @@ def _selfcheck():
         assert _coincide("Honorio Puyrredon", "Avenida Honorio Pueyrredón")
         assert _coincide("Gral. Urquiza", "General Urquiza")
         assert not _coincide("Pumacahua", "Calasanz")
+        assert _coincide("Av. J. B. Alberdi", "Avenida Juan Bautista Alberdi")
+        assert not _coincide("Av. J. B. Alberdi", "Avenida Rivadavia")
         for b in ("", "Caballito Sur", "Palermo Soho", "Barrio Norte", "Villa Crespo", "Villa del Parque", "Flores Norte", "CABA"):
             assert _es_caba(b), b
         for b in ("Olivos", "Vicente López", "La Plata", "Villa Ballester", "San Isidro", "Lomas de Zamora"):
@@ -170,6 +186,9 @@ def _selfcheck():
         assert c and not a, (c, a)                                     # el caso feliz
         c, a = caso(google("Calasanz", 700, lat=-34.61, lng=-58.44))
         assert c is None and "calle distinta" in a, (c, a)             # EL bug: Pumacahua 200 -> Calasanz 700
+        assert candidato("Pumacahua al 200", "Caballito Sur") == (-34.61, -58.44)  # el rechazado queda disponible para confirmar
+        assert 'q=-34.610000,-58.440000' in mapa_iframe("Pumacahua al 200", "Caballito Sur", forzar=True)
+        assert mapa_iframe("Pumacahua al 200", "Caballito Sur") == ""
         assert caso(google("Pumacahua", 700))[0] is None               # altura distinta
         assert caso(google("Pumacahua", 200, partial=True))[0] is None
         assert caso(google("Pumacahua", 200, lt="APPROXIMATE"))[0] is None
