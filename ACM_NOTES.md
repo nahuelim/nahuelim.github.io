@@ -24,8 +24,8 @@ new chat instead of re-explaining history.
 - PDF: marca nueva (verde #005941, logo nl-lockup-crema, íconos verdes, foto nahuel-perfil.webp),
   numeración dinámica, intro de ACM + textos cortos por sección, "m²" se imprimía como "m"
   (helvetica sin ²) → se imprime "m2". Secciones no se parten entre páginas.
-- Nueva página fija "¿Por qué trabajar conmigo?": checklist 10 servicios vs Inmob. 1/2
-  (todos confirmados por Nahuel; incluye reporte de consultas/visitas = compromiso escrito).
+- (2026-11-02) Se SACÓ la página "¿Por qué trabajar conmigo?" (checklist vs Inmob. 1/2) del PDF. El PDF cierra con Contacto.
+- (2026-11-02) Textos: intro sin "de quien opera la zona"; S3 con salto de línea tras "valor de base."; sin nota de portales/red C21 en Análisis de Mercado; card "Rango de Venta" → "Rango de Cierre" (evitar sonar a promesa) con descripciones cortas; contacto sin "Te acompaño en cada paso".
 - Borradores viejos siguen cargando (mapeo de vend_m2_* → vend_tot_* y ventana vieja → rangos).
 
 ## Deferred / next up (pick ONE per new chat)
@@ -72,7 +72,7 @@ new chat instead of re-explaining history.
 **PDF — dentro de `function generatePDF()`, en orden:**
 - Colores `PR,PG,PB` (verde) y `OR,OG,OB` (dorado acento). `header()` logos · `checkY(n)` salta de página si no entran n mm.
 - Helpers: `secN('TÍTULO')` = título numerado automático · `secTitle()` sin número · `intro(txt)` texto explicativo · `note(txt)` itálica · `grid(pairs)` pares etiqueta/valor.
-- Orden: título + intro ACM → PREPARADO PARA → PROPIEDAD (+ `escalaConservacion()`, leyenda `ESCALA`) → CARACTERÍSTICAS → OBJECIONES → PROPIEDADES COMPARABLES (+nota >90 días) → MARKET VALUATION → ANÁLISIS DE MERCADO (barras) → VENTANA DE VENTA (conclusión, cards, bloque `IMP` "qué pasa si…") → ¿POR QUÉ TRABAJAR CONMIGO? (lista `SERV`, página propia) → CONTACTO → footer legal.
+- Orden: título + intro ACM → PREPARADO PARA → PROPIEDAD (+ `escalaConservacion()`, leyenda `ESCALA`) → CARACTERÍSTICAS → OBJECIONES → PROPIEDADES COMPARABLES (+nota >90 días) → MARKET VALUATION → ANÁLISIS DE MERCADO (barras) → VENTANA DE VENTA (conclusión, cards, bloque `IMP` "qué pasa si…") → CONTACTO → footer legal.
 - Textos fijos del PDF: buscarlos directo (ej. `IMP=`, `SERV=`, `ESCALA=`, `intro('`).
 - Para que una sección no se parta entre páginas: `checkY(alto_estimado)` justo antes de su `secN(...)`.
 

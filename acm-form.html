@@ -715,7 +715,7 @@ const AR_IG=1.0000;
     <div class="section" id="sec-9">
       <div class="section-header" onclick="toggleSection('sec-9')">
         <div class="section-num">9</div>
-        <div class="section-title">Ventana de Venta &amp; Estrategia</div>
+        <div class="section-title">Ventana de Valor &amp; Estrategia</div>
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-9">
@@ -725,7 +725,7 @@ const AR_IG=1.0000;
         </div>
         <div class="rango-cards">
           <div class="rango-card verde">
-            <div class="rango-title">Rango de Venta</div>
+            <div class="rango-title">Rango de Cierre</div>
             <div class="field"><label>Desde (USD)</label><input type="text" inputmode="numeric" id="v_venta_min" oninput="this.dataset.manual='1'"></div>
             <div class="field"><label>Hasta (USD)</label><input type="text" inputmode="numeric" id="v_venta_max" oninput="this.dataset.manual='1'"></div>
           </div>
@@ -837,7 +837,7 @@ const AR_IG=1.0000;
         </div>
 
         <div class="field">
-          <label style="color:var(--orange)">La Ventana de Venta</label>
+          <label style="color:var(--orange)">La Ventana de Valor</label>
           <div class="callout">La ventana de venta es el rango de precio dentro del cual el mercado reacciona: generás consultas, conseguís visitas, recibís ofertas. Por debajo del piso, estás regalando valor. Por encima del techo, el mercado te ignora. El problema de salir caro no es solo que no te llamen — es que quemás las semanas de mayor exposición (las primeras 3-4 semanas de publicación son las de mayor tráfico), y después tenés que bajar desde una posición debilitada. El comprador que te vio antes y no llamó, cuando ve la baja interpreta que algo está mal. Publicar bien desde el día uno no es resignar precio, es maximizar las chances de venta al mejor valor posible.</div>
         </div>
 
@@ -1207,7 +1207,7 @@ function generatePDF() {
   doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(PR,PG,PB);
   doc.text('ANÁLISIS COMPARATIVO DE MERCADO',M,y); y+=6;
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(LBL[0],LBL[1],LBL[2]);
-  { const l=doc.splitTextToSize('Un Análisis Comparativo de Mercado estima el valor probable de tu propiedad según cómo se comporta hoy el mercado: qué se publica, qué se vende y en cuánto tiempo, en propiedades comparables por zona, tipología, superficie, antigüedad y estado. Combina datos de mercado verificables con el criterio profesional de quien opera la zona.',CW); doc.text(l,M,y); y+=l.length*4.4+4; }
+  { const l=doc.splitTextToSize('Un Análisis Comparativo de Mercado estima el valor probable de tu propiedad según cómo se comporta hoy el mercado: qué se publica, qué se vende y en cuánto tiempo, en propiedades comparables por zona, tipología, superficie, antigüedad y estado. Combina datos de mercado verificables con el criterio profesional.',CW); doc.text(l,M,y); y+=l.length*4.4+4; }
 
   function secTitle(txt){
     checkY(18); y+=1;
@@ -1272,7 +1272,7 @@ function generatePDF() {
   }
 
   const sf=d.secundarias.filter(s=>s.nivel);
-  if(pdfOn('sec-4') && sf.length){ secN('CARACTERÍSTICAS'); intro('La ubicación, la superficie y la antigüedad definen el valor de base. Estos atributos propios de la unidad suman o restan valor dentro de ese rango.'); grid(sf.map(s=>[s.atributo+':',s.nivel])); y+=3; }
+  if(pdfOn('sec-4') && sf.length){ secN('CARACTERÍSTICAS'); intro('La ubicación, la superficie y la antigüedad definen el valor de base.\nEstos atributos propios de la unidad suman o restan valor dentro de ese rango.'); grid(sf.map(s=>[s.atributo+':',s.nivel])); y+=3; }
 
   if(pdfOn('sec-5') && d.objeciones.length){
     secN('OBJECIONES DETECTADAS');
@@ -1355,7 +1355,6 @@ function generatePDF() {
           y+=14; });
         y+=1;
         if(d.propiedad.sup){ doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(LBL[0],LBL[1],LBL[2]); doc.text('USD/m2 calculado sobre la superficie homogeneizada de tu propiedad ('+d.propiedad.sup+' m2).',M,y); y+=4.5; }
-        if(venOn) note('Los portales solo muestran precios de publicación: en Argentina no existe un registro público de los valores a los que efectivamente se venden las propiedades. El rango de cierre surge de operaciones reales de la red Century 21, una de las redes inmobiliarias más grandes del mundo.',1);
         y+=2;
       }
       if(merc.length){
@@ -1371,20 +1370,20 @@ function generatePDF() {
     }
   }
 
-  // ── VENTANA DE VENTA: semáforo de 3 rangos ──
+  // ── VENTANA DE VALOR: semáforo de 3 rangos ──
   {
     const v=d.ventana;
     const cards=[
-      {t:'RANGO DE VENTA',val:rng(v.venta_min,v.venta_max),on:!!(v.venta_min||v.venta_max),bd:[31,122,77],bg:[230,242,234],tx:[31,122,77],
-       d:'Donde efectivamente se cierran operaciones en la zona. Es el rango con más probabilidad de venta en plazos razonables.'},
+      {t:'RANGO DE CIERRE',val:rng(v.venta_min,v.venta_max),on:!!(v.venta_min||v.venta_max),bd:[31,122,77],bg:[230,242,234],tx:[31,122,77],
+       d:'Es el rango con más probabilidad de venta en plazos razonables.'},
       {t:'RANGO DE PRUEBA',val:rng(v.prueba_min,v.prueba_max),on:!!(v.prueba_min||v.prueba_max),bd:[183,121,31],bg:[251,243,224],tx:[138,90,18],
-       d:'Por encima de los cierres, dentro de lo publicado. Sirve para testear el mercado durante un tiempo acotado.'},
+       d:'Sirve para testear el mercado durante un tiempo acotado.'},
       {t:'RANGO DE ESPERA',val:v.espera?('Más de USD '+v.espera):'',on:!!v.espera,bd:[153,27,27],bg:[249,229,229],tx:[153,27,27],
-       d:'Por encima de todo lo publicado: la propiedad deja de recibir consultas y pierde vigencia e importancia frente a la competencia.'}
+       d:'La propiedad deja de recibir consultas y pierde vigencia e importancia frente a la competencia.'}
     ].filter(c=>c.on);
     if(pdfOn('sec-9') && (cards.length||v.conclusion||v.precio_acordado||v.compromisos)){
       checkY((v.conclusion?45:0)+(cards.length?115:0)+(v.precio_acordado?16:0)+20); // no partir la sección entre páginas
-      secN('VENTANA DE VENTA');
+      secN('VENTANA DE VALOR');
       intro('Dónde se ubique el precio define cuánto tarda en venderse. Estos rangos muestran qué esperar en cada caso.');
       if(v.conclusion){ doc.setFontSize(9); const cl=doc.splitTextToSize(v.conclusion,CW-10); const hh=cl.length*4.4+12;
         checkY(hh+3); doc.setFillColor(227,238,233); doc.rect(M,y,CW,hh,'F'); doc.setFillColor(PR,PG,PB); doc.rect(M,y,1.2,hh,'F');
@@ -1428,35 +1427,6 @@ function generatePDF() {
     }
   }
 
-  // ── COMPARÁ SERVICIOS (siempre, página propia) ──
-  {
-    newPage();
-    secN('¿POR QUÉ TRABAJAR CONMIGO?');
-    intro('Antes de decidir con quién vender, usá esta lista para comparar qué incluye cada propuesta, punto por punto.');
-    const SERV=[['ANTES DE SALIR AL MERCADO',['Informe de valuación con comparables, fuentes y rangos de precio','Recomendaciones de puesta en valor antes de publicar','Revisión de documentación antes de publicar: título, planos y deudas']],
-      ['DURANTE LA COMERCIALIZACIÓN',['Ficha web exclusiva de la propiedad','Difusión en la red Century 21 y en base de compradores','Visitas solo con compradores precalificados','Monitoreo de la competencia: nuevas publicaciones y bajas de precio en la zona','Revisión del precio con datos de mercado cada 10–15 días','Reporte de consultas y visitas']],
-      ['DESPUÉS DE ENCONTRAR COMPRADOR',['Coordinación con escribanía y acompañamiento hasta la escritura']]];
-    const colX=[M+CW-66,M+CW-44,M+CW-22], cW=22;
-    doc.setFillColor(PR,PG,PB); doc.rect(M,y,CW,9,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
-    doc.text('Servicio',M+3,y+5.8);
-    ['Nahuel Lim','Inmob. 1','Inmob. 2'].forEach((h,i)=>doc.text(h,colX[i]+cW/2,y+5.8,{align:'center'})); y+=9;
-    let n=0;
-    SERV.forEach(([g,items])=>{
-      doc.setFillColor(227,238,233); doc.rect(M,y,CW,7,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.8); doc.setTextColor(PR,PG,PB); doc.text(g,M+3,y+4.8); y+=7;
-      items.forEach(it=>{ n++;
-        if(n%2===0){ doc.setFillColor(247,244,236); doc.rect(M,y,CW,8.5,'F'); }
-        doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(OR-60,OG-60,OB-60); doc.text(String(n).padStart(2,'0'),M+3,y+5.6);
-        doc.setFont('helvetica','normal'); doc.setFontSize(8.6); doc.setTextColor(VAL[0],VAL[1],VAL[2]); doc.text(it,M+11,y+5.6);
-        colX.forEach((cx,i)=>{ const bx=cx+cW/2-2.3, by=y+2;
-          doc.setDrawColor(i===0?PR:170,i===0?PG:170,i===0?PB:170); doc.setLineWidth(0.35); doc.rect(bx,by,4.6,4.6);
-          if(i===0){ doc.setLineWidth(0.8); doc.line(bx+0.9,by+2.4,bx+2,by+3.6); doc.line(bx+2,by+3.6,bx+3.9,by+1); } });
-        y+=8.5; });
-    });
-    doc.setLineWidth(0.2); y+=6;
-  }
-
   // CONTACTO (final) — título+contenido juntos
   checkY(58);
   secTitle('CONTACTO');
@@ -1468,7 +1438,7 @@ function generatePDF() {
   const MAPS='https://maps.google.com/?q=Pedro+Goyena+172+Caballito+CABA';
   doc.setFontSize(8.5); doc.setTextColor(LBL[0],LBL[1],LBL[2]);
   doc.textWithLink('Century 21 Evolución Inmobiliaria S.A. · Pedro Goyena 172, Caballito, CABA',cx,py+17.5,{url:MAPS});
-  doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(110,110,120); doc.text('Cualquier consulta, estoy a un mensaje. Te acompaño en cada paso.',cx,py+23);
+  doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(110,110,120); doc.text('Cualquier consulta, estoy a un mensaje.',cx,py+23);
   const iy=py+27, isz=7.5, gp=6, pad=2.2;
   let ix=cx;
   try{ doc.addImage(IMG_WA,'PNG',ix,iy,isz,isz); }catch(e){} doc.link(ix-pad,iy-pad,isz+pad*2,isz+pad*2,{url:WA_URL}); ix+=isz+gp;
