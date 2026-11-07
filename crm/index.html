@@ -31,6 +31,8 @@
   .top { background:var(--tinta); color:var(--crema); padding:calc(var(--top) + 12px) 16px 12px; display:flex; align-items:center; gap:12px; }
   .top img { height:30px; display:block; }
   .top .fecha { margin-left:auto; font-size:13px; color:var(--dorado); }
+  .top .ajustes { background:none; border:0; color:var(--crema); width:40px; height:40px; display:flex; align-items:center; justify-content:center; opacity:.85; }
+  .top .ajustes svg { width:22px; height:22px; }
   nav.tabs { position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--tinta); display:flex; padding-bottom:var(--bottom); }
   nav.tabs button { flex:1; background:none; border:0; color:var(--crema); padding:12px 0 10px; font-size:13px; font-weight:500; display:flex; flex-direction:column; align-items:center; gap:3px; }
   nav.tabs button.on { color:var(--dorado); }
@@ -138,6 +140,7 @@
 <div class="top">
   <img src="../assets/nl-logo.svg" alt="Nahuel Lim">
   <span class="fecha" id="fecha"></span>
+  <button id="bAjustes" class="ajustes" aria-label="Ajustes"></button>
 </div>
 <main id="lista"></main>
 <nav class="tabs">
@@ -164,6 +167,7 @@ const ICON = {
   tel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
   wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/></svg>',
   contacto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  ajustes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   flecha:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>'
 };
 
@@ -379,13 +383,34 @@ function verBuscar() {
   const inp = el('input', { type:'search', placeholder:'Nombre o teléfono', autocomplete:'off', enterkeyhint:'search',
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
-  l.replaceChildren(el('h2', {}, 'Buscar contacto'), inp, res,
-    el('div', { style:'margin-top:40px' }, el('a', { href:'guia.html', cls:'btn sec ancho', style:'text-decoration:none' }, 'Cómo usar el CRM')),
-    el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
-      if (!confirm('¿Borrar la clave y el Face ID de este dispositivo?')) return;
-      Object.values(LS).forEach(k => localStorage.removeItem(k)); pantallaConfig();
-    }}, 'Cerrar sesión en este dispositivo')));
+  l.replaceChildren(el('h2', {}, 'Buscar contacto'), inp, res);
   inp.focus();
+}
+
+// Ajustes: se entra desde el engranaje de arriba. Cerrar sesion pide escribir CERRAR (dos pasos, no se toca sin querer).
+function verAjustes() {
+  tabs('');
+  const l = document.getElementById('lista');
+  const conFace = !!localStorage.getItem(LS.cred);
+  const confirmar = el('input', { placeholder:'Escribí CERRAR', autocomplete:'off', autocapitalize:'characters' });
+  const zona = el('div');
+  l.replaceChildren(el('h2', {}, 'Ajustes de este dispositivo'),
+    el('div', { cls:'card' }, el('h3', {}, 'App'),
+      el('div', { cls:'actual' }, 'Versión ' + VERSION),
+      el('div', { cls:'actual' }, 'Face ID: ' + (conFace ? 'activado' : 'no activado')),
+      conFace ? '' : el('button', { cls:'btn sec ancho', onclick: async () => {
+        try { await activarFaceId(); toast('Face ID activado'); verAjustes(); } catch (e) { toast('No se pudo activar: ' + e.message, true); }
+      }}, 'Activar Face ID')),
+    el('div', { cls:'card' }, el('h3', {}, 'Cerrar sesión'),
+      el('div', { cls:'actual' }, 'Borra la clave y el Face ID de este dispositivo. Para volver a entrar vas a necesitar la URL y la clave.'),
+      zona));
+  zona.append(el('button', { cls:'btn peligro ancho', onclick: () => {
+    zona.replaceChildren(confirmar, el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
+      if (confirmar.value.trim().toUpperCase() !== 'CERRAR') return toast('Escribí CERRAR para confirmar', true);
+      Object.values(LS).forEach(k => localStorage.removeItem(k)); pantallaConfig();
+    }}, 'Confirmar cierre de sesión')));
+    confirmar.focus();
+  }}, 'Cerrar sesión en este dispositivo'));
 }
 
 function verNuevo() {
@@ -596,6 +621,8 @@ function arrancar() { verHoy(); }
 document.getElementById('tHoy').onclick = verHoy;
 document.getElementById('tBuscar').onclick = verBuscar;
 document.getElementById('tNuevo').onclick = verNuevo;
+document.getElementById('bAjustes').onclick = verAjustes;
+document.getElementById('bAjustes').insertAdjacentHTML('afterbegin', ICON.ajustes);
 document.querySelectorAll('[data-i]').forEach(s => s.insertAdjacentHTML('afterbegin', ICON[s.dataset.i]));
 const hoyTxt = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
 document.getElementById('fecha').textContent = hoyTxt.charAt(0).toUpperCase() + hoyTxt.slice(1);
