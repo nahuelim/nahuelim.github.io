@@ -380,7 +380,8 @@ function verBuscar() {
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
   l.replaceChildren(el('h2', {}, 'Buscar contacto'), inp, res,
-    el('div', { style:'margin-top:40px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
+    el('div', { style:'margin-top:40px' }, el('a', { href:'guia.html', cls:'btn sec ancho', style:'text-decoration:none' }, 'Cómo usar el CRM')),
+    el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
       if (!confirm('¿Borrar la clave y el Face ID de este dispositivo?')) return;
       Object.values(LS).forEach(k => localStorage.removeItem(k)); pantallaConfig();
     }}, 'Cerrar sesión en este dispositivo')));
