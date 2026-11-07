@@ -1188,7 +1188,7 @@ SHEETS_SCOPES = [
 
 def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
     """
-    Agrega una fila en la solapa 'Fichas' del Google Sheet.
+    Agrega una fila en la solapa 'FICHAS' (o 'Fichas', el nombre viejo) del Google Sheet.
     Si falla la conexión, logea el error pero NO interrumpe el flujo.
     """
     import traceback
@@ -1207,7 +1207,10 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
         sh = gc.open_by_key(SHEET_ID)
         print(f'[Sheets] Spreadsheet: {sh.title!r}', flush=True)
 
-        ws = sh.worksheet('Fichas')
+        try:
+            ws = sh.worksheet('FICHAS')
+        except gspread.exceptions.WorksheetNotFound:
+            ws = sh.worksheet('Fichas')   # nombre viejo de la pestana
         print(f'[Sheets] Worksheet: {ws.title!r}', flush=True)
 
         fecha = date.today().strftime('%d/%m/%Y')

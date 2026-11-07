@@ -31,8 +31,24 @@
   .top { background:var(--tinta); color:var(--crema); padding:calc(var(--top) + 12px) 16px 12px; display:flex; align-items:center; gap:12px; }
   .top img { height:30px; display:block; }
   .top .fecha { margin-left:auto; font-size:13px; color:var(--dorado); }
-  .top .ajustes { background:none; border:0; color:var(--crema); width:40px; height:40px; display:flex; align-items:center; justify-content:center; opacity:.85; }
-  .top .ajustes svg { width:22px; height:22px; }
+  .top .burger { background:none; border:0; color:var(--crema); width:44px; height:44px; display:flex; align-items:center; justify-content:center; margin-right:-8px; }
+  .top .burger svg { width:26px; height:26px; }
+  /* Menu lateral */
+  #velo { position:fixed; inset:0; z-index:70; background:rgba(20,35,29,.45); display:none; }
+  #velo.on { display:block; }
+  #menu { position:fixed; top:0; right:0; bottom:0; z-index:71; width:min(320px, 86vw); background:var(--crema); transform:translateX(100%); transition:transform .2s ease; display:flex; flex-direction:column; padding:calc(var(--top) + 12px) 0 calc(var(--bottom) + 12px); }
+  #menu.on { transform:none; }
+  #menu .cab { display:flex; align-items:center; justify-content:space-between; padding:0 12px 12px 20px; border-bottom:1px solid var(--linea); }
+  #menu .cab img { height:28px; }
+  #menu .cab button { background:none; border:0; width:44px; height:44px; color:var(--tinta); }
+  #menu .cab svg { width:24px; height:24px; }
+  #menu .grupo { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--tinta-suave); padding:18px 20px 6px; }
+  #menu a, #menu .op { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 20px; color:var(--tinta); text-decoration:none; font-weight:500; background:none; border:0; width:100%; text-align:left; cursor:pointer; }
+  #menu a { flex-direction:column; align-items:flex-start; gap:2px; }
+  #menu a small { color:var(--tinta-suave); font-weight:400; font-size:13px; }
+  #menu a:active, #menu .op:active { background:var(--verde-claro); }
+  #menu .abajo { margin-top:auto; border-top:1px solid var(--linea); }
+  #menu .salir { color:var(--alerta); }
   nav.tabs { position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--tinta); display:flex; padding-bottom:var(--bottom); }
   nav.tabs button { flex:1; background:none; border:0; color:var(--crema); padding:12px 0 10px; font-size:13px; font-weight:500; display:flex; flex-direction:column; align-items:center; gap:3px; }
   nav.tabs button.on { color:var(--dorado); }
@@ -140,7 +156,7 @@
 <div class="top">
   <img src="../assets/nl-logo.svg" alt="Nahuel Lim">
   <span class="fecha" id="fecha"></span>
-  <button id="bAjustes" class="ajustes" aria-label="Ajustes"></button>
+  <button id="bMenu" class="burger" aria-label="Menú"></button>
 </div>
 <main id="lista"></main>
 <nav class="tabs">
@@ -149,12 +165,14 @@
   <button id="tNuevo"><span data-i="mas"></span>Nuevo</button>
 </nav>
 <div id="ficha"></div>
+<div id="velo"></div>
+<nav id="menu" aria-label="Menú"></nav>
 <div id="bloqueo"></div>
 <div id="toast"></div>
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '6';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '7';                               // tiene que coincidir con VERSION en Code.gs
 const WA_ESQUEMA = 'whatsapp-business://send';     // WhatsApp Business. Alternativas: 'whatsapp://send' o 'https://wa.me/'
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -167,6 +185,7 @@ const ICON = {
   tel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
   wa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/></svg>',
   contacto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  burger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
   ajustes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   flecha:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>'
 };
@@ -350,6 +369,7 @@ async function verHoy() {
   tabs('tHoy');
   const l = document.getElementById('lista');
   const r = await api('api_hoy');
+  LINKS = r.links || {};
   l.replaceChildren();
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   l.append(el('div', { cls:'resumen' },
@@ -387,30 +407,53 @@ function verBuscar() {
   inp.focus();
 }
 
-// Ajustes: se entra desde el engranaje de arriba. Cerrar sesion pide escribir CERRAR (dos pasos, no se toca sin querer).
+// Menu lateral: links a las otras herramientas, ajustes y, al final, cerrar sesion.
+let LINKS = {};
+function menu(abrir) {
+  document.getElementById('menu').classList.toggle('on', abrir);
+  document.getElementById('velo').classList.toggle('on', abrir);
+}
+function armarMenu() {
+  const link = (texto, url, nota) => url
+    ? el('a', { href:url, target:'_blank', rel:'noopener', onclick: () => menu(false) }, texto, nota ? el('small', {}, nota) : '')
+    : el('button', { cls:'op', onclick: () => toast('Todavía cargando, probá en un segundo') }, texto);
+  const op = (texto, fn, cls) => el('button', { cls:'op' + (cls ? ' ' + cls : ''), onclick: () => { menu(false); fn(); } }, texto);
+  document.getElementById('menu').replaceChildren(
+    el('div', { cls:'cab' }, el('img', { src:'../assets/nl-lockup-tinta.svg', alt:'Nahuel Lim' }), el('button', { 'aria-label':'Cerrar menú', icon:'cerrar', onclick: () => menu(false) })),
+    el('div', { cls:'grupo' }, 'Google Sheet LEADS'),
+    link('Contactos', LINKS.contactos), link('Fichas', LINKS.fichas),
+    el('div', { cls:'grupo' }, 'Herramientas'),
+    link('Formulario ACM', 'https://nahuelim.com.ar/acm-form.html'),
+    link('Generador de fichas', 'http://127.0.0.1:5050', 'solo Mac, con genfichas abierto'),
+    link('Mi web', 'https://nahuelim.com.ar'),
+    el('div', { cls:'abajo' }, op('Ajustes', verAjustes), op('Cerrar sesión', verCerrarSesion, 'salir')));
+}
+
 function verAjustes() {
   tabs('');
-  const l = document.getElementById('lista');
   const conFace = !!localStorage.getItem(LS.cred);
-  const confirmar = el('input', { placeholder:'Escribí CERRAR', autocomplete:'off', autocapitalize:'characters' });
-  const zona = el('div');
-  l.replaceChildren(el('h2', {}, 'Ajustes de este dispositivo'),
+  document.getElementById('lista').replaceChildren(el('h2', {}, 'Ajustes de este dispositivo'),
     el('div', { cls:'card' }, el('h3', {}, 'App'),
       el('div', { cls:'actual' }, 'Versión ' + VERSION),
       el('div', { cls:'actual' }, 'Face ID: ' + (conFace ? 'activado' : 'no activado')),
       conFace ? '' : el('button', { cls:'btn sec ancho', onclick: async () => {
         try { await activarFaceId(); toast('Face ID activado'); verAjustes(); } catch (e) { toast('No se pudo activar: ' + e.message, true); }
-      }}, 'Activar Face ID')),
-    el('div', { cls:'card' }, el('h3', {}, 'Cerrar sesión'),
+      }}, 'Activar Face ID')));
+}
+
+// Cerrar sesion: pide escribir CERRAR (no se toca sin querer).
+function verCerrarSesion() {
+  tabs('');
+  const confirmar = el('input', { placeholder:'Escribí CERRAR', autocomplete:'off', autocapitalize:'characters' });
+  document.getElementById('lista').replaceChildren(el('h2', {}, 'Cerrar sesión'),
+    el('div', { cls:'card' },
       el('div', { cls:'actual' }, 'Borra la clave y el Face ID de este dispositivo. Para volver a entrar vas a necesitar la URL y la clave.'),
-      zona));
-  zona.append(el('button', { cls:'btn peligro ancho', onclick: () => {
-    zona.replaceChildren(confirmar, el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
-      if (confirmar.value.trim().toUpperCase() !== 'CERRAR') return toast('Escribí CERRAR para confirmar', true);
-      Object.values(LS).forEach(k => localStorage.removeItem(k)); pantallaConfig();
-    }}, 'Confirmar cierre de sesión')));
-    confirmar.focus();
-  }}, 'Cerrar sesión en este dispositivo'));
+      confirmar,
+      el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
+        if (confirmar.value.trim().toUpperCase() !== 'CERRAR') return toast('Escribí CERRAR para confirmar', true);
+        Object.values(LS).forEach(k => localStorage.removeItem(k)); pantallaConfig();
+      }}, 'Confirmar cierre de sesión')),
+      el('div', { style:'margin-top:10px' }, el('button', { cls:'btn ancho', onclick: verHoy }, 'Cancelar'))));
 }
 
 function verNuevo() {
@@ -621,8 +664,9 @@ function arrancar() { verHoy(); }
 document.getElementById('tHoy').onclick = verHoy;
 document.getElementById('tBuscar').onclick = verBuscar;
 document.getElementById('tNuevo').onclick = verNuevo;
-document.getElementById('bAjustes').onclick = verAjustes;
-document.getElementById('bAjustes').insertAdjacentHTML('afterbegin', ICON.ajustes);
+document.getElementById('bMenu').onclick = () => { armarMenu(); menu(true); };
+document.getElementById('bMenu').insertAdjacentHTML('afterbegin', ICON.burger);
+document.getElementById('velo').onclick = () => menu(false);
 document.querySelectorAll('[data-i]').forEach(s => s.insertAdjacentHTML('afterbegin', ICON[s.dataset.i]));
 const hoyTxt = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
 document.getElementById('fecha').textContent = hoyTxt.charAt(0).toUpperCase() + hoyTxt.slice(1);
