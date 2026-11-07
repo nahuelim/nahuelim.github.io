@@ -57,7 +57,7 @@
   main { padding:12px 16px calc(84px + var(--bottom)); max-width:720px; margin:0 auto; }
   .aviso { background:var(--alerta-fondo); color:var(--alerta); border-radius:12px; padding:12px 14px; margin:8px 0; font-size:14px; }
 
-  .resumen { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:4px 0 8px; }
+  .resumen { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:4px 0 8px; }
   .resumen div { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 6px; text-align:center; }
   .resumen b { display:block; font-size:24px; font-weight:700; letter-spacing:-.02em; }
   .resumen span { font-size:12px; color:var(--tinta-suave); }
@@ -172,7 +172,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '9';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '10';                               // tiene que coincidir con VERSION en Code.gs
 const WA_ESQUEMA = 'whatsapp-business://send';     // WhatsApp Business. Alternativas: 'whatsapp://send' o 'https://wa.me/'
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -192,7 +192,7 @@ const ICON = {
 
 const ESTADOS = ['NUEVO','EN CADENCIA','ACTIVO','REACTIVAR','ARCHIVADO','DESCARTADO','CLIENTE','COMPRO CON OTRO'];
 const ETAPA_COMPRA = ['','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
-const ETAPA_VENTA = ['','PRELISTING','ACM','CAPTADA','RESERVA','VENDIDA'];
+const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','CAPTADA','RESERVA','VENDIDA'];
 const MOTIVOS = ['ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
 const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
@@ -373,12 +373,13 @@ async function verHoy() {
   l.replaceChildren();
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   l.append(el('div', { cls:'resumen' },
-    ...[['Llamar', r.llamadas], ['Mensajes', r.mensajes], ['Seguir', r.seguimiento], ['Reactivar', r.reactivar]]
+    ...[['Captar', r.captar || []], ['Llamar', r.llamadas], ['Mensajes', r.mensajes], ['Seguir', r.seguimiento], ['Reactivar', r.reactivar]]
       .map(([t, xs]) => el('div', {}, el('b', {}, xs.length), el('span', {}, t)))));
   const sec = (t, xs, vacio, extra) => {
     l.append(el('h2', {}, t + (extra || '')));
     if (!xs.length) l.append(el('div', { cls:'vacio' }, vacio)); else xs.forEach(x => l.append(item(x)));
   };
+  sec('Para captar', r.captar || [], 'Nadie en CAPTAR. Si alguien tiene algo para vender, ponelo en Venta → CAPTAR.');
   sec('Llamadas', r.llamadas, 'Nada para llamar hoy.');
   sec('Mensajes de cadencia y archivados', r.mensajes, 'Ningún mensaje pendiente.');
   sec('Seguimiento', r.seguimiento, 'Sin seguimientos para hoy.');
@@ -559,7 +560,7 @@ async function abrir(id, seg) {
       const ajustar = () => {
         const t = tipo.value, conLado = t === 'VISITA' || t === 'FIRMA';
         fLado.style.display = conLado ? '' : 'none';
-        fColega.style.display = t === 'VISITA' && lado.value === 'PC' ? '' : 'none';
+        fColega.style.display = t === 'VISITA' && (lado.value === 'PC' || lado.value === 'PV') ? '' : 'none';   // en PV el comprador puede venir de un colega
         const dp = t === 'FIRMA' && lado.value === 'DP';
         fNombre.style.display = dp ? 'none' : ''; fVend.style.display = dp ? '' : 'none'; fComp.style.display = dp ? '' : 'none';
       };
