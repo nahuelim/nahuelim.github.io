@@ -172,7 +172,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '8';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '9';                               // tiene que coincidir con VERSION en Code.gs
 const WA_ESQUEMA = 'whatsapp-business://send';     // WhatsApp Business. Alternativas: 'whatsapp://send' o 'https://wa.me/'
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -537,6 +537,55 @@ async function abrir(id, seg) {
         contacto ? el('div', { cls:'actual', style:'margin:10px 0 0' }, 'Último contacto: ' + contacto.fecha + ' · ' + (nombres[contacto.tipo] || contacto.tipo) + (contacto.tipo === 'MENSAJE' && contacto.detalle ? ' (' + contacto.detalle + ')' : '')) : '',
         d.NOTAS ? el('details', { style:'margin-top:10px' }, el('summary', { style:'font-size:14px;color:var(--tinta-suave)' }, 'Notas del Sheet'), el('div', { style:'white-space:pre-wrap;font-size:14px;margin-top:6px' }, d.NOTAS)) : '');
     };
+    // Agendar en Calendar (calendario C21). Mismas reglas que el proyecto de Claude.
+    const tarjetaEvento = () => {
+      const caja = el('div', { cls:'card' });
+      const ultimo = r.hist.find(x => x.tipo === 'EVENTO' || x.tipo === 'EVENTO CORREGIDO');
+      const tipo = select(['VISITA','ACM','PRELISTING','FIRMA'], 'VISITA', ['Visita','ACM','Prelisting','Firma']);
+      const lado = select(['','PV','PC','DP'], '', ['Elegí la punta','Punta vendedora','Punta compradora','Doble punta']);
+      const direccion = el('input', { placeholder:'Calle y altura', value: d['VENDE DIRECCION'] || '' });
+      const uf = el('input', { placeholder:'Ej.: 3B (opcional)' });
+      const localidad = el('input', { placeholder:'CABA (si es otra, escribila)' });
+      const nombre = el('input', { value: d.NOMBRE || '' });
+      const colega = el('input', { placeholder:'Ej.: Juan / Remax Caballito' });
+      const esVendedor = d.ROL === 'VENDEDOR';
+      const vendedor = el('input', { value: esVendedor ? d.NOMBRE : '' }), comprador = el('input', { value: esVendedor ? '' : d.NOMBRE });
+      const fecha = el('input', { type:'date' }), hora = el('input', { type:'time', step:'300' });
+      const corregir = el('input', { type:'checkbox', style:'width:auto' });
+      const salida = el('div');
+      const campo = (t, i) => el('div', {}, el('label', {}, t), i);
+      const fLado = campo('Punta', lado), fColega = campo('Colega / inmobiliaria', colega), fNombre = campo('Nombre', nombre);
+      const fVend = campo('Vendedor', vendedor), fComp = campo('Comprador', comprador);
+      const ajustar = () => {
+        const t = tipo.value, conLado = t === 'VISITA' || t === 'FIRMA';
+        fLado.style.display = conLado ? '' : 'none';
+        fColega.style.display = t === 'VISITA' && lado.value === 'PC' ? '' : 'none';
+        const dp = t === 'FIRMA' && lado.value === 'DP';
+        fNombre.style.display = dp ? 'none' : ''; fVend.style.display = dp ? '' : 'none'; fComp.style.display = dp ? '' : 'none';
+      };
+      tipo.addEventListener('change', ajustar); lado.addEventListener('change', ajustar);
+      const crear = el('button', { cls:'btn pri ancho', onclick: async () => {
+        const e = { tipo: tipo.value, lado: (tipo.value === 'VISITA' || tipo.value === 'FIRMA') ? lado.value : '', direccion: direccion.value, uf: uf.value,
+          localidad: localidad.value, nombre: nombre.value.trim(), colega: colega.value.trim(), vendedor: vendedor.value.trim(), comprador: comprador.value.trim(),
+          fecha: fecha.value, hora: hora.value, eventoId: corregir.checked && ultimo ? ultimo.detalle : '' };
+        const res = await api('api_evento', id, e);
+        const txt = el('textarea', { readonly:'', style:'min-height:180px' }); txt.value = res.mensaje;
+        salida.replaceChildren(el('div', { cls:'aviso', style:'background:var(--verde-claro);color:var(--verde-profundo);font-weight:600' }, res.resumen), txt,
+          el('div', { cls:'fila', style:'margin-top:10px' },
+            el('button', { cls:'btn', onclick: () => navigator.clipboard.writeText(res.mensaje).then(() => toast('Mensaje copiado')) }, 'Copiar mensaje'),
+            el('button', { cls:'btn sec', onclick: () => r.wa ? abrirExterno(WA_ESQUEMA + '?phone=' + r.wa + '&text=' + encodeURIComponent(res.mensaje)) : toast('Falta un teléfono válido', true) }, 'Enviar a ' + (d.NOMBRE || '').split(' ')[0])));
+        toast(e.eventoId ? 'Evento corregido' : 'Evento creado en Calendar');
+        refrescar();
+      }}, 'Crear evento');
+      corregir.addEventListener('change', () => { crear.textContent = corregir.checked ? 'Guardar corrección' : 'Crear evento'; });
+      caja.append(el('h3', {}, 'Agendar en Calendar'),
+        el('div', { cls:'grid2' }, campo('Tipo', tipo), fLado, el('div', { cls:'ancho2' }, el('label', {}, 'Dirección'), direccion),
+          campo('Piso y depto', uf), campo('Localidad', localidad), fNombre, fColega, fVend, fComp, campo('Fecha', fecha), campo('Hora', hora)),
+        ultimo ? el('label', { style:'display:flex;gap:8px;align-items:center;margin-top:12px' }, corregir, 'Corregir el último evento: ' + ultimo.texto) : '',
+        el('div', { style:'margin-top:12px' }, crear), salida);
+      ajustar();
+      return caja;
+    };
     const resultado = (tipo, texto) => el('button', { cls:'btn' + (marcadoHoy === tipo ? ' marcado' : ''), onclick: e => {
       e.currentTarget.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('marcado'));
       e.currentTarget.classList.add('marcado');                                         // se marca al instante
@@ -556,6 +605,7 @@ async function abrir(id, seg) {
         el('div', { cls:'fila', style:'margin-bottom:10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
         el('div', { cls:'grid2' }, fecha, queHacer),
         el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', onclick: () => fecha.value ? accion('PROXIMO', fecha.value, queHacer.value) : toast('Elegí una fecha', true) }, 'Guardar próximo paso'))),
+      tarjetaEvento(),
       el('div', { cls:'card' }, el('h3', {}, 'Mensaje'),
         msjs.length ? [situacion, el('div', { style:'margin-top:10px' }, opciones), el('label', {}, 'Texto a enviar (lo podés editar)'), texto,
           el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', icon:'wa', onclick: () => {
