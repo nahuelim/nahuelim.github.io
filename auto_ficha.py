@@ -690,7 +690,8 @@ async function generarFicha(modo = 'auto') {
       return;
     }
 
-    if (data.aviso) showStatus('⚠ Ficha publicada, pero revisá el mapa: ' + data.aviso, 'error');
+    if (data.push_error) showStatus('✗ La ficha se generó en tu Mac pero NO se subió a GitHub (el link no va a andar): ' + data.push_error, 'error');
+    else if (data.aviso) showStatus('⚠ Ficha publicada, pero revisá el mapa: ' + data.aviso, 'error');
     else showStatus('✓ Ficha publicada. GitHub Pages tarda ~30 segundos en actualizarse.', 'success');
     const box = document.getElementById('result-box');
     box.style.display = 'block';
@@ -1170,6 +1171,8 @@ def git_push(repo: Path, mensaje: str):
         except OSError: pass
     subprocess.run(['git', 'add', '.'], cwd=repo, check=True, capture_output=True)
     subprocess.run(['git', 'commit', '-m', mensaje], cwd=repo, check=True, capture_output=True)
+    # si se editó algo desde GitHub web, el push sin pull es rechazado (non-fast-forward)
+    subprocess.run(['git', 'pull', '--rebase', '--autostash'], cwd=repo, check=True, capture_output=True)
     subprocess.run(['git', 'push'], cwd=repo, check=True, capture_output=True)
 
 
@@ -1372,10 +1375,15 @@ def generar():
 
     # Git push (no-fatal: si falla —sin internet o sin .git en modo test— la ficha
     # igual quedó escrita en fichas/ y se registró en Sheets)
+    push_error = ''
     try:
         git_push(REPO_PATH, f'ficha: {out_path.name}')
+    except subprocess.CalledProcessError as e:
+        push_error = (e.stderr or b'').decode(errors='replace').strip() or str(e)
     except Exception as e:
-        print(f'[git] push falló (no crítico): {e}', flush=True)
+        push_error = str(e)
+    if push_error:
+        print(f'[git] push falló: {push_error}', flush=True)
 
     url_publica = f'{GITHUB_BASE}/fichas/{out_path.name}'
     url_sheets  = f'https://nahuelim.com.ar/fichas/{out_path.name}'
@@ -1384,7 +1392,7 @@ def generar():
     _, aviso = geocodificar(dir_q, bar_q)  # cacheado: sin 2ª llamada
     if modo_mapa != 'auto':
         aviso = ''  # el usuario ya decidió con el preview a la vista
-    return jsonify({'url': url_publica, 'archivo': out_path.name, 'aviso': aviso})
+    return jsonify({'url': url_publica, 'archivo': out_path.name, 'aviso': aviso, 'push_error': push_error})
 
 
 def _video_embed_src(url: str):
