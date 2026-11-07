@@ -1557,11 +1557,15 @@ async function loadDraftsFromSheets() {
     json.drafts.forEach((d, i) => {
       const div = document.createElement('div');
       div.className = 'draft-item';
-      div.innerHTML = `
-        <button class="draft-item-load" onclick="loadDraftFromSheets(${i})">Cargar</button>
-        <div class="draft-item-name">${d.cliente || 'Sin nombre'}</div>
-        <div class="draft-item-meta">${d.fecha || ''} · ${d.ts ? new Date(d.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : ''}</div>
-      `;
+      // cliente puede venir como texto o como objeto {nombre, cel, ...}; se muestra como texto, nunca como HTML
+      const nombre = (typeof d.cliente === 'object' ? d.cliente?.nombre : d.cliente) || 'Sin nombre';
+      const ts = d._draft_ts || d.ts;
+      const btn = document.createElement('button'); btn.className = 'draft-item-load'; btn.textContent = 'Cargar';
+      btn.onclick = () => loadDraftFromSheets(i);
+      const nom = document.createElement('div'); nom.className = 'draft-item-name'; nom.textContent = nombre;
+      const meta = document.createElement('div'); meta.className = 'draft-item-meta';
+      meta.textContent = ts ? 'Guardado: ' + new Date(ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+      div.append(btn, nom, meta);
       listDiv.appendChild(div);
     });
     listDiv._sheets_drafts = json.drafts;
