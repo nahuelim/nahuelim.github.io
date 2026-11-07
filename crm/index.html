@@ -457,6 +457,17 @@ async function abrir(id, seg) {
         const on = chips[campo] === o; chips[campo] = on ? undefined : o;
         b.parentNode.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); if (!on) b.classList.add('on');
       }}, o); return b; })));
+    // Ultima conversacion: la ultima nota (lo que se hablo) + el ultimo contacto registrado + las notas fijas del Sheet
+    const ultimaConversacion = () => {
+      const nombres = { NOTA:'Nota', LLAMADA_SI:'Atendió', LLAMADA_NO:'No atendió', RESPONDIO:'Respondió', MENSAJE:'Mensaje enviado', ALTA:'Alta' };
+      const nota = r.hist.find(x => x.tipo === 'NOTA');
+      const contacto = r.hist.find(x => ['LLAMADA_SI','LLAMADA_NO','RESPONDIO','MENSAJE'].includes(x.tipo));
+      return el('div', { cls:'card' }, el('h3', {}, 'Última conversación'),
+        nota ? el('div', {}, el('span', { cls:'actual', style:'display:block;margin:0 0 4px' }, nota.fecha), el('div', { style:'white-space:pre-wrap' }, nota.texto))
+             : el('div', { cls:'vacio' }, 'Sin notas todavía. Después de hablar, dejá una nota rápida.'),
+        contacto ? el('div', { cls:'actual', style:'margin:10px 0 0' }, 'Último contacto: ' + contacto.fecha + ' · ' + (nombres[contacto.tipo] || contacto.tipo) + (contacto.tipo === 'MENSAJE' && contacto.detalle ? ' (' + contacto.detalle + ')' : '')) : '',
+        d.NOTAS ? el('details', { style:'margin-top:10px' }, el('summary', { style:'font-size:14px;color:var(--tinta-suave)' }, 'Notas del Sheet'), el('div', { style:'white-space:pre-wrap;font-size:14px;margin-top:6px' }, d.NOTAS)) : '');
+    };
     const resultado = (tipo, texto) => el('button', { cls:'btn' + (marcadoHoy === tipo ? ' marcado' : ''), onclick: e => {
       e.currentTarget.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('marcado'));
       e.currentTarget.classList.add('marcado');                                         // se marca al instante
@@ -470,6 +481,7 @@ async function abrir(id, seg) {
         el('button', { cls:'btn', icon:'contacto', onclick: async () => toast(await api('api_contactoGoogle', id)) }, 'Agendar')),
       el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
         el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No atendió'), resultado('LLAMADA_SI', 'Atendió'), resultado('RESPONDIO', 'Respondió'))),
+      ultimaConversacion(),
       el('div', { cls:'card' }, el('h3', {}, 'Próximo paso'),
         el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Agendado: ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') : 'Sin fecha'),
         el('div', { cls:'fila', style:'margin-bottom:10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
