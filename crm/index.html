@@ -172,7 +172,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '7';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '8';                               // tiene que coincidir con VERSION en Code.gs
 const WA_ESQUEMA = 'whatsapp-business://send';     // WhatsApp Business. Alternativas: 'whatsapp://send' o 'https://wa.me/'
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -286,7 +286,7 @@ function formulario(d, campos, listas) {
     if (/AMB/.test(k)) return sel(AMBS);                                  // en el iPhone se ve como rueda
     if (k === 'URGENCIA') return sel(['', ...(listas.urgencias || [])]);
     if (k === 'MOTIVACION') return sel(['', ...(listas.motivaciones || [])]);
-    if (k === 'BUSCA FORMA DE PAGO') return sel(['','PARTE DE PAGO','CONTADO','CREDITO APROBADO','CREDITO EN TRAMITE','CREDITO SIN CONFIRMAR','VENDE PARA COMPRAR']);
+    if (k === 'BUSCA FORMA DE PAGO') return sel(['','PARTE DE PAGO','VENTA','CASH','CREDITO APROBADO','CREDITO EN TRAMITE','CREDITO SIN CONFIRMAR']);
     if (k === 'BUSCA COCHERA') return sel(['','SI','NO','DESEABLE']);
     if (k === 'FUENTE') return sel(['', ...FUENTES]);
     if (k === 'ROL') return sel(['','COMPRADOR','VENDEDOR','AMBOS']);
@@ -567,7 +567,7 @@ async function abrir(id, seg) {
         : el('div', { cls:'aviso' }, 'No hay plantillas cargadas.')),
       el('div', { cls:'card' }, el('h3', {}, 'Nota rápida'), nota,
         grupoChips('URGENCIA', 'Urgencia', listas.urgencias || []),
-        grupoChips('BUSCA FORMA DE PAGO', 'Forma de pago', ['PARTE DE PAGO', 'CONTADO', 'CREDITO APROBADO', 'CREDITO EN TRAMITE']),
+        grupoChips('BUSCA FORMA DE PAGO', 'Forma de pago', ['PARTE DE PAGO', 'VENTA', 'CASH', 'CREDITO APROBADO', 'CREDITO EN TRAMITE']),
         grupoChips('DECISORES', 'Quién decide', ['Solo', 'Con pareja', 'Con familia']),
         grupoChips('VIVIENDA', 'Vivienda', ['Alquila', 'Propia']),
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: async () => {
