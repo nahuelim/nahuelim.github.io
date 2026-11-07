@@ -1241,7 +1241,6 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
             ficha_id,                # ID
             d.get('inmobiliaria', ''),         # INMOBILIARIA
             d.get('whatsapp_publicador', ''),   # WHATSAPP/TEL PUBLICADOR
-            d.get('fecha_publicacion', ''),     # FECHA PUBLICACION REAL
         ]
 
         print(f'[Sheets] Fila a escribir: {fila}', flush=True)
