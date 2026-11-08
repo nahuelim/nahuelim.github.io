@@ -81,7 +81,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   padding:11px 16px;
   display:flex;align-items:center;justify-content:space-between;
 }
-.topbar-left{display:flex;align-items:center;gap:10px}
+.topbar-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .topbar-monogram{
   width:32px;height:32px;border-radius:50%;background:#fff;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -99,7 +99,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .topbar-actions .btn-sm{height:32px;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 @media (max-width:600px){
   .topbar{flex-wrap:wrap;row-gap:10px;padding:10px 14px}
-  .topbar-left{width:100%}
+  .topbar-left{flex:1 1 100%}
   .topbar-actions{width:100%;display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px}
 }
 .agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
@@ -343,6 +343,7 @@ const AR_IG=1.0000;
         <div class="topbar-brand">Nahuel Lim</div>
         <div class="topbar-label"><span style="color:var(--orange)">Century 21 Evolución</span> · ACM</div>
       </div>
+      <a href="crm/" class="btn-sm btn-ghost" style="margin-left:auto;height:32px;display:flex;align-items:center;text-decoration:none;flex-shrink:0" title="Volver al CRM">‹ CRM</a>
     </div>
     <div class="topbar-actions">
       <button class="btn-sm btn-ghost" onclick="showDraftModal()">Borrador</button>
@@ -750,9 +751,9 @@ const AR_IG=1.0000;
         </div>
         <div class="callout" style="font-size:11px;margin:6px 0"><strong>Solo para vos:</strong> se completan solos desde la sección 8 — Venta = rango de cierres · Prueba = de cierre máx. a publicado máx. · Espera = más que el publicado máx. Editá cualquier valor si querés otro criterio. En el PDF, Espera sale sin techo.</div>
         <div class="field" style="margin-top:8px">
-          <label>Análisis del valor · IA (va al PDF)</label>
-          <textarea id="v_analisis" style="min-height:160px" placeholder="1) Tocá 'Copiar datos para Claude'. 2) Pegalos en tu proyecto de Claude del ACM. 3) Pegá acá la respuesta y corregí lo que haga falta."></textarea>
-          <button type="button" class="btn-sm btn-ghost" style="background:var(--primary);color:#fff;height:38px;margin-top:4px" onclick="copiarParaClaude()">Copiar datos para Claude</button>
+          <label>Análisis del valor y fuentes (va al PDF)</label>
+          <textarea id="v_analisis" style="min-height:160px" placeholder="Comparables, referencia de la zona, ajustes y fuentes."></textarea>
+          <button type="button" class="btn-sm btn-ghost" style="background:var(--primary);color:#fff;height:38px;margin-top:4px" onclick="copiarParaClaude()">Copiar datos del análisis</button>
         </div>
         <div class="field">
           <label>Compromisos / condiciones acordadas</label>
@@ -940,8 +941,10 @@ const PREGUNTAS_CLAVE = [
 function checkLogin() {
   if (document.getElementById('pwd-input').value === PASSWORD) {
     document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('acm_ok', '1');               // al recargar la pestaña no la vuelve a pedir
     document.getElementById('app').style.display = 'block'; medirTopbar();
     init();
+    recuperarEnCurso();
   } else {
     const inp = document.getElementById('pwd-input');
     inp.classList.add('shake'); inp.value = '';
@@ -949,10 +952,25 @@ function checkLogin() {
   }
 }
 document.getElementById('pwd-input').addEventListener('keydown', e => { if (e.key === 'Enter') checkLogin(); });
+// (corre cuando terminó de cargar todo el script)
+window.addEventListener('DOMContentLoaded', () => { if (sessionStorage.getItem('acm_ok')) { document.getElementById('pwd-input').value = PASSWORD; checkLogin(); } });
+
+// ── GUARDADO AUTOMÁTICO EN ESTE DISPOSITIVO ──
+// Si recargás o se cierra la pestaña, el ACM que estabas cargando vuelve solo. "Nueva" lo borra.
+const LS_EN_CURSO = 'acm_en_curso';
+let _autoT;
+function guardarEnCurso(){ clearTimeout(_autoT); _autoT=setTimeout(()=>{ try{ localStorage.setItem(LS_EN_CURSO, JSON.stringify(collect())); }catch(e){} }, 600); }
+function recuperarEnCurso(){
+  let d=null; try{ d=JSON.parse(localStorage.getItem(LS_EN_CURSO)||'null'); }catch(e){}
+  if (d && (d.cliente?.nombre || d.propiedad?.direccion)) { populateForm(d); showToast('Recuperé el ACM que estabas cargando'); }
+  const f=document.getElementById('main-form');
+  f.addEventListener('input', guardarEnCurso); f.addEventListener('change', guardarEnCurso); f.addEventListener('click', guardarEnCurso);
+}
 
 // Alto real del topbar (en el celular ocupa dos renglones): la barra de progreso y el formulario arrancan debajo
 function medirTopbar(){ const t=document.querySelector('.topbar'); if(t&&t.offsetHeight) document.documentElement.style.setProperty('--topbar-h', t.offsetHeight+'px'); }
 window.addEventListener('resize', medirTopbar);
+if (window.ResizeObserver) new ResizeObserver(medirTopbar).observe(document.querySelector('.topbar'));
 
 // Arma un texto con los datos de la propiedad y del ACM para pegar en el proyecto de Claude.
 // No incluye los datos de contacto del cliente ni las notas privadas.
@@ -979,7 +997,7 @@ function copiarParaClaude(){
     L('Cierres red C21 USD',[a.vend_tot_min,a.vend_tot_max].filter(Boolean).join(' – ')), L('Cierres red C21 USD/m²',[a.vend_m2_min,a.vend_m2_max].filter(Boolean).join(' – ')),
     L('Días promedio en mercado',a.dias), L('Margen de negociación (%)',a.margen), L('Tendencia',a.tendencia), L('Notas ACM',a.notas)
   ].filter(x=>x!==null).join('\n');
-  navigator.clipboard.writeText(txt).then(()=>showToast('Datos copiados. Pegalos en el proyecto de Claude.'),()=>showToast('No se pudo copiar'));
+  navigator.clipboard.writeText(txt).then(()=>showToast('Datos copiados'),()=>showToast('No se pudo copiar'));
 }
 
 // ── INIT ──
@@ -1181,6 +1199,7 @@ function updateProgress() {
 // ── RESET ──
 function resetForm() {
   if (!confirm('¿Limpiar todo para una nueva ACM?')) return;
+  localStorage.removeItem(LS_EN_CURSO);
   document.getElementById('main-form').reset();
   [ratings,checked,preguntasCheck].forEach(o => Object.keys(o).forEach(k => delete o[k]));
   document.getElementById('prop_barrio').value=''; document.getElementById('prop_barrio_input').value='';
@@ -1664,6 +1683,8 @@ function populateForm(d) {
   s('dormitorios',p.dormitorios); s('prop_cocina',p.cocina);s('prop_toilette',p.toilette);s('prop_amenities',p.amenities);s('prop_disposicion',p.disposicion);s('prop_seguridad',p.seguridad);s('prop_encargado',p.encargado);s('prop_estado',p.estado);
   if(p.espacio_libre){const _s=String(p.espacio_libre).split(',').map(x=>x.trim());document.querySelectorAll('.espacio-libre').forEach(c=>{c.checked=_s.includes(c.value);});}
   s('prop_notas', p.notas||d.prop_notas);
+  s('sup_cub', p.sup_cub); s('sup_tot', p.sup_tot); s('prop_estado', p.estado);
+  if (p.sup) { const _h=document.getElementById('sup'); if(_h) _h.dataset.manual='1'; }
   // S4 — ratings
   if (d.secundarias?.length) {
     d.secundarias.forEach((item, ai) => {
@@ -1718,6 +1739,12 @@ function populateForm(d) {
   man('v_prueba_min', v.prueba_min); man('v_prueba_max', v.prueba_max??v.lanch_tot);
   man('v_espera', v.espera??v.pub_tot);
   s('v_conclusion', v.conclusion); s('precio_acordado', v.precio_acordado||d.precio_acordado); s('v_analisis', v.analisis); s('compromisos', v.compromisos||d.compromisos);
+  // Modo asesor (privado)
+  const pv = d.privado||{};
+  s('ag_urgencia', pv.urgencia_detectada); s('ag_expectativa', pv.expectativa); s('ag_competencia', pv.competencia);
+  s('ag_dinamica', pv.dinamica); s('ag_evaluacion', pv.evaluacion); s('ag_notas', pv.notas_privadas);
+  if (pv.preguntas_hechas?.length) document.querySelectorAll('#preguntas-list .check-item').forEach((div,i) => {
+    preguntasCheck[i] = pv.preguntas_hechas.includes(PREGUNTAS_CLAVE[i]); div.classList.toggle('checked', preguntasCheck[i]); });
   calcAcmM2();
   updateProgress();
 }

@@ -319,6 +319,7 @@ async function verificarFaceId() {
   await navigator.credentials.get({ publicKey: { challenge: azar(32), allowCredentials: [{ type:'public-key', id: unb64(localStorage.getItem(LS.cred)) }], userVerification:'required', timeout: 60000 } });
 }
 function pantallaBloqueo() {
+  desbloqueado = false;
   const b = document.getElementById('bloqueo');
   b.replaceChildren(el('img', { src:'../assets/nl-mono-crema.svg', alt:'NL' }),
     el('button', { cls:'btn pri', onclick: async () => {
@@ -354,7 +355,7 @@ function pantallaConfig(msg) {
 }
 let ocultoDesde = 0;
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') { ocultoDesde = Date.now(); return; }
+  if (document.visibilityState === 'hidden') { ocultoDesde = Date.now(); marcarActivo(); return; }
   if (localStorage.getItem(LS.cred) && ocultoDesde && Date.now() - ocultoDesde > BLOQUEO_MIN * 60000) return pantallaBloqueo();
   refrescar();                                       // al volver de WhatsApp o del telefono
 });
@@ -489,11 +490,12 @@ function verNuevo() {
 
 // ─── ficha por segmentos ───
 let segmentoActual = 'contacto';
-function cerrar() { document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; }
+function cerrar() { document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista'); }
 
 async function abrir(id, seg) {
   const r = await api('api_ficha', id);
-  if (seg) segmentoActual = seg;
+  if (seg) { segmentoActual = seg; sessionStorage.setItem('crm_seg', seg); }
+  sessionStorage.setItem('crm_vista', id);                // al recargar vuelve a esta ficha
   const d = r.datos, p = document.getElementById('ficha'), listas = r.listas || {};
   const accion = async (tipo, detalle, texto) => { await api('api_accion', id, tipo, detalle || '', texto || ''); toast('Guardado'); abrir(id); refrescar(); };
   const guardar = async (campos, msg) => {
@@ -691,7 +693,7 @@ async function abrir(id, seg) {
   const cuerpo = el('div', { cls:'ficha-body' });
   const barra = el('div', { cls:'segmentos' });
   const mostrar = key => {
-    segmentoActual = key;
+    segmentoActual = key; sessionStorage.setItem('crm_seg', key);
     barra.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === key));
     cuerpo.replaceChildren(...SEGMENTOS.find(s => s[0] === key)[2]());
     p.scrollTop = 0;
@@ -717,7 +719,16 @@ async function abrir(id, seg) {
 
 function refrescar() { if (cfg().key && document.getElementById('tHoy').classList.contains('on')) verHoy(); }
 
-function arrancar() { verHoy(); }
+// Al recargar: vuelve a la ficha abierta (y su solapa). sessionStorage dura mientras la pestaña o la app esté abierta.
+let desbloqueado = false;
+const marcarActivo = () => { if (desbloqueado) sessionStorage.setItem('crm_activo', Date.now()); };
+window.addEventListener('pagehide', marcarActivo);     // una recarga cuenta como actividad, no como salida
+function arrancar() {
+  desbloqueado = true; marcarActivo();
+  verHoy();
+  const id = sessionStorage.getItem('crm_vista');
+  if (id) abrir(id, sessionStorage.getItem('crm_seg') || '').catch(() => sessionStorage.removeItem('crm_vista'));
+}
 
 document.getElementById('tHoy').onclick = verHoy;
 document.getElementById('tBuscar').onclick = verBuscar;
@@ -730,7 +741,8 @@ const hoyTxt = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'num
 document.getElementById('fecha').textContent = hoyTxt.charAt(0).toUpperCase() + hoyTxt.slice(1);
 
 if (!cfg().url || !cfg().key) pantallaConfig();
-else if (localStorage.getItem(LS.cred)) pantallaBloqueo();
+// Face ID solo si la app estuvo cerrada o en segundo plano más de BLOQUEO_MIN; una recarga no lo pide
+else if (localStorage.getItem(LS.cred) && !(Date.now() - (+sessionStorage.getItem('crm_activo') || 0) < BLOQUEO_MIN * 60000)) pantallaBloqueo();
 else arrancar();
 </script>
 </body>
