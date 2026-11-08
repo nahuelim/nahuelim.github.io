@@ -75,7 +75,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 /* ── TOPBAR ── */
 .topbar{
-  position:fixed;top:0;left:0;right:0;z-index:100;
+  position:relative;z-index:100;gap:8px;
   background:#14231D;
   border-bottom:2px solid var(--orange);
   padding:11px 16px;
@@ -94,26 +94,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .btn-sm:active{opacity:.75}
 .btn-ghost{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.92)}
 .btn-ghost:hover{background:rgba(255,255,255,.15)}
-.btn-agent{background:transparent;border:1px solid rgba(190,175,135,.5);color:var(--orange);display:flex;align-items:center;gap:5px}
-.btn-agent.active{background:var(--orange);color:#14231D;border-color:var(--orange)}
 .topbar-actions .btn-sm{height:32px;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 @media (max-width:600px){
   .topbar{flex-wrap:wrap;row-gap:10px;padding:10px 14px}
   .topbar-left{flex:1 1 100%}
-  .topbar-actions{width:100%;display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px}
+  .topbar-actions{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 }
-.agent-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 
 /* ── PROGRESS ── */
-.progress-bar{height:2px;background:rgba(0,0,0,.06);position:fixed;top:var(--topbar-h,57px);left:0;right:0;z-index:99}
+.progress-bar{height:2px;background:rgba(0,0,0,.06)}
 .progress-fill{height:100%;background:var(--orange);transition:width .4s ease}
 
 /* ── FORM ── */
-.form-body{padding:calc(var(--topbar-h,57px) + 2px) 0 110px;min-height:100vh}
+.form-body{padding:0 0 110px;min-height:100vh}
 
 /* ── SECTION ── */
 .section{border-bottom:1px solid var(--border);background:var(--white)}
-.section.agent-section{background:var(--agent-bg);border-color:var(--agent-border)}
 .section-header{
   padding:14px 16px;
   display:flex;align-items:center;gap:10px;
@@ -125,9 +121,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   display:flex;align-items:center;justify-content:center;
   font-size:11px;font-weight:700;color:var(--primary);flex-shrink:0;
 }
-.section.agent-section .section-num{background:var(--agent-surface);border-color:var(--agent-border);color:var(--orange)}
 .section-title{font-size:14px;font-weight:600;color:var(--text);flex:1;line-height:1.3;letter-spacing:-.1px}
-.section.agent-section .section-title{color:var(--agent-text)}
 .section-chevron{font-size:11px;color:var(--muted);transition:transform .25s;flex-shrink:0}
 .section-chevron.open{transform:rotate(180deg)}
 .section-body{padding:4px 16px 20px;display:flex;flex-direction:column;gap:12px}
@@ -144,7 +138,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── FIELDS ── */
 .field{display:flex;flex-direction:column;gap:5px}
 .field label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600}
-.section.agent-section .field label{color:var(--agent-muted)}
 .field input[type=checkbox]{width:20px;height:20px;accent-color:var(--primary);flex-shrink:0;cursor:pointer}
 .field label span.req{color:var(--orange);margin-left:2px}
 .field input:not([type=checkbox]),.field textarea,.field select{
@@ -153,16 +146,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   padding:11px 12px;border-radius:8px;outline:none;width:100%;
   transition:border-color .2s;-webkit-appearance:none;
 }
-.section.agent-section .field input,
-.section.agent-section .field textarea,
-.section.agent-section .field select{background:var(--agent-surface);border-color:var(--agent-border);color:var(--agent-text)}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--primary);background:#fff}
-.section.agent-section .field input:focus,
-.section.agent-section .field textarea:focus,
-.section.agent-section .field select:focus{border-color:var(--orange);background:var(--agent-bg)}
 .field textarea{resize:vertical;min-height:70px;line-height:1.5}
 .field select option{background:var(--white);color:var(--text)}
-.section.agent-section .field select option{background:var(--agent-surface);color:var(--agent-text)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .field-row>.field,.field-row3>.field{justify-content:flex-end}
@@ -199,17 +185,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   cursor:pointer;user-select:none;transition:border-color .15s,background .15s;
 }
 .check-item.checked{border-color:var(--primary);background:var(--primary-pale)}
-.section.agent-section .check-item{background:var(--agent-surface);border-color:var(--agent-border)}
-.section.agent-section .check-item.checked{border-color:var(--orange);background:rgba(190,175,135,.08)}
 .check-box{width:18px;height:18px;border-radius:4px;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
 .check-item.checked .check-box{background:var(--primary);border-color:var(--primary)}
-.section.agent-section .check-item.checked .check-box{background:var(--orange);border-color:var(--orange)}
 .check-box svg{display:none}
 .check-item.checked .check-box svg{display:block}
 .check-label{font-size:13px;color:var(--muted);line-height:1.4}
 .check-item.checked .check-label{color:var(--text);font-weight:500}
-.section.agent-section .check-label{color:var(--agent-muted)}
-.section.agent-section .check-item.checked .check-label{color:var(--agent-text)}
 
 /* ── RANGE ── */
 .range-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end}
@@ -222,8 +203,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 /* ── CALLOUT ── */
 .callout{background:var(--orange-pale);border-left:3px solid var(--orange);border-radius:0 8px 8px 0;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.5}
 .callout strong{color:var(--orange)}
-.section.agent-section .callout{background:rgba(190,175,135,.07);border-color:var(--orange);color:var(--agent-muted)}
-.section.agent-section .callout strong{color:var(--orange)}
 
 /* ── TESTIGOS ── */
 .testigos-table{width:100%;border-collapse:collapse;font-size:12px}
@@ -300,9 +279,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .rango-card.rojo{border-color:#991B1B;background:#F9E5E5}.rango-card.rojo .rango-title{color:#991B1B}
 @media (max-width:640px){.acm-cards,.rango-cards{grid-template-columns:1fr}}
 .divider{height:1px;background:var(--border);margin:4px 0}
-.section.agent-section .divider{background:var(--agent-border)}
 .sublabel{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;padding:4px 0 2px}
-.section.agent-section .sublabel{color:var(--agent-muted)}
 </style>
 </head>
 <body>
@@ -348,9 +325,6 @@ const AR_IG=1.0000;
     <div class="topbar-actions">
       <button class="btn-sm btn-ghost" onclick="showDraftModal()">Borrador</button>
       <button class="btn-sm btn-ghost" onclick="resetForm()">Nueva</button>
-      <button class="btn-sm btn-agent" id="agent-btn" onclick="toggleAgentMode()">
-        <div class="agent-dot"></div>Modo Asesor
-      </button>
     </div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
@@ -600,7 +574,6 @@ const AR_IG=1.0000;
         <div class="section-chevron open">▾</div>
       </div>
       <div class="section-body" id="body-sec-5">
-        <div class="callout" id="tip-objeciones" style="display:none"><strong>Tip:</strong> Nombrá cada objeción antes que el cliente. "Sé que X va a ser una objeción frecuente — te quiero ser honesto sobre cuánto impacta en el valor."</div>
         <div class="checklist" id="objeciones-list"></div>
         <div class="field" style="margin-top:4px">
           <label>Notas adicionales</label>
@@ -762,113 +735,6 @@ const AR_IG=1.0000;
       </div>
     </div>
 
-    <!-- MODO AGENTE (privado) -->
-    <div class="section agent-section" id="sec-agent" style="display:none">
-      <div class="section-header" onclick="toggleSection('sec-agent')">
-        <div class="section-num" style="font-size:14px">🔒</div>
-        <div style="flex:1">
-          <div class="agent-badge" style="margin-bottom:4px">Modo Asesor</div>
-          <div class="section-title">Notas Privadas &amp; Checklist</div>
-        </div>
-        <div class="section-chevron open">▾</div>
-      </div>
-      <div class="section-body" id="body-sec-agent">
-        <div class="agent-badge">Preguntas clave — no olvidarse</div>
-        <div class="checklist" id="preguntas-list"></div>
-        <div class="divider" style="margin-top:8px"></div>
-        <div class="field">
-          <label>Señales de urgencia real</label>
-          <textarea id="ag_urgencia" placeholder="¿Cómo llegaron — frío, referido, ya decididos? ¿Algo en el relato que indica presión?"></textarea>
-        </div>
-        <div class="field">
-          <label>Expectativa de precio vs. mercado</label>
-          <select id="ag_expectativa">
-            <option value="">Sin evaluar</option>
-            <option>Alineada ✓</option>
-            <option>Levemente sobrevaluada (5-10%)</option>
-            <option>Sobrevaluada (10-20%)</option>
-            <option>Muy sobrevaluada (+20%) — requiere trabajo previo</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>¿Habló con otros asesores?</label>
-          <select id="ag_competencia">
-            <option value="">Sin definir</option>
-            <option>No — primera reunión</option>
-            <option>Sí — uno o dos más, sin propuesta formal</option>
-            <option>Sí — ya tienen propuesta de otra inmobiliaria</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Dinámica de decisión</label>
-          <textarea id="ag_dinamica" placeholder="¿Quién decide? ¿Hay alguien que no está que necesita dar el OK?"></textarea>
-        </div>
-        <div class="field">
-          <label>Evaluación general</label>
-          <select id="ag_evaluacion">
-            <option value="">Sin evaluar</option>
-            <option>⭐⭐⭐ Cliente ideal — listo para arrancar</option>
-            <option>⭐⭐ Necesita trabajo — pero vale la pena</option>
-            <option>⭐ Difícil — precio irreal o motivación baja</option>
-            <option>❌ No tomar — precio intransigente / red flag</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Notas libres</label>
-          <textarea id="ag_notas" placeholder="Todo lo que no podés escribir delante del cliente..."></textarea>
-        </div>
-
-        <div class="divider" style="margin-top:12px"></div>
-        <div class="agent-badge" style="margin-top:8px">Ayuda Memoria — Conceptos Clave</div>
-
-        <div class="field" style="margin-top:8px">
-          <label style="color:var(--orange)">Necesidades e Intereses</label>
-          <div class="callout">Antes de hablar de números, entendé qué hay detrás de la decisión de vender. La gente no vende propiedades — resuelve problemas o persigue objetivos. Puede ser liquidez, un cambio de vida, una separación, una herencia, o simplemente querer algo mejor. Tu trabajo es identificar el motor real: ¿qué necesita lograr con esta venta para sentir que fue una buena decisión? Eso te dice el precio mínimo real, los plazos reales, y cuánta flexibilidad hay. Sin eso, estás trabajando a ciegas.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Cómo se Valúa una Propiedad</label>
-          <div class="callout">Una propiedad vale lo que un comprador real está dispuesto a pagar hoy en el mercado. No lo que costó construirla, no lo que pagó el dueño, no lo que necesita el vendedor. El método correcto es comparativo: tomás propiedades similares que se vendieron recientemente en la misma zona, ajustás por diferencias, y determinás el rango donde se cierra el mercado. No es una opinión — es evidencia. El ACM es exactamente eso: una foto del mercado en este momento, con datos reales de operaciones reales.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Características Secundarias</label>
-          <div class="callout">Más allá de los metros y los ambientes, hay atributos que el mercado valora o castiga silenciosamente: luminosidad, ventilación, orientación, estado de mantenimiento, distribución, acceso al edificio. Estos no mueven el precio en un porcentaje fijo — generan o destruyen interés. Una propiedad mal iluminada o sin ascensor puede estar bien de precio y aun así no recibir visitas, porque el comprador la descarta antes de ir. Identificarlos te permite anticipar objeciones y ajustar la estrategia de publicación.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Objeciones Duras</label>
-          <div class="callout">Son los factores estructurales que los compradores van a objetar en todas o casi todas las visitas. No desaparecen con el tiempo ni con mejor fotografía. Sin ascensor, sin luz, orientación desfavorable, expensas altas, zona conflictiva — cada uno tiene un impacto real en el precio de cierre. La clave es nombrarlos vos primero, antes de que los diga el comprador. Cuando el asesor los nombra proactivamente, genera confianza y establece la lógica del precio. Cuando los nombra el comprador en la oferta, se convierte en argumento para bajar. Anticiparlos es parte del trabajo.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Qué son los Comparables</label>
-          <div class="callout">Los comparables son propiedades similares a la que estamos analizando, en la misma zona, con características parecidas, que están publicadas hoy o se vendieron recientemente. Son el único dato objetivo disponible para anclar el precio. No alcanza con ver los publicados — esos son los precios que piden, no los que se pagan. Lo que importa es el precio de cierre: a cuánto se escrituró. La diferencia entre precio publicado y precio de cierre es el margen de negociación del mercado, que en CABA suele estar entre el 8% y el 15%.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">La Ventana de Valor</label>
-          <div class="callout">La ventana de venta es el rango de precio dentro del cual el mercado reacciona: generás consultas, conseguís visitas, recibís ofertas. Por debajo del piso, estás regalando valor. Por encima del techo, el mercado te ignora. El problema de salir caro no es solo que no te llamen — es que quemás las semanas de mayor exposición (las primeras 3-4 semanas de publicación son las de mayor tráfico), y después tenés que bajar desde una posición debilitada. El comprador que te vio antes y no llamó, cuando ve la baja interpreta que algo está mal. Publicar bien desde el día uno no es resignar precio, es maximizar las chances de venta al mejor valor posible.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Impacto de Publicar Fuera de la Ventana</label>
-          <div class="callout">Cuando una propiedad sale al mercado, tiene un período de exposición inicial que nunca se repite: los compradores activos la ven por primera vez, la comparan con otras, y deciden si vale una visita. Si el precio está fuera de la ventana, ese momento se desperdicia. Con el tiempo, la propiedad se "quema" — acumula días en el mercado, los portales la muestran menos, y los compradores la descartan sin leerla. Una propiedad con 90 días publicada sin venderse ya tiene una señal negativa en el mercado. Bajar el precio después es más costoso que salir bien desde el principio.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Estrategia Dinámica de Venta</label>
-          <div class="callout">El mercado habla permanentemente. Cada semana sin consultas es información: el precio está fuera del rango donde el mercado reacciona. La estrategia dinámica es un plan acordado desde el inicio: si en las primeras semanas no hay señales de demanda, ajustamos el precio según criterios objetivos y pre-acordados. No es una sorpresa — es parte del plan. Esto le da al propietario control y previsibilidad, y a vos un marco para tener esa conversación sin que se sienta como una presión. El ajuste no es una derrota, es una lectura del mercado.</div>
-        </div>
-
-        <div class="field">
-          <label style="color:var(--orange)">Criterios de Reajuste</label>
-          <div class="callout">Los reajustes se aplican según las señales concretas que el mercado da durante las primeras semanas de publicación. Sin consultas en semanas 3-4: el precio está por lo menos un 15% fuera del rango activo — reajuste del 15%. Pocas consultas pero sin visitas: el precio filtra antes de que el comprador decida visitar — reajuste del 10%. Consultas y visitas pero sin ofertas: el producto interesa pero el precio frena el compromiso — reajuste del 5%. Cada reajuste se acompaña de un informe del período con datos reales: cuántas consultas, cuántas visitas, qué objeciones se repitieron.</div>
-        </div>
-
-      </div>
-    </div>
-
   </form>
 
   <div class="status-bar">
@@ -926,23 +792,13 @@ const NIVELES = ["Malo","Regular","Bueno","Excelente"];
 
 const OBJECIONES = ["Sin ascensor / acceso solo por escalera","Sin luz natural — contrafrente o pozo de luz","Sin visual / da a medianera o pared ciega","Zona conflictiva o cerca de cancha / estadio","Estado de mantenimiento regular o malo","Escaleras internas (PH de dos plantas, duplex)","Distribución disfuncional o poco práctica","Obras linderas activas en este momento","Problemas estructurales o de humedad en el edificio","Expensas altas respecto del promedio de la zona","Sin espacios exteriores (balcón/terraza)"];
 
-const PREGUNTAS_CLAVE = [
-  "¿Estuvieron en algún momento cerca de vender, o es la primera vez que lo ponen en el mercado?",
-  "¿Ya tuvieron la propiedad publicada en algún momento? ¿Qué pasó?",
-  "Si el mercado te mostrara que el valor real de cierre está por debajo de lo que tenés en mente, ¿cómo lo tomarías?",
-  "¿El número que tienen en mente es el mínimo que necesitan para que la operación les cierre, o hay margen?",
-  "Si aparece el comprador rápido — en 30 o 45 días — ¿están en condiciones de entregar, o necesitan un plazo mínimo?",
-  "¿Tienen algo pactado que dependa de los tiempos de esta venta — mudanza, compra, otra operación?",
-  "Si llegamos a un acuerdo hoy, ¿están en condiciones de avanzar, o hay alguien más que necesita estar de acuerdo?",
-  "¿Quiénes son los titulares — están todos acá o hay que sumar a alguien en el proceso?"
-];
 
 // ── LOGIN ──
 function checkLogin() {
   if (document.getElementById('pwd-input').value === PASSWORD) {
     document.getElementById('login-screen').style.display = 'none';
     sessionStorage.setItem('acm_ok', '1');               // al recargar la pestaña no la vuelve a pedir
-    document.getElementById('app').style.display = 'block'; medirTopbar();
+    document.getElementById('app').style.display = 'block';
     init();
     recuperarEnCurso();
   } else {
@@ -967,10 +823,6 @@ function recuperarEnCurso(){
   f.addEventListener('input', guardarEnCurso); f.addEventListener('change', guardarEnCurso); f.addEventListener('click', guardarEnCurso);
 }
 
-// Alto real del topbar (en el celular ocupa dos renglones): la barra de progreso y el formulario arrancan debajo
-function medirTopbar(){ const t=document.querySelector('.topbar'); if(t&&t.offsetHeight) document.documentElement.style.setProperty('--topbar-h', t.offsetHeight+'px'); }
-window.addEventListener('resize', medirTopbar);
-if (window.ResizeObserver) new ResizeObserver(medirTopbar).observe(document.querySelector('.topbar'));
 
 // Arma un texto con los datos de la propiedad y del ACM para pegar en el proyecto de Claude.
 // No incluye los datos de contacto del cliente ni las notas privadas.
@@ -1002,7 +854,7 @@ function copiarParaClaude(){
 
 // ── INIT ──
 function init() {
-  buildRatingTable(); buildObjeciones(); buildPreguntas();
+  buildRatingTable(); buildObjeciones();
   injectPdfToggles();
   addTestigoRow(); addTestigoRow(); addTestigoRow();
   document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
@@ -1019,17 +871,6 @@ function toggleSection(id) {
   const chev = document.querySelector('#' + id + ' .section-chevron');
   const collapsed = body.classList.toggle('collapsed');
   if (chev) chev.classList.toggle('open', !collapsed);
-}
-
-// ── MODO AGENTE ──
-let agentMode = false;
-function toggleAgentMode() {
-  agentMode = !agentMode;
-  const btn = document.getElementById('agent-btn');
-  btn.classList.toggle('active', agentMode);
-  btn.innerHTML = `<div class="agent-dot"></div>${agentMode ? 'Agente ON' : 'Modo Agente'}`;
-  document.getElementById('sec-agent').style.display = agentMode ? 'block' : 'none';
-  document.getElementById('tip-objeciones').style.display = agentMode ? 'block' : 'none';
 }
 
 // ── TIPO OP ──
@@ -1082,17 +923,6 @@ function buildObjeciones() {
 }
 
 // ── PREGUNTAS PRIVADAS ──
-const preguntasCheck = {};
-function buildPreguntas() {
-  const list = document.getElementById('preguntas-list'); list.innerHTML = '';
-  PREGUNTAS_CLAVE.forEach((p, i) => {
-    const div = document.createElement('div'); div.className = 'check-item';
-    div.innerHTML = `<div class="check-box"><svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4.5L4 7.5L10 1" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="check-label">${p}</span>`;
-    div.addEventListener('click', () => { preguntasCheck[i] = !preguntasCheck[i]; div.classList.toggle('checked', preguntasCheck[i]); });
-    list.appendChild(div);
-  });
-}
-
 // ── TESTIGOS ──
 let testigoCount = 0;
 function addTestigoRow() {
@@ -1201,10 +1031,10 @@ function resetForm() {
   if (!confirm('¿Limpiar todo para una nueva ACM?')) return;
   localStorage.removeItem(LS_EN_CURSO);
   document.getElementById('main-form').reset();
-  [ratings,checked,preguntasCheck].forEach(o => Object.keys(o).forEach(k => delete o[k]));
+  [ratings,checked].forEach(o => Object.keys(o).forEach(k => delete o[k]));
   document.getElementById('prop_barrio').value=''; document.getElementById('prop_barrio_input').value='';
   testigoCount=0; document.getElementById('testigos-body').innerHTML='';
-  buildRatingTable(); buildObjeciones(); buildPreguntas();
+  buildRatingTable(); buildObjeciones();
   addTestigoRow(); addTestigoRow(); addTestigoRow();
   document.getElementById('fecha').value=new Date().toISOString().split('T')[0];
   document.getElementById('agente').value='Nahuel Lim';
@@ -1232,8 +1062,7 @@ function collect() {
     testigos,testigos_notas:g('testigos_notas'),
     reporte:{sup:g('ri_sup'),m2:g('ri_m2'),total:g('ri_total'),notas:g('ri_notas')},
     acm:{pub_tot_min:g('pub_tot_min'),pub_tot_max:g('pub_tot_max'),pub_m2_min:g('pub_m2_min'),pub_m2_max:g('pub_m2_max'),vend_tot_min:g('vend_tot_min'),vend_tot_max:g('vend_tot_max'),vend_m2_min:g('vend_m2_min'),vend_m2_max:g('vend_m2_max'),dias:g('acm_dias'),margen:g('acm_margen'),tendencia:g('acm_tendencia'),notas:g('acm_notas')},
-    ventana:{conclusion:g('v_conclusion'),venta_min:g('v_venta_min'),venta_max:g('v_venta_max'),prueba_min:g('v_prueba_min'),prueba_max:g('v_prueba_max'),espera:g('v_espera'),precio_acordado:g('precio_acordado'),analisis:g('v_analisis'),compromisos:g('compromisos')},
-    privado:{preguntas_hechas:PREGUNTAS_CLAVE.filter((_,i)=>preguntasCheck[i]),urgencia_detectada:g('ag_urgencia'),expectativa:g('ag_expectativa'),competencia:g('ag_competencia'),dinamica:g('ag_dinamica'),evaluacion:g('ag_evaluacion'),notas_privadas:g('ag_notas')}
+    ventana:{conclusion:g('v_conclusion'),venta_min:g('v_venta_min'),venta_max:g('v_venta_max'),prueba_min:g('v_prueba_min'),prueba_max:g('v_prueba_max'),espera:g('v_espera'),precio_acordado:g('precio_acordado'),analisis:g('v_analisis'),compromisos:g('compromisos')}
   };
 }
 
@@ -1739,12 +1568,6 @@ function populateForm(d) {
   man('v_prueba_min', v.prueba_min); man('v_prueba_max', v.prueba_max??v.lanch_tot);
   man('v_espera', v.espera??v.pub_tot);
   s('v_conclusion', v.conclusion); s('precio_acordado', v.precio_acordado||d.precio_acordado); s('v_analisis', v.analisis); s('compromisos', v.compromisos||d.compromisos);
-  // Modo asesor (privado)
-  const pv = d.privado||{};
-  s('ag_urgencia', pv.urgencia_detectada); s('ag_expectativa', pv.expectativa); s('ag_competencia', pv.competencia);
-  s('ag_dinamica', pv.dinamica); s('ag_evaluacion', pv.evaluacion); s('ag_notas', pv.notas_privadas);
-  if (pv.preguntas_hechas?.length) document.querySelectorAll('#preguntas-list .check-item').forEach((div,i) => {
-    preguntasCheck[i] = pv.preguntas_hechas.includes(PREGUNTAS_CLAVE[i]); div.classList.toggle('checked', preguntasCheck[i]); });
   calcAcmM2();
   updateProgress();
 }
