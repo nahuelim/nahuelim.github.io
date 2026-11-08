@@ -322,8 +322,15 @@ function pantallaBloqueo() {
   const b = document.getElementById('bloqueo');
   b.replaceChildren(el('img', { src:'../assets/nl-mono-crema.svg', alt:'NL' }),
     el('button', { cls:'btn pri', onclick: async () => {
-      try { await verificarFaceId(); b.classList.remove('on'); arrancar(); } catch (e) { toast('No se pudo verificar. Probá de nuevo.', true); }
-    }}, 'Desbloquear con Face ID'));
+      try { await verificarFaceId(); b.classList.remove('on'); arrancar(); }
+      catch (e) { toast('No se pudo verificar (' + (e.name || 'error') + '). Probá de nuevo o entrá con la clave.', true); }
+    }}, 'Desbloquear con Face ID'),
+    // Salida si el Face ID deja de responder: borra el Face ID y la clave de este dispositivo y pide la clave de nuevo.
+    // Es igual de seguro: sin la clave no se entra.
+    el('button', { cls:'btn', style:'margin-top:12px;background:transparent;color:#F4EFE4;border-color:rgba(244,239,228,.35)', onclick: () => {
+      localStorage.removeItem(LS.cred); localStorage.removeItem(LS.key);
+      pantallaConfig('Entrá con tu clave. Después te ofrece activar Face ID de nuevo.');
+    }}, 'Entrar con la clave'));
   b.classList.add('on');
 }
 function pantallaConfig(msg) {
