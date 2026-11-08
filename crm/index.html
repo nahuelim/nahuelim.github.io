@@ -679,12 +679,13 @@ async function abrir(id, seg) {
       ultimaConversacion(),
       el('div', { cls:'card' }, el('h3', {}, 'Nota rápida'), nota,
         grupoChips('URGENCIA', 'Urgencia', listas.urgencias || []),
+        grupoChips('MOTIVACION', 'Motivación (por qué ahora)', listas.motivaciones || []),
         grupoChips('BUSCA FORMA DE PAGO', 'Forma de pago', ['PARTE DE PAGO', 'VENTA', 'CASH', 'CREDITO APROBADO', 'CREDITO EN TRAMITE']),
         grupoChips('DECISORES', 'Quién decide', ['Solo', 'Con pareja', 'Con familia']),
         grupoChips('VIVIENDA', 'Vivienda', ['Alquila', 'Propia']),
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: async () => {
           const campos = {};
-          ['URGENCIA', 'BUSCA FORMA DE PAGO', 'DECISORES'].forEach(k => { if (chips[k]) campos[k] = chips[k]; });
+          ['URGENCIA', 'MOTIVACION', 'BUSCA FORMA DE PAGO', 'DECISORES'].forEach(k => { if (chips[k]) campos[k] = chips[k]; });
           const t = [chips.VIVIENDA ? 'Vivienda: ' + chips.VIVIENDA : '', nota.value.trim()].filter(Boolean).join('. ');
           if (!t && !Object.keys(campos).length) return toast('No hay nada para guardar', true);
           if (Object.keys(campos).length) await api('api_guardar', id, campos);
