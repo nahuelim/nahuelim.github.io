@@ -25,11 +25,15 @@
     --top: env(safe-area-inset-top, 0px); --bottom: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { margin:0; background:var(--crema); color:var(--tinta); font:16px/1.45 Inter, -apple-system, system-ui, sans-serif; }
+  /* html oscuro: el iPhone toma ese color para la franja de arriba (sin esfumado claro) */
+  html { background:var(--tinta); }
+  body { min-height:100vh; }
+  html, body { margin:0; color:var(--tinta); font:16px/1.45 Inter, -apple-system, system-ui, sans-serif; }
   input, select, textarea, button { font:inherit; font-size:16px; color:inherit; }   /* 16px: iOS no hace zoom */
 
-  .top { background:var(--tinta); color:var(--crema); padding:calc(var(--top) + 12px) 16px 12px; display:flex; align-items:center; gap:12px; }
-  .top img { height:30px; display:block; }
+  body { background:var(--crema); }
+  .top { position:sticky; top:0; z-index:50; background:var(--tinta); color:var(--crema); padding:calc(var(--top) + 6px) 16px 6px; display:flex; align-items:center; gap:12px; }
+  .top img { height:26px; display:block; }
   .top .fecha { margin-left:auto; font-size:13px; color:var(--dorado); }
   .top .burger { background:none; border:0; color:var(--crema); width:44px; height:44px; display:flex; align-items:center; justify-content:center; margin-right:-8px; }
   .top .burger svg { width:26px; height:26px; }
@@ -145,7 +149,7 @@
 
   #toast { position:fixed; left:16px; right:16px; bottom:calc(84px + var(--bottom)); z-index:50; background:var(--tinta); color:var(--crema); padding:12px 14px; border-radius:12px; display:none; font-size:15px; }
   #toast.error { background:var(--alerta); }
-  #cargando { position:fixed; top:calc(var(--top) + 8px); right:12px; z-index:60; background:var(--dorado); color:var(--tinta); font-size:12px; font-weight:600; border-radius:999px; padding:4px 10px; display:none; }
+  #cargando { position:fixed; bottom:calc(var(--bottom) + 84px); left:50%; transform:translateX(-50%); z-index:60; background:var(--dorado); color:var(--tinta); font-size:12px; font-weight:600; border-radius:999px; padding:4px 10px; display:none; }
 
   @media (min-width: 900px) {
     #ficha { left:auto; width:560px; border-left:1px solid var(--linea); box-shadow:-8px 0 24px rgba(20,35,29,.08); }
