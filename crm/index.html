@@ -73,7 +73,7 @@
   main { padding:12px 16px calc(84px + var(--bottom)); max-width:720px; margin:0 auto; }
   .aviso { background:var(--alerta-fondo); color:var(--alerta); border-radius:12px; padding:12px 14px; margin:8px 0; font-size:14px; }
 
-  .resumen { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:4px 0 8px; }
+  .resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:4px 0 8px; }
   .resumen div { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 6px; text-align:center; }
   .resumen b { display:block; font-size:24px; font-weight:700; letter-spacing:-.02em; }
   .resumen span { font-size:12px; color:var(--tinta-suave); }
@@ -189,7 +189,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '15';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '16';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -213,7 +213,7 @@ const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO'
 const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
 const CAMPOS_SEG_VENDEDOR = ['FECHA PRELISTING','OTRA INMO','OTRA INMO LINK','OTRA INMO DESDE','FIN AUTORIZACION'];
 const CATEGORIAS = ['Primer contacto','Responde','Calificar','Opciones y visitas','Cadencia sin respuesta','Vendedores','Reactivar y fechas','Relación'];
-const MOTIVOS = ['ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
+const MOTIVOS = ['NO BUSCA AHORA','ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
 const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
 const AMBS = ['','1','2','3','4','5+'], AMBS_TXT = ['—','1','2','3','4','5 o más'];
@@ -394,8 +394,9 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ─── listas ───
-function item(x) {
+function item(x, tag) {
   const tags = el('div', { cls:'tags' },
+    tag ? el('span', { cls:'pill' }, tag) : '',
     x.vencido ? el('span', { cls:'pill alerta' }, 'Vencido') : '',
     x.temp === 'CALIENTE' ? el('span', { cls:'pill oro' }, 'Caliente') : '',
     x.tel ? '' : el('span', { cls:'pill alerta' }, 'Sin tel'),
@@ -413,33 +414,38 @@ async function verHoy() {
   LINKS = r.links || {};
   l.replaceChildren();
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
+  const visitas = r.visitas || [], captar = r.captar || [], vendedores = r.vendedores || [], relacion = r.relacion || [];
+  const escribir = [...r.mensajes, ...r.seguimiento, ...r.fechas, ...relacion, ...r.reactivar];
   l.append(el('div', { cls:'resumen' },
-    ...[['Captar', r.captar || []], ['Llamar', r.llamadas], ['Mensajes', r.mensajes], ['Seguir', r.seguimiento], ['Reactivar', r.reactivar]]
-      .map(([t, xs]) => el('div', {}, el('b', {}, xs.length), el('span', {}, t)))));
-  const sec = (t, xs, vacio, extra) => {
-    l.append(el('h2', {}, t + (extra || '')));
-    if (!xs.length) l.append(el('div', { cls:'vacio' }, vacio)); else xs.forEach(x => l.append(item(x)));
-  };
-  if ((r.visitas || []).length) {
-    l.append(el('h2', {}, 'Visitas: confirmar y seguir'));
-    r.visitas.forEach(v => l.append(el('div', { cls:'item visita' },
-      el('div', { cls:'cuerpo', onclick: () => abrir(v.id, 'contacto') },
-        el('div', { cls:'nombre' }, v.nombre), el('div', { cls:'meta' }, v.accion + ' · ' + v.cuando), el('div', { cls:'meta' }, v.evento),
-        el('div', { cls:'texto' }, v.texto)),
-      el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
-        if (!v.wa) return toast('Falta un teléfono válido', true);
-        abrirExterno(waUrl(v.wa, v.texto));
-        await api('api_accion', v.id, 'AVISO', v.clave, v.texto); verHoy();
-      }}, 'Enviar'))));
-  }
-  sec('Para captar', r.captar || [], 'Nadie en CAPTAR. Si alguien tiene algo para vender, ponelo en Venta → CAPTAR.');
-  if ((r.vendedores || []).length) sec('Vendedores: revisar y recaptar', r.vendedores, '');
-  sec('Llamadas', r.llamadas, 'Nada para llamar hoy.');
-  sec('Mensajes de cadencia y archivados', r.mensajes, 'Ningún mensaje pendiente.');
-  sec('Seguimiento', r.seguimiento, 'Sin seguimientos para hoy.');
-  if (r.fechas.length) sec('Cumpleaños y aniversarios', r.fechas, '');
-  if ((r.relacion || []).length) sec('Relación', r.relacion, '', r.relacionPendientes > r.relacion.length ? ' · quedan ' + (r.relacionPendientes - r.relacion.length) : '');
-  sec('Reactivación de hoy', r.reactivar, 'Cupo del día completo.', ' · quedan ' + r.reactivarPendientes);
+    ...[['Llamar', r.llamadas.length], ['Escribir', visitas.length + escribir.length], ['Revisar', captar.length + vendedores.length]]
+      .map(([t, n]) => el('div', {}, el('b', {}, n), el('span', {}, t)))));
+
+  // 1. Llamar: solo las 3 llamadas de la cadencia
+  l.append(el('h2', {}, 'Llamar'));
+  if (!r.llamadas.length) l.append(el('div', { cls:'vacio' }, 'Nada para llamar hoy.')); else r.llamadas.forEach(x => l.append(item(x)));
+
+  // 2. Escribir: todo lo que se resuelve con un mensaje. Primero las visitas a confirmar.
+  l.append(el('h2', {}, 'Escribir'));
+  visitas.forEach(v => l.append(el('div', { cls:'item visita' },
+    el('div', { cls:'cuerpo', onclick: () => abrir(v.id, 'contacto') },
+      el('div', { cls:'nombre' }, v.nombre), el('div', { cls:'meta' }, v.accion + ' · ' + v.cuando), el('div', { cls:'meta' }, v.evento),
+      el('div', { cls:'texto' }, v.texto)),
+    el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
+      if (!v.wa) return toast('Falta un teléfono válido', true);
+      abrirExterno(waUrl(v.wa, v.texto));
+      await api('api_accion', v.id, 'AVISO', v.clave, v.texto); verHoy();
+    }}, 'Enviar'))));
+  escribir.forEach(x => l.append(item(x)));
+  if (!visitas.length && !escribir.length) l.append(el('div', { cls:'vacio' }, 'Ningún mensaje para hoy.'));
+  const quedan = [r.reactivarPendientes > r.reactivar.length ? (r.reactivarPendientes - r.reactivar.length) + ' de reactivación' : '',
+    (r.relacionPendientes || 0) > relacion.length ? (r.relacionPendientes - relacion.length) + ' de relación' : ''].filter(Boolean);
+  if (quedan.length) l.append(el('div', { cls:'vacio' }, 'Quedan para los próximos días: ' + quedan.join(' y ') + '.'));
+
+  // 3. Revisar: vendedores (si publicaron, a qué precio) y los que estás por captar
+  l.append(el('h2', {}, 'Revisar'));
+  vendedores.forEach(x => l.append(item(x)));
+  captar.forEach(x => l.append(item(x, 'Captar')));
+  if (!vendedores.length && !captar.length) l.append(el('div', { cls:'vacio' }, 'Nada para revisar. Si alguien tiene algo para vender, ponelo en Venta → CAPTAR.'));
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
@@ -688,7 +694,7 @@ async function abrir(id, seg) {
     const pintar = () => {
       const m = msjs.find(x => x.codigo === situacion.value);
       opciones.replaceChildren(...(m ? m.variantes.map((t, k) => el('div', { cls:'opcion' + (k === variante ? ' elegida' : ''),
-        onclick: () => { variante = k; texto.value = t; pintar(); } }, el('small', {}, 'Opción ' + (k + 1) + (k === m.toca ? ' · toca rotar' : '')), t)) : []));
+        onclick: () => { variante = k; texto.value = t; pintar(); } }, el('small', {}, (m.variantes.length > 1 ? (k ? 'Otro enfoque' : 'Principal') + ((m.enfoques || [])[k] ? ': ' + m.enfoques[k].replace(/^(Principal|Otro enfoque):\s*/, '').split('. ')[0] : '') : '') + (m.variantes.length > 1 && k === m.toca ? ' · sugerida' : '')), t)) : []));
     };
     const elegir = () => { const m = msjs.find(x => x.codigo === situacion.value); variante = m ? m.toca : 0; texto.value = m ? m.variantes[variante] : ''; pintar(); };
     situacion.addEventListener('change', elegir); elegir();
@@ -702,7 +708,7 @@ async function abrir(id, seg) {
       }}, o); return b; })));
     // Ultima conversacion: la ultima nota (lo que se hablo) + el ultimo contacto registrado + las notas fijas del Sheet
     const ultimaConversacion = () => {
-      const nombres = { NOTA:'Nota', LLAMADA_SI:'Atendió', LLAMADA_NO:'No atendió', RESPONDIO:'Respondió', MENSAJE:'Mensaje enviado', ALTA:'Alta' };
+      const nombres = { NOTA:'Nota', LLAMADA_SI:'Contestó la llamada', LLAMADA_NO:'No atendió', RESPONDIO:'Contestó', MENSAJE:'Mensaje enviado', ALTA:'Alta' };
       const nota = r.hist.find(x => x.tipo === 'NOTA');
       const contacto = r.hist.find(x => ['LLAMADA_SI','LLAMADA_NO','RESPONDIO','MENSAJE'].includes(x.tipo));
       return el('div', { cls:'card' }, el('h3', {}, 'Última conversación'),
@@ -711,7 +717,8 @@ async function abrir(id, seg) {
         contacto ? el('div', { cls:'actual', style:'margin:10px 0 0' }, 'Último contacto: ' + contacto.fecha + ' · ' + (nombres[contacto.tipo] || contacto.tipo) + (contacto.tipo === 'MENSAJE' && contacto.detalle ? ' (' + contacto.detalle + ')' : '')) : '',
         d.NOTAS ? el('details', { style:'margin-top:10px' }, el('summary', { style:'font-size:14px;color:var(--tinta-suave)' }, 'Notas del Sheet'), el('div', { style:'white-space:pre-wrap;font-size:14px;margin-top:6px' }, d.NOTAS)) : '');
     };
-    const resultado = (tipo, texto) => el('button', { cls:'btn' + (marcadoHoy === tipo ? ' marcado' : ''), onclick: e => {
+    const enLlamadas = ['NUEVO','EN CADENCIA'].includes(d.ESTADO) && (parseInt(d.INTENTO) || 0) < 3;
+    const resultado = (tipo, texto, marca) => el('button', { cls:'btn' + ((marca || [tipo]).includes(marcadoHoy) ? ' marcado' : ''), onclick: e => {
       e.currentTarget.parentNode.querySelectorAll('.btn').forEach(b => b.classList.remove('marcado'));
       e.currentTarget.classList.add('marcado');                                         // se marca al instante
       accion(tipo);
@@ -724,7 +731,7 @@ async function abrir(id, seg) {
         el('button', { cls:'btn', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Contactos')),
       resumenCalif(),
       el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
-        el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No atendió'), resultado('LLAMADA_SI', 'Atendió'), resultado('RESPONDIO', 'Respondió'))),
+        el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No atendió'), resultado(enLlamadas ? 'LLAMADA_SI' : 'RESPONDIO', 'Contestó', ['LLAMADA_SI','RESPONDIO']))),
       ultimaConversacion(),
       el('div', { cls:'card' }, el('h3', {}, 'Nota rápida'), nota,
         grupoChips('URGENCIA', 'Urgencia', listas.urgencias || []),
@@ -826,8 +833,9 @@ async function abrir(id, seg) {
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(cal.cambios(), 'Calificación guardada') }, 'Guardar calificación'))),
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(con.cambios(), 'Datos guardados') }, 'Guardar datos'))),
-      el('div', { cls:'card' }, el('h3', {}, 'Descartar'),
-        el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: () => { if (confirm('¿Descartar a ' + d.NOMBRE + '?')) accion('DESCARTAR', motivo.value); } }, 'Descartar')))
+      el('div', { cls:'card' }, el('h3', {}, 'Archivar'),
+        el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: () => { if (confirm('¿Archivar a ' + d.NOMBRE + '?')) accion('DESCARTAR', motivo.value); } }, 'Archivar')),
+        el('div', { cls:'actual', style:'margin-top:8px' }, '"No busca ahora": vuelve a aparecer en 45 días hábiles. Cualquier otro motivo: no vuelve.'))
     ];
   };
 
