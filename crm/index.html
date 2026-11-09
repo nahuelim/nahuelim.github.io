@@ -189,7 +189,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '14';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '15';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -212,7 +212,7 @@ const ETAPA_COMPRA = ['','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
 const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','CAPTADA','RESERVA','VENDIDA'];
 const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
 const CAMPOS_SEG_VENDEDOR = ['FECHA PRELISTING','OTRA INMO','OTRA INMO LINK','OTRA INMO DESDE','FIN AUTORIZACION'];
-const CATEGORIAS = ['Primer contacto','Responde','Calificar','Opciones y visitas','Cadencia sin respuesta','Vendedores','Reactivar y fechas'];
+const CATEGORIAS = ['Primer contacto','Responde','Calificar','Opciones y visitas','Cadencia sin respuesta','Vendedores','Reactivar y fechas','Relación'];
 const MOTIVOS = ['ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
 const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
@@ -221,8 +221,8 @@ const AMB_MAX_SUGERIDO = { '1':'2', '2':'3', '3':'4', '4':'5+', '5+':'5+' };   /
 const CAMPOS_BUSQUEDA = ['BUSCA TIPO','BUSCA AMB MIN','BUSCA AMB MAX','BUSCA BARRIOS','BUSCA HASTA USD','BUSCA FORMA DE PAGO','BUSCA COCHERA','BUSCA REQUISITOS'];
 const CAMPOS_VENTA = ['VENDE TIPO','VENDE AMB','VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION'];
 const CAMPOS_CALIF = ['URGENCIA','MOTIVACION','DECISORES','HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'];
-const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','CUMPLEANOS','FECHA COMPRA','NOTAS'];
-const TILDES = { 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
+const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','RELACION','CUMPLEANOS','FECHA COMPRA','NOTAS'];
+const TILDES = { 'RELACION':'Relación', 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
   'HACE CUANTO BUSCA':'Hace cuánto busca', 'VENDE PUBLICACION':'Publicación', 'BUSCA TIPO':'Tipo', 'BUSCA AMB MIN':'Amb. mínimo', 'BUSCA AMB MAX':'Amb. máximo',
   'BUSCA BARRIOS':'Barrios', 'BUSCA HASTA USD':'Hasta USD', 'BUSCA FORMA DE PAGO':'Forma de pago', 'BUSCA COCHERA':'Cochera', 'BUSCA REQUISITOS':'Requisitos',
   'FECHA PRELISTING':'Fecha del prelisting', 'OTRA INMO':'Inmobiliaria', 'OTRA INMO LINK':'Link de la publicación', 'OTRA INMO DESDE':'Publicada desde', 'FIN AUTORIZACION':'Fin de la autorización',
@@ -322,6 +322,7 @@ function formulario(d, campos, listas) {
     if (k === 'FUENTE') return sel(['', ...FUENTES]);
     if (k === 'ROL') return sel(['','COMPRADOR','VENDEDOR','AMBOS']);
     if (k === 'TEMPERATURA') return sel(['','CALIENTE','TIBIO','FRIO']);
+    if (k === 'RELACION') { const s = select(['','A','B','C'], v, ['No','A · cada 30 días','B · cada 60 días','C · cada 90 días']); return { nodo:s, valor:() => s.value }; }
     if (k === 'CUMPLEANOS' || /FECHA|DESDE|AUTORIZACION/.test(k)) { const i = el('input', { type:'date', value: aISO(v) }); return { nodo:i, valor:() => i.value, orig: aISO(v) }; }
     if (/USD/.test(k)) { const i = el('input', { inputmode:'numeric', value:v }); return { nodo:i, valor:() => i.value.replace(/\D/g, '') }; }
     if (k === 'OTRA INMO LINK') { const i = el('input', { type:'url', value:v, placeholder:'https://www.zonaprop.com.ar/...' }); return { nodo:i, valor:() => i.value.trim(), ancho:true }; }
@@ -437,6 +438,7 @@ async function verHoy() {
   sec('Mensajes de cadencia y archivados', r.mensajes, 'Ningún mensaje pendiente.');
   sec('Seguimiento', r.seguimiento, 'Sin seguimientos para hoy.');
   if (r.fechas.length) sec('Cumpleaños y aniversarios', r.fechas, '');
+  if ((r.relacion || []).length) sec('Relación', r.relacion, '', r.relacionPendientes > r.relacion.length ? ' · quedan ' + (r.relacionPendientes - r.relacion.length) : '');
   sec('Reactivación de hoy', r.reactivar, 'Cupo del día completo.', ' · quedan ' + r.reactivarPendientes);
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
