@@ -189,7 +189,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '12';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '13';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -209,7 +209,10 @@ const ICON = {
 
 const ESTADOS = ['NUEVO','EN CADENCIA','ACTIVO','REACTIVAR','ARCHIVADO','DESCARTADO','CLIENTE','COMPRO CON OTRO'];
 const ETAPA_COMPRA = ['','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
-const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','CAPTADA','RESERVA','VENDIDA'];
+const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','CAPTADA','RESERVA','VENDIDA'];
+const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
+const CAMPOS_SEG_VENDEDOR = ['FECHA PRELISTING','OTRA INMO','OTRA INMO LINK','OTRA INMO DESDE','FIN AUTORIZACION'];
+const CATEGORIAS = ['Primer contacto','Responde','Calificar','Opciones y visitas','Cadencia sin respuesta','Vendedores','Reactivar y fechas'];
 const MOTIVOS = ['ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
 const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
@@ -222,6 +225,7 @@ const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','CUMP
 const TILDES = { 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
   'HACE CUANTO BUSCA':'Hace cuánto busca', 'VENDE PUBLICACION':'Publicación', 'BUSCA TIPO':'Tipo', 'BUSCA AMB MIN':'Amb. mínimo', 'BUSCA AMB MAX':'Amb. máximo',
   'BUSCA BARRIOS':'Barrios', 'BUSCA HASTA USD':'Hasta USD', 'BUSCA FORMA DE PAGO':'Forma de pago', 'BUSCA COCHERA':'Cochera', 'BUSCA REQUISITOS':'Requisitos',
+  'FECHA PRELISTING':'Fecha del prelisting', 'OTRA INMO':'Inmobiliaria', 'OTRA INMO LINK':'Link de la publicación', 'OTRA INMO DESDE':'Publicada desde', 'FIN AUTORIZACION':'Fin de la autorización',
   'VENDE TIPO':'Tipo', 'VENDE AMB':'Ambientes', 'VENDE BARRIO':'Barrio', 'VENDE PRECIO USD':'Precio USD', 'OTRAS INMOS':'Otras inmobiliarias', 'FECHA COMPRA':'Fecha de compra' };
 const ETIQ = s => TILDES[s] || s.charAt(0) + s.slice(1).toLowerCase();
 
@@ -318,8 +322,9 @@ function formulario(d, campos, listas) {
     if (k === 'FUENTE') return sel(['', ...FUENTES]);
     if (k === 'ROL') return sel(['','COMPRADOR','VENDEDOR','AMBOS']);
     if (k === 'TEMPERATURA') return sel(['','CALIENTE','TIBIO','FRIO']);
-    if (k === 'CUMPLEANOS' || k === 'FECHA COMPRA') { const i = el('input', { type:'date', value: aISO(v) }); return { nodo:i, valor:() => i.value, orig: aISO(v) }; }
+    if (k === 'CUMPLEANOS' || /FECHA|DESDE|AUTORIZACION/.test(k)) { const i = el('input', { type:'date', value: aISO(v) }); return { nodo:i, valor:() => i.value, orig: aISO(v) }; }
     if (/USD/.test(k)) { const i = el('input', { inputmode:'numeric', value:v }); return { nodo:i, valor:() => i.value.replace(/\D/g, '') }; }
+    if (k === 'OTRA INMO LINK') { const i = el('input', { type:'url', value:v, placeholder:'https://www.zonaprop.com.ar/...' }); return { nodo:i, valor:() => i.value.trim(), ancho:true }; }
     if (k === 'NOTAS' || k === 'BUSCA REQUISITOS') { const t = el('textarea', { style:'min-height:64px' }); t.value = v; return { nodo:t, valor:() => t.value, ancho:true }; }
     const i = el('input', { value:v }); return { nodo:i, valor:() => i.value };
   };
@@ -427,6 +432,7 @@ async function verHoy() {
       }}, 'Enviar'))));
   }
   sec('Para captar', r.captar || [], 'Nadie en CAPTAR. Si alguien tiene algo para vender, ponelo en Venta → CAPTAR.');
+  if ((r.vendedores || []).length) sec('Vendedores: revisar y recaptar', r.vendedores, '');
   sec('Llamadas', r.llamadas, 'Nada para llamar hoy.');
   sec('Mensajes de cadencia y archivados', r.mensajes, 'Ningún mensaje pendiente.');
   sec('Seguimiento', r.seguimiento, 'Sin seguimientos para hoy.');
@@ -535,22 +541,43 @@ function verNuevo() {
   const l = document.getElementById('lista');
   const f = { NOMBRE: el('input', { autocomplete:'off' }), TELEFONO: el('input', { inputmode:'tel', placeholder:'11xxxxxxxx' }),
     FUENTE: select(FUENTES, 'Instagram'), ROL: select(['','COMPRADOR','VENDEDOR','AMBOS'], ''),
-    'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi' }) };
+    'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi' }),
+    'ETAPA VENTA': select(['','CAPTAR','CON OTRA INMO'], '', ['—','Captar (todavía no lo publicó)','Ya lo publicó con otra inmobiliaria']) };
+  const ayuda = el('div', { cls:'actual', style:'margin-top:8px' });
+  const explicar = () => { ayuda.textContent = ['Conocido','Referido','Colega'].includes(f.FUENTE.value)
+    ? 'Conocido, referido o colega: entra como ACTIVO, sin llamadas en cadencia.'
+    : 'Entra en cadencia hoy (primera llamada).'; };
+  f.FUENTE.addEventListener('change', explicar); explicar();
   const resultado = el('div');
   l.replaceChildren(el('h2', {}, 'Nuevo contacto'),
     el('div', { cls:'card' }, ...Object.entries(f).map(([k, i]) => [el('label', {}, ETIQ(k)), i]),
+      ayuda,
       el('div', { style:'margin-top:14px' }, el('button', { cls:'btn pri ancho', onclick: async () => {
         if (!f.NOMBRE.value.trim()) return toast('Falta el nombre', true);
         const d = {}; Object.entries(f).forEach(([k, i]) => d[k] = i.value.trim());
         const r = await api('api_nuevo', d);
         if (r.duplicado) { toast('Ese teléfono ya existe: ' + r.nombre); return abrir(r.id, 'contacto'); }
         resultado.replaceChildren(el('div', { cls:'card' }, el('h3', {}, 'Cargado'),
-          el('div', {}, 'Entra en cadencia hoy (primera llamada).'),
+          el('div', {}, ayuda.textContent),
           el('div', { style:'margin-top:6px' }, 'Contactos de Google: ' + (r.google || '—')),
           el('div', { style:'margin-top:12px' }, el('button', { cls:'btn sec ancho', onclick: () => abrir(r.id, 'contacto') }, 'Abrir ficha'))));
         Object.values(f).forEach(i => { if (i.tagName === 'INPUT') i.value = ''; });
       }}, 'Guardar contacto'))),
     resultado);
+}
+
+// Reduce una captura a JPEG de 1600px como maximo y devuelve el base64 (sin el prefijo data:)
+function imagenJpeg(file) {
+  return new Promise((ok, mal) => {
+    const fr = new FileReader();
+    fr.onerror = () => mal(new Error('no se pudo leer la imagen'));
+    fr.onload = () => { const img = new Image(); img.onerror = () => mal(new Error('formato no soportado'));
+      img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)); const cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        ok(cv.toDataURL('image/jpeg', 0.82).split(',')[1]); };
+      img.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
 }
 
 // ─── ficha por segmentos ───
@@ -644,7 +671,17 @@ async function abrir(id, seg) {
 
     const msjs = Array.isArray(r.mensajes) ? r.mensajes.filter(m => Array.isArray(m.variantes)) : [];
     const texto = el('textarea'), opciones = el('div');
-    const situacion = select(msjs.map(m => m.codigo), r.sugerido || (msjs[0] && msjs[0].codigo), msjs.map(m => m.codigo + ' · ' + m.situacion));
+    // Sugerido arriba; abajo todos, agrupados por categoria (flexibilidad para encararlo de otra manera)
+    const sug = r.sugerido || ((msjs.find(m => m.categoria === r.sugeridoCategoria) || msjs[0] || {}).codigo);
+    const situacion = el('select');
+    const op = m => el('option', { value:m.codigo }, m.codigo + ' · ' + m.situacion);
+    const msug = msjs.find(m => m.codigo === sug);
+    if (msug) situacion.append(el('optgroup', { label:'Sugerido' }, op(msug)));
+    [...CATEGORIAS, ''].forEach(cat => {
+      const xs = msjs.filter(m => (CATEGORIAS.includes(m.categoria) ? m.categoria : '') === cat);
+      if (xs.length) situacion.append(el('optgroup', { label: cat || 'Otros' }, ...xs.map(op)));
+    });
+    if (sug) situacion.value = sug;
     let variante = 0;
     const pintar = () => {
       const m = msjs.find(x => x.codigo === situacion.value);
@@ -740,8 +777,39 @@ async function abrir(id, seg) {
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de venta'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo,
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(Object.assign(f.cambios(), etapa.value !== (d['ETAPA VENTA'] || '') ? { 'ETAPA VENTA': etapa.value } : {}), 'Venta guardada') }, 'Guardar venta'))),
+      VENTA_SEGUIMIENTO.includes(d['ETAPA VENTA']) ? tarjetaSeguimiento() : '',
       el('div', { cls:'card' }, el('h3', {}, 'Compradores que matchean (' + mVenta.length + ')'), mVenta.length ? mVenta.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin compradores que matcheen.'))
     ];
+  };
+  // Vendedor no captado: revisar si publico con otra inmobiliaria, guardar la prueba y recaptar
+  const tarjetaSeguimiento = () => {
+    const f = formulario(d, CAMPOS_SEG_VENDEDOR, listas);
+    const hace = el('input', { inputmode:'numeric', placeholder:'Ej.: 40' });
+    const dir = [d['VENDE DIRECCION'], d['VENDE BARRIO']].filter(Boolean).join(', ');
+    const q = '"' + (d['VENDE DIRECCION'] || '') + '" (site:zonaprop.com.ar OR site:argenprop.com OR site:mercadolibre.com.ar)';
+    const archivo = el('input', { type:'file', accept:'image/*', style:'display:none', onchange: async e => {
+      const file = e.target.files[0]; if (!file) return;
+      toast('Subiendo captura...');
+      try { await api('api_captura', id, await imagenJpeg(file), file.name); toast('Captura guardada en Drive'); abrir(id); }
+      catch (err) { toast('No se pudo subir: ' + err.message, true); }
+    }});
+    const capturas = String(d.CAPTURAS || '').split('\n').filter(Boolean);
+    return el('div', { cls:'card' }, el('h3', {}, d['ETAPA VENTA'] === 'NO CAPTADA' ? 'Seguimiento: ¿publicó con otra inmobiliaria?' : 'Seguimiento: publicada con otra inmobiliaria'),
+      el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Próximo: ' + d['PROX CONTACTO'] + ' · ' + (d['PROX ACCION'] || '') : 'Sin próximo paso'),
+      dir ? el('button', { cls:'btn ancho', style:'margin:8px 0', onclick: () => abrirExterno('https://www.google.com/search?q=' + encodeURIComponent(q)) }, 'Buscar en portales: ' + dir)
+          : el('div', { cls:'aviso' }, 'Cargá la dirección en "Qué vende" para buscarla en los portales.'),
+      d['ETAPA VENTA'] === 'NO CAPTADA' ? el('button', { cls:'btn sec ancho', style:'margin-bottom:8px', onclick: () => accion('REVISION', 'no publicó') }, 'Revisé: todavía no publicó') : '',
+      f.nodo,
+      el('label', {}, 'O publicada hace (días)'), hace,
+      el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => {
+        const c = f.cambios();
+        if (hace.value) { const x = new Date(); x.setDate(x.getDate() - parseInt(hace.value)); c['OTRA INMO DESDE'] = isoLocal(x); }
+        if ((c['OTRA INMO LINK'] || c['OTRA INMO'] || c['OTRA INMO DESDE']) && d['ETAPA VENTA'] === 'NO CAPTADA') c['ETAPA VENTA'] = 'CON OTRA INMO';
+        guardar(c, 'Seguimiento guardado');
+      }}, 'Guardar')),
+      el('h3', { style:'margin-top:16px' }, 'Capturas (' + capturas.length + ')'),
+      ...capturas.map((u, i) => el('div', {}, el('a', { href:u, target:'_blank', rel:'noopener' }, 'Captura ' + (i + 1)))),
+      el('button', { cls:'btn ancho', style:'margin-top:8px', onclick: () => archivo.click() }, 'Subir captura'), archivo);
   };
 
   // ── PERFIL
