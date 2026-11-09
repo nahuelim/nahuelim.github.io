@@ -189,7 +189,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '11';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '12';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -213,7 +213,8 @@ const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','CAPTADA','RESERVA','VENDIDA
 const MOTIVOS = ['ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
 const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
-const AMBS = ['','1','2','3','4','5','6','7','8'];
+const AMBS = ['','1','2','3','4','5+'], AMBS_TXT = ['—','1','2','3','4','5 o más'];
+const AMB_MAX_SUGERIDO = { '1':'2', '2':'3', '3':'4', '4':'5+', '5+':'5+' };   // al elegir el minimo, propone el maximo
 const CAMPOS_BUSQUEDA = ['BUSCA TIPO','BUSCA AMB MIN','BUSCA AMB MAX','BUSCA BARRIOS','BUSCA HASTA USD','BUSCA FORMA DE PAGO','BUSCA COCHERA','BUSCA REQUISITOS'];
 const CAMPOS_VENTA = ['VENDE TIPO','VENDE AMB','VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION'];
 const CAMPOS_CALIF = ['URGENCIA','MOTIVACION','DECISORES','HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'];
@@ -294,13 +295,22 @@ const esEscritorio = () => matchMedia('(min-width: 900px)').matches;
 // Formulario de campos del Sheet con el control adecuado a cada campo; devuelve { nodo, cambios() }
 function formulario(d, campos, listas) {
   const ctrl = {};
+  let ambMax;
   const control = k => {
     const v = d[k] || '';
     const sel = ops => { const s = select(ops, v); return { nodo:s, valor:() => s.value }; };
     if (k === 'BUSCA TIPO' || k === 'VENDE TIPO') { const m = multi(TIPOS, v); return { nodo:m, valor:m.valor }; }
     if (k === 'BUSCA BARRIOS') { const m = multi(listas.barrios || [], v, true); return { nodo:m, valor:m.valor, ancho:true }; }
     if (k === 'VENDE BARRIO') return sel(['', ...(listas.barrios || [])]);
-    if (/AMB/.test(k)) return sel(AMBS);                                  // en el iPhone se ve como rueda
+    if (/AMB/.test(k)) {                                                   // en el iPhone se ve como rueda
+      const s = select(AMBS, v === '5' ? '5+' : v, AMBS_TXT);
+      if (k === 'BUSCA AMB MAX') ambMax = s;
+      if (k === 'BUSCA AMB MIN') s.addEventListener('change', () => {
+        const sug = AMB_MAX_SUGERIDO[s.value];
+        if (ambMax && sug && (!ambMax.value || parseInt(ambMax.value) < parseInt(s.value))) ambMax.value = sug;
+      });
+      return { nodo:s, valor:() => s.value };
+    }
     if (k === 'URGENCIA') return sel(['', ...(listas.urgencias || [])]);
     if (k === 'MOTIVACION') return sel(['', ...(listas.motivaciones || [])]);
     if (k === 'BUSCA FORMA DE PAGO') return sel(['','PARTE DE PAGO','VENTA','CASH','CREDITO APROBADO','CREDITO EN TRAMITE','CREDITO SIN CONFIRMAR']);
@@ -771,10 +781,10 @@ async function abrir(id, seg) {
     el('div', { cls:'ficha-head' },
       el('div', { cls:'barra' },
         el('button', { cls:'icono', 'aria-label':'Cerrar', icon:'cerrar', onclick: cerrar }),
-        el('h1', {}, d.NOMBRE),
+        el('h1', {}, String(d.NOMBRE || '').split(' - ')[0]),
         el('img', { cls:'mono', src:'../assets/nl-mono-crema.svg', alt:'NL' })),
-      el('div', { cls:'etiqueta' }, el('span', {}, r.etiqueta),
-        el('button', { onclick: () => navigator.clipboard.writeText(r.etiqueta).then(() => toast('Nombre copiado')) }, 'Copiar')),
+      r.etiqueta.includes(' - ') ? el('div', { cls:'etiqueta' }, el('span', {}, r.etiqueta),
+        el('button', { onclick: () => navigator.clipboard.writeText(r.etiqueta).then(() => toast('Nombre copiado')) }, 'Copiar')) : '',
       el('div', { cls:'estado-linea' }, el('span', { cls:'pill' }, d.ESTADO || 'Sin estado'),
         d['ETAPA COMPRA'] ? el('span', { cls:'pill' }, 'Compra: ' + d['ETAPA COMPRA']) : '',
         d['ETAPA VENTA'] ? el('span', { cls:'pill' }, 'Venta: ' + d['ETAPA VENTA']) : ''),
