@@ -189,7 +189,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '16';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '17';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -207,13 +207,13 @@ const ICON = {
   flecha:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>'
 };
 
-const ESTADOS = ['NUEVO','EN CADENCIA','ACTIVO','REACTIVAR','ARCHIVADO','DESCARTADO','CLIENTE','COMPRO CON OTRO'];
+const ESTADOS = ['NUEVO','EN CONTACTO','CLIENTE','EN PAUSA','DESCARTADO'];
 const ETAPA_COMPRA = ['','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
 const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','CAPTADA','RESERVA','VENDIDA'];
 const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
 const CAMPOS_SEG_VENDEDOR = ['FECHA PRELISTING','OTRA INMO','OTRA INMO LINK','OTRA INMO DESDE','FIN AUTORIZACION'];
 const CATEGORIAS = ['Primer contacto','Responde','Calificar','Opciones y visitas','Cadencia sin respuesta','Vendedores','Reactivar y fechas','Relación'];
-const MOTIVOS = ['NO BUSCA AHORA','ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
+const MOTIVOS = ['NO BUSCA AHORA','COMPRO CON OTRO','ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
 const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
 const AMBS = ['','1','2','3','4','5+'], AMBS_TXT = ['—','1','2','3','4','5 o más'];
@@ -414,17 +414,33 @@ async function verHoy() {
   LINKS = r.links || {};
   l.replaceChildren();
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
-  const visitas = r.visitas || [], captar = r.captar || [], vendedores = r.vendedores || [], relacion = r.relacion || [];
-  const escribir = [...r.mensajes, ...r.seguimiento, ...r.fechas, ...relacion, ...r.reactivar];
+  // Tope del día: 20 contactos (más los que sumes de a 10). Las visitas a confirmar y los cumpleaños no cuentan: tienen fecha fija.
+  const hoyISO = new Date().toLocaleDateString('sv');   // fecha local (en UTC, después de las 21 ya sería mañana)
+  let tope = 20;
+  try { const t = JSON.parse(localStorage.getItem('crm_tope') || '{}'); if (t.dia === hoyISO) tope = t.n; } catch (e) {}
+  const visitas = r.visitas || [], fechas = r.fechas || [];
+  // Prioridad: captar → vendedores → nuevos → en contacto → clientes → relación → en pausa
+  const cola = [
+    ...(r.captar || []).map(x => ['revisar', x, 'Captar']), ...(r.vendedores || []).map(x => ['revisar', x]),
+    ...r.llamadas.map(x => ['llamar', x]), ...r.mensajes.map(x => ['escribir', x]),
+    ...r.seguimiento.map(x => ['escribir', x]), ...(r.clientes || []).map(x => ['escribir', x, 'Cliente']),
+    ...(r.relacion || []).map(x => ['escribir', x]), ...(r.pausa || []).map(x => ['escribir', x, 'En pausa']), ...r.reactivar.map(x => ['escribir', x])];
+  const hechos = r.hechosHoy || 0;
+  const hoyVan = cola.slice(0, Math.max(0, tope - hechos));
+  const de = g => hoyVan.filter(c => c[0] === g);
+  const llamar = de('llamar'), escribir = de('escribir'), revisar = de('revisar');
+
   l.append(el('div', { cls:'resumen' },
-    ...[['Llamar', r.llamadas.length], ['Escribir', visitas.length + escribir.length], ['Revisar', captar.length + vendedores.length]]
+    ...[['Llamar', llamar.length], ['Escribir', visitas.length + fechas.length + escribir.length], ['Revisar', revisar.length]]
       .map(([t, n]) => el('div', {}, el('b', {}, n), el('span', {}, t)))));
+  l.append(el('div', { cls:'actual', style:'margin:0 2px 4px' }, 'Hechos hoy: ' + hechos + ' de ' + tope + '.'));
+  const pintar = xs => xs.forEach(([, x, tag]) => l.append(item(x, tag)));
 
   // 1. Llamar: solo las 3 llamadas de la cadencia
   l.append(el('h2', {}, 'Llamar'));
-  if (!r.llamadas.length) l.append(el('div', { cls:'vacio' }, 'Nada para llamar hoy.')); else r.llamadas.forEach(x => l.append(item(x)));
+  if (!llamar.length) l.append(el('div', { cls:'vacio' }, 'Nada para llamar.')); else pintar(llamar);
 
-  // 2. Escribir: todo lo que se resuelve con un mensaje. Primero las visitas a confirmar.
+  // 2. Escribir: visitas a confirmar y cumpleaños primero (fuera del tope), después el resto
   l.append(el('h2', {}, 'Escribir'));
   visitas.forEach(v => l.append(el('div', { cls:'item visita' },
     el('div', { cls:'cuerpo', onclick: () => abrir(v.id, 'contacto') },
@@ -435,17 +451,20 @@ async function verHoy() {
       abrirExterno(waUrl(v.wa, v.texto));
       await api('api_accion', v.id, 'AVISO', v.clave, v.texto); verHoy();
     }}, 'Enviar'))));
-  escribir.forEach(x => l.append(item(x)));
-  if (!visitas.length && !escribir.length) l.append(el('div', { cls:'vacio' }, 'Ningún mensaje para hoy.'));
-  const quedan = [r.reactivarPendientes > r.reactivar.length ? (r.reactivarPendientes - r.reactivar.length) + ' de reactivación' : '',
-    (r.relacionPendientes || 0) > relacion.length ? (r.relacionPendientes - relacion.length) + ' de relación' : ''].filter(Boolean);
-  if (quedan.length) l.append(el('div', { cls:'vacio' }, 'Quedan para los próximos días: ' + quedan.join(' y ') + '.'));
+  fechas.forEach(x => l.append(item(x)));
+  pintar(escribir);
+  if (!visitas.length && !fechas.length && !escribir.length) l.append(el('div', { cls:'vacio' }, 'Ningún mensaje.'));
 
-  // 3. Revisar: vendedores (si publicaron, a qué precio) y los que estás por captar
+  // 3. Revisar: vendedores y los que estás por captar
   l.append(el('h2', {}, 'Revisar'));
-  vendedores.forEach(x => l.append(item(x)));
-  captar.forEach(x => l.append(item(x, 'Captar')));
-  if (!vendedores.length && !captar.length) l.append(el('div', { cls:'vacio' }, 'Nada para revisar. Si alguien tiene algo para vender, ponelo en Venta → CAPTAR.'));
+  if (!revisar.length) l.append(el('div', { cls:'vacio' }, 'Nada para revisar.')); else pintar(revisar);
+
+  // Terminaste: +10
+  const quedan = cola.length - hoyVan.length;
+  if (quedan > 0) l.append(el('div', { style:'margin:14px 0' },
+    el('div', { cls:'actual', style:'margin-bottom:8px' }, hoyVan.length ? 'Quedan ' + quedan + ' más para cuando termines.' : 'Listo por hoy. Quedan ' + quedan + ' si querés seguir.'),
+    el('button', { cls:'btn sec ancho', onclick: () => { localStorage.setItem('crm_tope', JSON.stringify({ dia: hoyISO, n: Math.max(tope, hechos) + 10 })); verHoy(); } }, '+10 más')));
+  else if (!hoyVan.length) l.append(el('div', { cls:'vacio' }, 'Listo por hoy. No queda nadie pendiente.'));
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
