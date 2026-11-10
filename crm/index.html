@@ -109,6 +109,7 @@
   .grid3 > .btn { min-width:0; padding:10px 4px; font-size:15px; gap:6px; }
   .grid3 > .btn svg { width:18px; height:18px; flex:none; }
   .ancho2 { grid-column:1/3; }
+  .guardar-fijo { position:sticky; bottom:0; padding:10px 0 calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--crema) 30%); z-index:2; }
   .pregunta { font-size:13px; font-style:italic; color:var(--tinta-suave); margin:-2px 0 6px; }
 
   input, select, textarea { width:100%; border:1px solid var(--linea); border-radius:12px; padding:11px 12px; background:var(--blanco); }
@@ -190,7 +191,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '19';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '20';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -643,17 +644,32 @@ function imagenJpeg(file) {
 
 // ─── ficha por segmentos ───
 let segmentoActual = 'contacto';
-function cerrar() { document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista'); }
+let fichaSucia = () => false;
+function cerrar() {
+  if (fichaSucia() && !confirm('Tenés cambios sin guardar. ¿Cerrar igual?')) return;
+  fichaSucia = () => false; document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista'); }
 
 async function abrir(id, seg) {
   const r = await api('api_ficha', id);
   if (seg) { segmentoActual = seg; sessionStorage.setItem('crm_seg', seg); }
   sessionStorage.setItem('crm_vista', id);                // al recargar vuelve a esta ficha
   const d = r.datos, p = document.getElementById('ficha'), listas = r.listas || {};
-  const accion = async (tipo, detalle, texto) => { await api('api_accion', id, tipo, detalle || '', texto || ''); toast('Guardado'); abrir(id); refrescar(); };
-  const guardar = async (campos, msg) => {
-    if (!Object.keys(campos).length) return toast('No hay cambios');
-    await api('api_guardar', id, campos); toast(msg || 'Guardado'); abrir(id);
+  // Una acción (Contestó, Archivar...) también guarda lo pendiente de la solapa, así no se pierde la nota que estabas escribiendo.
+  // Primero la acción y después lo tuyo: si elegiste a mano el próximo paso o el estado, gana lo que elegiste.
+  const accion = async (tipo, detalle, texto) => {
+    const x = (pend && pend()) || {};
+    await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, [tipo, detalle || '', texto || '']);
+    pend = null; toast('Guardado'); abrir(id); refrescar();
+  };
+  // Un solo Guardar por solapa: cada solapa declara qué tiene pendiente; se manda todo junto en un viaje.
+  let pend = null;
+  const vacio = x => !x || (!Object.keys(x.campos || {}).length && !x.nota && !x.proximo);
+  fichaSucia = () => !!pend && !vacio(pend());
+  const guardarTab = async () => {
+    const x = pend && pend();
+    if (vacio(x)) return toast('No hay cambios');
+    await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null);
+    pend = null; toast('Guardado'); abrir(id);
   };
   const filaMatch = m => el('div', { cls:'match' + (m.enviada ? ' gris' : '') }, el('div', { style:'flex:1' }, m.texto),
     m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Ver ficha') : m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
@@ -716,21 +732,15 @@ async function abrir(id, seg) {
   };
   const segAgenda = () => [tarjetaEvento()];
   // Calificacion de un vistazo: lo que falta se ve en rojo; se edita en Perfil
-  const tarjetaEstado = () => {
-    const estado = select(ESTADOS, d.ESTADO);
-    return el('div', { cls:'card' }, el('h3', {}, 'Estado'), el('div', { cls:'grid2' }, estado,
-      el('button', { cls:'btn sec', onclick: () => guardar(estado.value !== d.ESTADO ? { ESTADO: estado.value } : {}, 'Estado guardado') }, 'Guardar')));
-  };
-  const tarjetaCalif = () => {
+  const tarjetaEstado = estado => el('div', { cls:'card' }, el('h3', {}, 'Estado'), estado);
+  const tarjetaCalif = f => {
     const campos = [['Urgencia','URGENCIA'],['Motivación','MOTIVACION'],['Quién decide','DECISORES'],['Forma de pago','BUSCA FORMA DE PAGO'],['Hace cuánto busca','HACE CUANTO BUSCA'],['Otras inmobiliarias','OTRAS INMOS'],['Temperatura','TEMPERATURA']];
     const faltan = campos.filter(([, k]) => !d[k]).length;
     const prio = PRIO_PAGO[d['BUSCA FORMA DE PAGO']];
-    const f = formulario(d, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'], listas, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA']);
     return el('div', { cls:'card' }, el('h3', {}, 'Calificación' + (faltan ? ' · faltan ' + faltan : ' · completa')),
       el('div', { cls:'actual', style:'margin:0 0 8px' }, prio ? 'Prioridad ' + PRIO_TXT[prio] : 'Prioridad: falta la forma de pago'),
       el('div', { cls:'calif' }, ...campos.map(([t, k]) => el('div', {}, el('small', {}, t), d[k] ? el('span', {}, d[k]) : el('span', { cls:'falta' }, 'Falta')))),
-      el('div', { style:'margin-top:12px' }, f.nodo),
-      el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(f.cambios(), 'Calificación guardada') }, 'Guardar calificación')));
+      el('div', { style:'margin-top:12px' }, f.nodo));
   };
 
   const segContacto = () => {
@@ -761,6 +771,16 @@ async function abrir(id, seg) {
     situacion.addEventListener('change', elegir); elegir();
 
     const nota = el('textarea', { placeholder:'Lo que hablaste. Podés dictar con el micrófono del teclado.' });
+    const estado = select(ESTADOS, d.ESTADO);
+    const fCalif = formulario(d, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'], listas, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA']);
+    pend = () => {
+      const campos = fCalif.cambios();
+      ['URGENCIA', 'MOTIVACION', 'BUSCA FORMA DE PAGO', 'DECISORES'].forEach(k => { if (chips[k] && chips[k] !== d[k]) campos[k] = chips[k]; });
+      if (estado.value !== (d.ESTADO || '')) campos.ESTADO = estado.value;
+      const t = [chips.VIVIENDA ? 'Vivienda: ' + chips.VIVIENDA : '', nota.value.trim()].filter(Boolean).join('. ');
+      const proximo = fecha.value && (fecha.value !== aISO(d['PROX CONTACTO']) || queHacer.value !== (d['PROX ACCION'] || '')) ? { fecha: fecha.value, accion: queHacer.value } : null;
+      return { campos, nota: t, proximo };
+    };
     const chips = {};
     const grupoChips = (campo, titulo, ops) => el('div', {}, el('label', {}, titulo), PREGUNTAS[campo] ? el('div', { cls:'pregunta' }, PREGUNTAS[campo]) : '', el('div', { cls:'fila' },
       ...ops.map(o => { const b = el('button', { cls:'chip', type:'button', onclick: () => {
@@ -797,24 +817,15 @@ async function abrir(id, seg) {
         grupoChips('BUSCA FORMA DE PAGO', 'Forma de pago', ['PARTE DE PAGO', 'VENTA', 'CASH', 'CREDITO APROBADO', 'CREDITO EN TRAMITE', 'CREDITO SIN CONFIRMAR']),
         grupoChips('DECISORES', 'Quién decide', ['Solo', 'Con pareja', 'Con familia']),
         grupoChips('VIVIENDA', 'Vivienda', ['Alquila', 'Propia']),
-        el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: async () => {
-          const campos = {};
-          ['URGENCIA', 'MOTIVACION', 'BUSCA FORMA DE PAGO', 'DECISORES'].forEach(k => { if (chips[k]) campos[k] = chips[k]; });
-          const t = [chips.VIVIENDA ? 'Vivienda: ' + chips.VIVIENDA : '', nota.value.trim()].filter(Boolean).join('. ');
-          if (!t && !Object.keys(campos).length) return toast('No hay nada para guardar', true);
-          if (Object.keys(campos).length) await api('api_guardar', id, campos);
-          if (t) await api('api_accion', id, 'NOTA', '', t);
-          toast('Nota guardada'); abrir(id);
-        }}, 'Guardar nota'))),
+        ),
       el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
         el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No contestó'), resultado(enLlamadas ? 'LLAMADA_SI' : 'RESPONDIO', 'Contestó', ['LLAMADA_SI','RESPONDIO']))),
-      tarjetaEstado(),
+      tarjetaEstado(estado),
       el('div', { cls:'card' }, el('h3', {}, 'Próximo paso'),
         el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Agendado: ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') : 'Sin fecha'),
         el('div', { cls:'fila', style:'margin-bottom:10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
-        el('div', { cls:'grid2' }, fecha, queHacer),
-        el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', onclick: () => fecha.value ? accion('PROXIMO', fecha.value, queHacer.value) : toast('Elegí una fecha', true) }, 'Guardar próximo paso'))),
-      tarjetaCalif(),
+        el('div', { cls:'grid2' }, fecha, queHacer)),
+      tarjetaCalif(fCalif),
       el('div', { cls:'card' }, el('h3', {}, 'Mensaje'),
         msjs.length ? [situacion, el('div', { style:'margin-top:10px' }, opciones), el('label', {}, 'Texto a enviar (lo podés editar)'), texto,
           el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', icon:'wa', onclick: () => {
@@ -831,10 +842,10 @@ async function abrir(id, seg) {
   const segBusqueda = () => {
     const etapa = select(ETAPA_COMPRA, d['ETAPA COMPRA'], ETAPA_COMPRA_TXT);
     const f = formulario(d, CAMPOS_BUSQUEDA, listas, ['BUSCA TIPO','BUSCA AMB MIN','BUSCA AMB MAX','BUSCA HASTA USD']);
+    pend = () => ({ campos: Object.assign(f.cambios(), etapa.value !== (d['ETAPA COMPRA'] || '') ? { 'ETAPA COMPRA': etapa.value } : {}) });
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de compra'), etapa),
-      el('div', { cls:'card' }, el('h3', {}, 'Qué busca'), f.nodo,
-        el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(Object.assign(f.cambios(), etapa.value !== (d['ETAPA COMPRA'] || '') ? { 'ETAPA COMPRA': etapa.value } : {}), 'Búsqueda guardada') }, 'Guardar búsqueda'))),
+      el('div', { cls:'card' }, el('h3', {}, 'Qué busca'), f.nodo),
       el('div', { cls:'card' }, el('h3', {}, 'Matches (' + mCompra.length + ')'), mCompra.length ? mCompra.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin matches. Hace falta tipo, barrios, ambientes y presupuesto.')),
       mEnviadas.length ? el('div', { cls:'card' }, el('h3', {}, 'Fichas ya enviadas (' + mEnviadas.length + ')'), mEnviadas.map(filaMatch)) : ''
     ];
@@ -844,11 +855,16 @@ async function abrir(id, seg) {
   const segVenta = () => {
     const etapa = select(ETAPA_VENTA, d['ETAPA VENTA']);
     const f = formulario(d, CAMPOS_VENTA, listas, ['VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION']);
+    const seg = VENTA_SEGUIMIENTO.includes(d['ETAPA VENTA']) ? tarjetaSeguimiento() : null;
+    pend = () => {
+      const campos = Object.assign(f.cambios(), seg ? seg.cambios() : {});
+      if (etapa.value !== (d['ETAPA VENTA'] || '') && !campos['ETAPA VENTA']) campos['ETAPA VENTA'] = etapa.value;
+      return { campos };
+    };
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de venta'), etapa),
-      el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo,
-        el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(Object.assign(f.cambios(), etapa.value !== (d['ETAPA VENTA'] || '') ? { 'ETAPA VENTA': etapa.value } : {}), 'Venta guardada') }, 'Guardar venta'))),
-      VENTA_SEGUIMIENTO.includes(d['ETAPA VENTA']) ? tarjetaSeguimiento() : '',
+      el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo),
+      seg ? seg.nodo : '',
       el('div', { cls:'card' }, el('h3', {}, 'Compradores que matchean (' + mVenta.length + ')'), mVenta.length ? mVenta.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin compradores que matcheen.'))
     ];
   };
@@ -865,22 +881,23 @@ async function abrir(id, seg) {
       catch (err) { toast('No se pudo subir: ' + err.message, true); }
     }});
     const capturas = String(d.CAPTURAS || '').split('\n').filter(Boolean);
-    return el('div', { cls:'card' }, el('h3', {}, d['ETAPA VENTA'] === 'NO CAPTADA' ? 'Seguimiento: ¿publicó con otra inmobiliaria?' : 'Seguimiento: publicada con otra inmobiliaria'),
+    const cambios = () => {
+      const c = f.cambios();
+      if (hace.value) { const x = new Date(); x.setDate(x.getDate() - parseInt(hace.value)); c['OTRA INMO DESDE'] = isoLocal(x); }
+      if ((c['OTRA INMO LINK'] || c['OTRA INMO'] || c['OTRA INMO DESDE']) && d['ETAPA VENTA'] === 'NO CAPTADA') c['ETAPA VENTA'] = 'CON OTRA INMO';
+      return c;
+    };
+    return { cambios, nodo: el('div', { cls:'card' }, el('h3', {}, d['ETAPA VENTA'] === 'NO CAPTADA' ? 'Seguimiento: ¿publicó con otra inmobiliaria?' : 'Seguimiento: publicada con otra inmobiliaria'),
       el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Próximo: ' + d['PROX CONTACTO'] + ' · ' + (d['PROX ACCION'] || '') : 'Sin próximo paso'),
       dir ? el('button', { cls:'btn ancho', style:'margin:8px 0', onclick: () => abrirExterno('https://www.google.com/search?q=' + encodeURIComponent(q)) }, 'Buscar en portales: ' + dir)
           : el('div', { cls:'aviso' }, 'Cargá la dirección en "Qué vende" para buscarla en los portales.'),
       d['ETAPA VENTA'] === 'NO CAPTADA' ? el('button', { cls:'btn sec ancho', style:'margin-bottom:8px', onclick: () => accion('REVISION', 'no publicó') }, 'Revisé: todavía no publicó') : '',
       f.nodo,
       el('label', {}, 'O publicada hace (días)'), hace,
-      el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => {
-        const c = f.cambios();
-        if (hace.value) { const x = new Date(); x.setDate(x.getDate() - parseInt(hace.value)); c['OTRA INMO DESDE'] = isoLocal(x); }
-        if ((c['OTRA INMO LINK'] || c['OTRA INMO'] || c['OTRA INMO DESDE']) && d['ETAPA VENTA'] === 'NO CAPTADA') c['ETAPA VENTA'] = 'CON OTRA INMO';
-        guardar(c, 'Seguimiento guardado');
-      }}, 'Guardar')),
+
       el('h3', { style:'margin-top:16px' }, 'Capturas (' + capturas.length + ')'),
       ...capturas.map((u, i) => el('div', {}, el('a', { href:u, target:'_blank', rel:'noopener' }, 'Captura ' + (i + 1)))),
-      el('button', { cls:'btn ancho', style:'margin-top:8px', onclick: () => archivo.click() }, 'Subir captura'), archivo);
+      el('button', { cls:'btn ancho', style:'margin-top:8px', onclick: () => archivo.click() }, 'Subir captura'), archivo) };
   };
 
   // ── PERFIL
@@ -888,13 +905,11 @@ async function abrir(id, seg) {
     const con = formulario(d, CAMPOS_CONTACTO, listas);
     const sobre = el('textarea', { style:'min-height:110px', placeholder:'Familia, hijos y edades, trabajo, qué lo motiva, qué le preocupa, cómo le gusta que le hablen...' }); sobre.value = d['SOBRE LA PERSONA'] || '';
     const motivo = select(MOTIVOS, MOTIVOS[0]);
+    pend = () => { const campos = con.cambios(); if (sobre.value !== (d['SOBRE LA PERSONA'] || '')) campos['SOBRE LA PERSONA'] = sobre.value; return { campos }; };
     return [
-      el('div', { cls:'card' }, el('h3', {}, 'Sobre la persona'), sobre,
-        el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(sobre.value !== (d['SOBRE LA PERSONA'] || '') ? { 'SOBRE LA PERSONA': sobre.value } : {}, 'Guardado') }, 'Guardar'))),
+      el('div', { cls:'card' }, el('h3', {}, 'Sobre la persona'), sobre),
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
-        el('div', { cls:'grid2', style:'margin-top:12px' },
-          el('button', { cls:'btn pri', onclick: () => guardar(con.cambios(), 'Datos guardados') }, 'Guardar datos'),
-          el('button', { cls:'btn', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Pasar a Contactos')),
+        el('button', { cls:'btn ancho', style:'margin-top:12px', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Pasar a Contactos'),
         el('div', { cls:'actual', style:'margin-top:8px' }, '"Pasar a Contactos" actualiza el nombre en tu agenda (y WhatsApp) con el formato "Nombre - Compra..." después de cambiar la búsqueda o la venta. Si solo cambiás el nombre, se pasa solo al guardar.')),
       el('div', { cls:'card' }, el('h3', {}, 'Archivar'),
         el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: () => { if (confirm('¿Archivar a ' + d.NOMBRE + '?')) accion('DESCARTAR', motivo.value); } }, 'Archivar')),
@@ -911,9 +926,12 @@ async function abrir(id, seg) {
   const cuerpo = el('div', { cls:'ficha-body' });
   const barra = el('div', { cls:'segmentos' });
   const mostrar = key => {
+    if (key !== segmentoActual && fichaSucia() && !confirm('Tenés cambios sin guardar en esta solapa. ¿Salir igual?')) return;
+    pend = null;
     segmentoActual = key; sessionStorage.setItem('crm_seg', key);
     barra.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === key));
     cuerpo.replaceChildren(...SEGMENTOS.find(s => s[0] === key)[2]());
+    if (pend) cuerpo.append(el('div', { cls:'guardar-fijo' }, el('button', { cls:'btn pri ancho', onclick: guardarTab }, 'Guardar')));
     p.scrollTop = 0;
   };
   SEGMENTOS.forEach(([k, t, , n]) => barra.append(el('button', { 'data-k':k, onclick: () => mostrar(k) }, t, n ? el('span', { cls:'n' }, n) : '')));
