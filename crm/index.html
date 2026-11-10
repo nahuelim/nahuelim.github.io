@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="CRM">
 <meta name="theme-color" content="#14231D">
 <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -192,7 +192,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '23';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '24';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -439,12 +439,24 @@ function item(x, tag) {
     el('span', { icon:'flecha' }));
 }
 
+// Hoy se muestra al instante con lo último guardado en el dispositivo y se actualiza cuando contesta el servidor
+// (Apps Script tarda 2 a 5 segundos). La clave ya vive en este dispositivo, así que guardar Hoy no expone nada nuevo.
+const LS_HOY = 'crm_hoy_cache';
+let hoyPedido = 0;
 async function verHoy() {
   tabs('tHoy');
-  const l = document.getElementById('lista');
+  const n = ++hoyPedido;
+  try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv')) pintarHoy(c.r, true); } catch (e) {}
   const r = await api('api_hoy');
+  if (n !== hoyPedido || !document.getElementById('tHoy').classList.contains('on')) return;   // ya se fue a otra pantalla
+  try { localStorage.setItem(LS_HOY, JSON.stringify({ dia: new Date().toLocaleDateString('sv'), r })); } catch (e) {}
+  pintarHoy(r, false);
+}
+function pintarHoy(r, viejo) {
+  const l = document.getElementById('lista');
   LINKS = r.links || {};
   l.replaceChildren();
+  if (viejo) l.append(el('div', { cls:'actual', style:'margin:0 2px 6px' }, 'Actualizando…'));
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   // Tope del día por sección: Llamar 5, Escribir 10, Revisar 5 (más lo que sumes con el botón). Visitas y cumpleaños no cuentan.
   const hoyISO = new Date().toLocaleDateString('sv');   // fecha local (en UTC, después de las 21 ya sería mañana)
@@ -614,7 +626,7 @@ function verCerrarSesion() {
       confirmar,
       el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
         if (confirmar.value.trim().toUpperCase() !== 'CERRAR') return toast('Escribí CERRAR para confirmar', true);
-        Object.values(LS).forEach(k => localStorage.removeItem(k)); pantallaConfig();
+        Object.values(LS).forEach(k => localStorage.removeItem(k)); localStorage.removeItem(LS_HOY); pantallaConfig();
       }}, 'Confirmar cierre de sesión')),
       el('div', { style:'margin-top:10px' }, el('button', { cls:'btn ancho', onclick: verHoy }, 'Cancelar'))));
 }
