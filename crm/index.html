@@ -102,6 +102,7 @@
   .chip { border:1px solid var(--linea); background:var(--blanco); border-radius:999px; padding:7px 12px; font-size:14px; cursor:pointer; }
   .chip.on { background:var(--verde-profundo); border-color:var(--verde-profundo); color:var(--crema); }
   .chip.on::after { content:' ×'; }
+  .chip.seg.on::after { content:none; }
   .fila { display:flex; gap:8px; flex-wrap:wrap; }
   .fila > .btn { flex:1; min-width:0; padding:10px 6px; }
   .grid2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
@@ -181,7 +182,7 @@
 <nav class="tabs">
   <button id="tHoy" class="on"><span data-i="hoy"></span>Hoy</button>
   <button id="tNuevo"><span data-i="mas"></span>Nuevo</button>
-  <button id="tBuscar"><span data-i="buscar"></span>Buscar</button>
+  <button id="tBuscar"><span data-i="buscar"></span>Contactos</button>
 </nav>
 <div id="ficha"></div>
 <div id="velo"></div>
@@ -191,7 +192,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '22';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '23';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -445,10 +446,12 @@ async function verHoy() {
   LINKS = r.links || {};
   l.replaceChildren();
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
-  // Tope del día: 20 contactos (más los que sumes de a 10). Las visitas a confirmar y los cumpleaños no cuentan: tienen fecha fija.
+  // Tope del día por sección: Llamar 5, Escribir 10, Revisar 5 (más lo que sumes con el botón). Visitas y cumpleaños no cuentan.
   const hoyISO = new Date().toLocaleDateString('sv');   // fecha local (en UTC, después de las 21 ya sería mañana)
-  let tope = 20;
-  try { const t = JSON.parse(localStorage.getItem('crm_tope') || '{}'); if (t.dia === hoyISO) tope = t.n; } catch (e) {}
+  const PASO = { llamar:5, escribir:10, revisar:5 };
+  let topes = Object.assign({}, PASO);
+  try { const t = JSON.parse(localStorage.getItem('crm_topes') || '{}'); if (t.dia === hoyISO) topes = Object.assign(topes, t.n); } catch (e) {}
+  const hechos = Object.assign({ llamar:0, escribir:0, revisar:0 }, r.hechos || {});
   const visitas = r.visitas || [], fechas = r.fechas || [];
   // Prioridad: captar → vendedores → nuevos → en contacto → clientes → relación → en pausa
   // Dentro de cada grupo, primero P1-P2 (parte de pago, venta, cash); los que no tienen forma de pago van entre P3 y P4
@@ -460,20 +463,31 @@ async function verHoy() {
     ...r.llamadas.map(x => ['llamar', x]), ...r.mensajes.map(x => ['escribir', x]),
     ...r.seguimiento.map(x => ['escribir', x]), ...(r.clientes || []).map(x => ['escribir', x, 'Cliente']),
     ...(r.relacion || []).map(x => ['escribir', x]), ...(r.pausa || []).map(x => ['escribir', x, 'En pausa']), ...r.reactivar.map(x => ['escribir', x])];
-  const hechos = r.hechosHoy || 0;
-  const hoyVan = cola.slice(0, Math.max(0, tope - hechos));
-  const de = g => hoyVan.filter(c => c[0] === g);
+  const todos = g => cola.filter(c => c[0] === g);
+  const de = g => todos(g).slice(0, Math.max(0, topes[g] - hechos[g]));
   const llamar = de('llamar'), escribir = de('escribir'), revisar = de('revisar');
+  // Botón para cargar más en cada sección, sin límite
+  const mas = g => {
+    const quedan = todos(g).length - de(g).length;
+    if (quedan <= 0) return;
+    l.append(el('div', { style:'margin:6px 0 4px' },
+      el('div', { cls:'actual', style:'margin-bottom:6px' }, (de(g).length ? 'Quedan ' : 'Listo. Quedan ') + quedan + ' más.'),
+      el('button', { cls:'btn sec ancho', onclick: () => {
+        topes[g] = Math.max(topes[g], hechos[g]) + PASO[g];
+        localStorage.setItem('crm_topes', JSON.stringify({ dia: hoyISO, n: topes })); verHoy();
+      }}, '+' + PASO[g] + ' más')));
+  };
 
   l.append(el('div', { cls:'resumen' },
     ...[['Llamar', llamar.length], ['Escribir', visitas.length + fechas.length + escribir.length], ['Revisar', revisar.length]]
       .map(([t, n]) => el('div', { style:'cursor:pointer', onclick: () => document.getElementById('sec-' + t.toLowerCase()).scrollIntoView({ behavior:'smooth', block:'start' }) }, el('b', {}, n), el('span', {}, t)))));
-  l.append(el('div', { cls:'actual', style:'margin:0 2px 4px' }, 'Hechos hoy: ' + hechos + ' de ' + tope + '.'));
+  l.append(el('div', { cls:'actual', style:'margin:0 2px 4px' }, 'Hechos hoy: ' + (hechos.llamar + hechos.escribir + hechos.revisar) + '.'));
   const pintar = xs => xs.forEach(([, x, tag]) => l.append(item(x, tag)));
 
   // 1. Llamar: solo las 3 llamadas de la cadencia
   l.append(el('h2', { id:'sec-llamar' }, 'Llamar'));
   if (!llamar.length) l.append(el('div', { cls:'vacio' }, 'Nada para llamar.')); else pintar(llamar);
+  mas('llamar');
 
   // 2. Escribir: visitas a confirmar y cumpleaños primero (fuera del tope), después el resto
   l.append(el('h2', { id:'sec-escribir' }, 'Escribir'));
@@ -489,17 +503,12 @@ async function verHoy() {
   fechas.forEach(x => l.append(item(x)));
   pintar(escribir);
   if (!visitas.length && !fechas.length && !escribir.length) l.append(el('div', { cls:'vacio' }, 'Ningún mensaje.'));
+  mas('escribir');
 
-  // 3. Revisar: vendedores y los que estás por captar
+  // 3. Revisar: vendedores no captados (si publicaron, a qué precio, recaptar) y los que estás por captar
   l.append(el('h2', { id:'sec-revisar' }, 'Revisar'));
   if (!revisar.length) l.append(el('div', { cls:'vacio' }, 'Nada para revisar.')); else pintar(revisar);
-
-  // Terminaste: +10
-  const quedan = cola.length - hoyVan.length;
-  if (quedan > 0) l.append(el('div', { style:'margin:14px 0' },
-    el('div', { cls:'actual', style:'margin-bottom:8px' }, hoyVan.length ? 'Quedan ' + quedan + ' más para cuando termines.' : 'Listo por hoy. Quedan ' + quedan + ' si querés seguir.'),
-    el('button', { cls:'btn sec ancho', onclick: () => { localStorage.setItem('crm_tope', JSON.stringify({ dia: hoyISO, n: Math.max(tope, hechos) + 10 })); verHoy(); } }, '+10 más')));
-  else if (!hoyVan.length) l.append(el('div', { cls:'vacio' }, 'Listo por hoy. No queda nadie pendiente.'));
+  mas('revisar');
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
@@ -510,7 +519,8 @@ function verBuscar() {
   let t, ultimo = '';
   const buscar = async () => {
     const q = inp.value.trim();
-    if (q.length < 2) { res.replaceChildren(el('div', { cls:'vacio' }, 'Escribí al menos 2 letras o 4 números.')); return; }
+    if (q.length < 2) { res.replaceChildren(el('div', { cls:'vacio' }, 'Escribí al menos 2 letras o 4 números, o elegí una lista.')); return; }
+    segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); sessionStorage.removeItem('crm_lista');
     ultimo = q;
     const xs = await api('api_buscar', q);
     if (q !== ultimo) return;
@@ -519,8 +529,19 @@ function verBuscar() {
   const inp = el('input', { type:'search', placeholder:'Nombre o teléfono', autocomplete:'off', enterkeyhint:'search',
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
-  l.replaceChildren(el('h2', {}, 'Buscar contacto'), inp, res);
-  inp.focus();
+  // Listas por segmento (la permuta cuenta como vendedor: tiene algo para vender)
+  const SEGS = [['vendedores','Vendedores y permuta'],['cash','Búsquedas cash'],['credito','Búsquedas crédito'],['sinpago','Sin forma de pago']];
+  const segs = el('div', { cls:'fila', style:'margin:10px 0 4px' }, ...SEGS.map(([k, t]) => el('button', { cls:'chip seg', type:'button', onclick: async e => {
+    segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on');
+    inp.value = ''; ultimo = k; sessionStorage.setItem('crm_lista', k);
+    const xs = await api('api_lista', k);
+    if (ultimo !== k) return;
+    res.replaceChildren(el('h2', {}, t + ' (' + xs.length + ')'), ...(xs.length ? xs.map(x => item(x)) : [el('div', { cls:'vacio' }, 'Nadie en esta lista.')]));
+  }}, t)));
+  l.replaceChildren(el('h2', {}, 'Contactos'), inp, segs, res);
+  const previa = sessionStorage.getItem('crm_lista');
+  const b = previa && [...segs.children].find((x, i) => SEGS[i][0] === previa);
+  if (b) b.click(); else inp.focus();
 }
 
 // Menu lateral: links a las otras herramientas, ajustes y, al final, cerrar sesion.
