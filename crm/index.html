@@ -109,6 +109,7 @@
   .grid3 > .btn { min-width:0; padding:10px 4px; font-size:15px; gap:6px; }
   .grid3 > .btn svg { width:18px; height:18px; flex:none; }
   .ancho2 { grid-column:1/3; }
+  .pregunta { font-size:13px; font-style:italic; color:var(--tinta-suave); margin:-2px 0 6px; }
 
   input, select, textarea { width:100%; border:1px solid var(--linea); border-radius:12px; padding:11px 12px; background:var(--blanco); }
   input[type=date], input[type=time] { -webkit-appearance:none; appearance:none; min-width:0; max-width:100%; display:block; min-height:46px; text-align:left; }
@@ -189,7 +190,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '17';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '18';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -208,7 +209,8 @@ const ICON = {
 };
 
 const ESTADOS = ['NUEVO','EN CONTACTO','CLIENTE','EN PAUSA','DESCARTADO'];
-const ETAPA_COMPRA = ['','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
+const ETAPA_COMPRA = ['','OPCIONES','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
+const ETAPA_COMPRA_TXT = ['—','Enviar opciones','Calificado','Visitas','Oferta','Reserva','Cerrada'];
 const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','CAPTADA','RESERVA','VENDIDA'];
 const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
 const CAMPOS_SEG_VENDEDOR = ['FECHA PRELISTING','OTRA INMO','OTRA INMO LINK','OTRA INMO DESDE','FIN AUTORIZACION'];
@@ -221,6 +223,19 @@ const AMB_MAX_SUGERIDO = { '1':'2', '2':'3', '3':'4', '4':'5+', '5+':'5+' };   /
 const CAMPOS_BUSQUEDA = ['BUSCA TIPO','BUSCA AMB MIN','BUSCA AMB MAX','BUSCA BARRIOS','BUSCA HASTA USD','BUSCA FORMA DE PAGO','BUSCA COCHERA','BUSCA REQUISITOS'];
 const CAMPOS_VENTA = ['VENDE TIPO','VENDE AMB','VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION'];
 const CAMPOS_CALIF = ['URGENCIA','MOTIVACION','DECISORES','HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'];
+// Ayuda memoria: cómo preguntarlo sin incomodar, pero yendo al grano
+const PREGUNTAS = {
+  'URGENCIA': '¿Para cuándo te gustaría estar mudado?',
+  'MOTIVACION': '¿Qué te llevó a empezar a buscar ahora?',
+  'BUSCA FORMA DE PAGO': 'Para buscarte lo que encaja: ¿la pensás con la venta de algo, contado o con crédito? (si es crédito: ¿ya lo tenés aprobado?)',
+  'DECISORES': '¿Hay alguien más que tenga que ver las propiedades antes de decidir?',
+  'VIVIENDA': '¿Hoy estás alquilando o tenés algo propio?',
+  'HACE CUANTO BUSCA': '¿Hace cuánto que venís mirando?',
+  'OTRAS INMOS': '¿Viste algo con otras inmobiliarias que te haya gustado?',
+  'TEMPERATURA': 'No se pregunta: es tu impresión después de hablar.'
+};
+const PRIO_TXT = { 1:'P1 · estar encima', 2:'P2 · estar encima', 3:'P3 · buscar y estar atento', 4:'P4 · cuando haya tiempo', 5:'P5 · cuando haya tiempo' };
+const PRIO_PAGO = { 'PARTE DE PAGO':1, 'VENTA':1, 'CASH':2, 'CREDITO APROBADO':3, 'CREDITO EN TRAMITE':4, 'CREDITO SIN CONFIRMAR':5 };
 const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','RELACION','CUMPLEANOS','FECHA COMPRA','NOTAS'];
 const TILDES = { 'RELACION':'Relación', 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
   'HACE CUANTO BUSCA':'Hace cuánto busca', 'VENDE PUBLICACION':'Publicación', 'BUSCA TIPO':'Tipo', 'BUSCA AMB MIN':'Amb. mínimo', 'BUSCA AMB MAX':'Amb. máximo',
@@ -248,11 +263,22 @@ function toast(m, error) {
 }
 const cfg = () => ({ url: localStorage.getItem(LS.url), key: localStorage.getItem(LS.key) });
 let pendientes = 0;
+const SOLO_LEE = ['api_hoy', 'api_ficha', 'api_buscar', 'api_estadisticas'];
 async function api(fn, ...args) {
   const { url, key } = cfg();
   pendientes++; document.getElementById('cargando').style.display = 'block';
   try {
-    const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args, k: key }) });
+    // "Load failed": el iPhone corta la conexión cuando la app pasa a segundo plano (WhatsApp, llamada).
+    // Lo que solo lee se reintenta solo. Lo que guarda NO, para no registrar dos veces el mismo mensaje.
+    const soloLee = SOLO_LEE.includes(fn);
+    let res;
+    for (let i = 0; ; i++) {
+      try { res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args, k: key }) }); break; }
+      catch (e) {
+        if (!soloLee || i >= 2) { e.red = true; throw e; }
+        await new Promise(ok => setTimeout(ok, 1500));
+      }
+    }
     const j = await res.json();
     if (!j.ok) {
       if (j.error === 'no autorizado') { pantallaConfig('La clave no es válida. Volvé a cargarla.'); }
@@ -260,7 +286,9 @@ async function api(fn, ...args) {
     }
     return j.data;
   } catch (e) {
-    toast('Error: ' + e.message + ' (tocá para cerrar)', true); throw e;
+    if (e.red) { if (document.visibilityState === 'visible') toast(SOLO_LEE.includes(fn) ? 'Sin conexión. Probá de nuevo en un momento.' : 'Sin conexión: puede que no se haya guardado. Revisalo en el Historial.'); }
+    else toast('Error: ' + e.message + ' (tocá para cerrar)', true);
+    throw e;
   } finally {
     if (--pendientes <= 0) { pendientes = 0; document.getElementById('cargando').style.display = 'none'; }
   }
@@ -297,7 +325,7 @@ function abrirExterno(url) { const a = el('a', { href:url }); document.body.appe
 const esEscritorio = () => matchMedia('(min-width: 900px)').matches;
 
 // Formulario de campos del Sheet con el control adecuado a cada campo; devuelve { nodo, cambios() }
-function formulario(d, campos, listas) {
+function formulario(d, campos, listas, anchos) {
   const ctrl = {};
   let ambMax;
   const control = k => {
@@ -331,7 +359,7 @@ function formulario(d, campos, listas) {
   };
   const nodo = el('div', { cls:'grid2' }, ...campos.map(k => {
     const c = control(k); ctrl[k] = c;
-    return el('div', { cls: c.ancho ? 'ancho2' : '' }, el('label', {}, ETIQ(k)), c.nodo);
+    return el('div', { cls: c.ancho || (anchos || []).includes(k) ? 'ancho2' : '' }, el('label', {}, ETIQ(k)), PREGUNTAS[k] && CAMPOS_CALIF.includes(k) ? el('div', { cls:'pregunta' }, PREGUNTAS[k]) : '', c.nodo);
   }));
   return { nodo, cambios: () => { const r = {}; Object.entries(ctrl).forEach(([k, c]) => { const orig = c.orig !== undefined ? c.orig : String(d[k] || ''); if (c.valor() !== orig) r[k] = c.valor(); }); return r; } };
 }
@@ -390,12 +418,13 @@ let ocultoDesde = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { ocultoDesde = Date.now(); marcarActivo(); return; }
   if (localStorage.getItem(LS.cred) && ocultoDesde && Date.now() - ocultoDesde > BLOQUEO_MIN * 60000) return pantallaBloqueo();
-  refrescar();                                       // al volver de WhatsApp o del telefono
+  setTimeout(refrescar, 800);                        // al volver de WhatsApp o del telefono (la red tarda en despertar)
 });
 
 // ─── listas ───
 function item(x, tag) {
   const tags = el('div', { cls:'tags' },
+    x.prio ? el('span', { cls:'pill' + (x.prio <= 2 ? ' oro' : '') }, 'P' + x.prio) : '',
     tag ? el('span', { cls:'pill' }, tag) : '',
     x.vencido ? el('span', { cls:'pill alerta' }, 'Vencido') : '',
     x.temp === 'CALIENTE' ? el('span', { cls:'pill oro' }, 'Caliente') : '',
@@ -403,7 +432,8 @@ function item(x, tag) {
     x.matches ? el('span', { cls:'pill' }, x.matches + (x.matches === 1 ? ' match' : ' matches')) : '');
   return el('div', { cls:'item', onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'cuerpo' }, el('div', { cls:'nombre' }, x.nombre),
-      el('div', { cls:'meta' }, [x.accion, x.prox].filter(Boolean).join(' · ')), tags),
+      el('div', { cls:'meta' }, [x.accion, x.prox].filter(Boolean).join(' · ') + (x.ultimo ? ' · último: ' + x.ultimo : '')),
+      x.nota ? el('div', { cls:'texto' }, '“' + x.nota + (x.nota.length >= 110 ? '…' : '') + '”') : '', tags),
     el('span', { icon:'flecha' }));
 }
 
@@ -420,6 +450,10 @@ async function verHoy() {
   try { const t = JSON.parse(localStorage.getItem('crm_tope') || '{}'); if (t.dia === hoyISO) tope = t.n; } catch (e) {}
   const visitas = r.visitas || [], fechas = r.fechas || [];
   // Prioridad: captar → vendedores → nuevos → en contacto → clientes → relación → en pausa
+  // Dentro de cada grupo, primero P1-P2 (parte de pago, venta, cash); los que no tienen forma de pago van entre P3 y P4
+  const porPrio = xs => [...xs].sort((a, b) => (a.prio || 3.5) - (b.prio || 3.5));
+  r.llamadas = porPrio(r.llamadas); r.mensajes = porPrio(r.mensajes); r.seguimiento = porPrio(r.seguimiento);
+  r.clientes = porPrio(r.clientes || []); r.pausa = porPrio(r.pausa || []);
   const cola = [
     ...(r.captar || []).map(x => ['revisar', x, 'Captar']), ...(r.vendedores || []).map(x => ['revisar', x]),
     ...r.llamadas.map(x => ['llamar', x]), ...r.mensajes.map(x => ['escribir', x]),
@@ -432,16 +466,16 @@ async function verHoy() {
 
   l.append(el('div', { cls:'resumen' },
     ...[['Llamar', llamar.length], ['Escribir', visitas.length + fechas.length + escribir.length], ['Revisar', revisar.length]]
-      .map(([t, n]) => el('div', {}, el('b', {}, n), el('span', {}, t)))));
+      .map(([t, n]) => el('div', { style:'cursor:pointer', onclick: () => document.getElementById('sec-' + t.toLowerCase()).scrollIntoView({ behavior:'smooth', block:'start' }) }, el('b', {}, n), el('span', {}, t)))));
   l.append(el('div', { cls:'actual', style:'margin:0 2px 4px' }, 'Hechos hoy: ' + hechos + ' de ' + tope + '.'));
   const pintar = xs => xs.forEach(([, x, tag]) => l.append(item(x, tag)));
 
   // 1. Llamar: solo las 3 llamadas de la cadencia
-  l.append(el('h2', {}, 'Llamar'));
+  l.append(el('h2', { id:'sec-llamar' }, 'Llamar'));
   if (!llamar.length) l.append(el('div', { cls:'vacio' }, 'Nada para llamar.')); else pintar(llamar);
 
   // 2. Escribir: visitas a confirmar y cumpleaños primero (fuera del tope), después el resto
-  l.append(el('h2', {}, 'Escribir'));
+  l.append(el('h2', { id:'sec-escribir' }, 'Escribir'));
   visitas.forEach(v => l.append(el('div', { cls:'item visita' },
     el('div', { cls:'cuerpo', onclick: () => abrir(v.id, 'contacto') },
       el('div', { cls:'nombre' }, v.nombre), el('div', { cls:'meta' }, v.accion + ' · ' + v.cuando), el('div', { cls:'meta' }, v.evento),
@@ -456,7 +490,7 @@ async function verHoy() {
   if (!visitas.length && !fechas.length && !escribir.length) l.append(el('div', { cls:'vacio' }, 'Ningún mensaje.'));
 
   // 3. Revisar: vendedores y los que estás por captar
-  l.append(el('h2', {}, 'Revisar'));
+  l.append(el('h2', { id:'sec-revisar' }, 'Revisar'));
   if (!revisar.length) l.append(el('div', { cls:'vacio' }, 'Nada para revisar.')); else pintar(revisar);
 
   // Terminaste: +10
@@ -682,13 +716,16 @@ async function abrir(id, seg) {
   };
   const segAgenda = () => [tarjetaEvento()];
   // Calificacion de un vistazo: lo que falta se ve en rojo; se edita en Perfil
-  const resumenCalif = () => {
-    const campos = [['Urgencia','URGENCIA'],['Motivación','MOTIVACION'],['Quién decide','DECISORES'],['Forma de pago','BUSCA FORMA DE PAGO'],['Hace cuánto busca','HACE CUANTO BUSCA'],['Otras inmobiliarias','OTRAS INMOS']];
+  const tarjetaCalif = () => {
+    const campos = [['Urgencia','URGENCIA'],['Motivación','MOTIVACION'],['Quién decide','DECISORES'],['Forma de pago','BUSCA FORMA DE PAGO'],['Hace cuánto busca','HACE CUANTO BUSCA'],['Otras inmobiliarias','OTRAS INMOS'],['Temperatura','TEMPERATURA']];
     const faltan = campos.filter(([, k]) => !d[k]).length;
-    return el('div', { cls:'card' }, el('div', { cls:'fila', style:'justify-content:space-between;align-items:center;margin-bottom:6px' },
-        el('h3', { style:'margin:0' }, 'Calificación' + (faltan ? ' · faltan ' + faltan : ' · completa')),
-        el('button', { cls:'chip', onclick: () => mostrar('perfil') }, 'Editar')),
-      el('div', { cls:'calif' }, ...campos.map(([t, k]) => el('div', {}, el('small', {}, t), d[k] ? el('span', {}, d[k]) : el('span', { cls:'falta' }, 'Falta')))));
+    const prio = PRIO_PAGO[d['BUSCA FORMA DE PAGO']];
+    const f = formulario(d, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'], listas, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA']);
+    return el('div', { cls:'card' }, el('h3', {}, 'Calificación' + (faltan ? ' · faltan ' + faltan : ' · completa')),
+      el('div', { cls:'actual', style:'margin:0 0 8px' }, prio ? 'Prioridad ' + PRIO_TXT[prio] : 'Prioridad: falta la forma de pago'),
+      el('div', { cls:'calif' }, ...campos.map(([t, k]) => el('div', {}, el('small', {}, t), d[k] ? el('span', {}, d[k]) : el('span', { cls:'falta' }, 'Falta')))),
+      el('div', { style:'margin-top:12px' }, f.nodo),
+      el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(f.cambios(), 'Calificación guardada') }, 'Guardar calificación')));
   };
 
   const segContacto = () => {
@@ -720,14 +757,14 @@ async function abrir(id, seg) {
 
     const nota = el('textarea', { placeholder:'Lo que hablaste. Podés dictar con el micrófono del teclado.' });
     const chips = {};
-    const grupoChips = (campo, titulo, ops) => el('div', {}, el('label', {}, titulo), el('div', { cls:'fila' },
+    const grupoChips = (campo, titulo, ops) => el('div', {}, el('label', {}, titulo), PREGUNTAS[campo] ? el('div', { cls:'pregunta' }, PREGUNTAS[campo]) : '', el('div', { cls:'fila' },
       ...ops.map(o => { const b = el('button', { cls:'chip', type:'button', onclick: () => {
         const on = chips[campo] === o; chips[campo] = on ? undefined : o;
         b.parentNode.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); if (!on) b.classList.add('on');
       }}, o); return b; })));
     // Ultima conversacion: la ultima nota (lo que se hablo) + el ultimo contacto registrado + las notas fijas del Sheet
     const ultimaConversacion = () => {
-      const nombres = { NOTA:'Nota', LLAMADA_SI:'Contestó la llamada', LLAMADA_NO:'No atendió', RESPONDIO:'Contestó', MENSAJE:'Mensaje enviado', ALTA:'Alta' };
+      const nombres = { NOTA:'Nota', LLAMADA_SI:'Contestó la llamada', LLAMADA_NO:'No contestó', RESPONDIO:'Contestó', MENSAJE:'Mensaje enviado', ALTA:'Alta' };
       const nota = r.hist.find(x => x.tipo === 'NOTA');
       const contacto = r.hist.find(x => ['LLAMADA_SI','LLAMADA_NO','RESPONDIO','MENSAJE'].includes(x.tipo));
       return el('div', { cls:'card' }, el('h3', {}, 'Última conversación'),
@@ -748,14 +785,11 @@ async function abrir(id, seg) {
         r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + r.wa) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
         el('button', { cls:'btn sec', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp'),
         el('button', { cls:'btn', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Contactos')),
-      resumenCalif(),
-      el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
-        el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No atendió'), resultado(enLlamadas ? 'LLAMADA_SI' : 'RESPONDIO', 'Contestó', ['LLAMADA_SI','RESPONDIO']))),
       ultimaConversacion(),
       el('div', { cls:'card' }, el('h3', {}, 'Nota rápida'), nota,
         grupoChips('URGENCIA', 'Urgencia', listas.urgencias || []),
         grupoChips('MOTIVACION', 'Motivación (por qué ahora)', listas.motivaciones || []),
-        grupoChips('BUSCA FORMA DE PAGO', 'Forma de pago', ['PARTE DE PAGO', 'VENTA', 'CASH', 'CREDITO APROBADO', 'CREDITO EN TRAMITE']),
+        grupoChips('BUSCA FORMA DE PAGO', 'Forma de pago', ['PARTE DE PAGO', 'VENTA', 'CASH', 'CREDITO APROBADO', 'CREDITO EN TRAMITE', 'CREDITO SIN CONFIRMAR']),
         grupoChips('DECISORES', 'Quién decide', ['Solo', 'Con pareja', 'Con familia']),
         grupoChips('VIVIENDA', 'Vivienda', ['Alquila', 'Propia']),
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: async () => {
@@ -767,11 +801,14 @@ async function abrir(id, seg) {
           if (t) await api('api_accion', id, 'NOTA', '', t);
           toast('Nota guardada'); abrir(id);
         }}, 'Guardar nota'))),
+      el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
+        el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No contestó'), resultado(enLlamadas ? 'LLAMADA_SI' : 'RESPONDIO', 'Contestó', ['LLAMADA_SI','RESPONDIO']))),
       el('div', { cls:'card' }, el('h3', {}, 'Próximo paso'),
         el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Agendado: ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') : 'Sin fecha'),
         el('div', { cls:'fila', style:'margin-bottom:10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
         el('div', { cls:'grid2' }, fecha, queHacer),
         el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', onclick: () => fecha.value ? accion('PROXIMO', fecha.value, queHacer.value) : toast('Elegí una fecha', true) }, 'Guardar próximo paso'))),
+      tarjetaCalif(),
       el('div', { cls:'card' }, el('h3', {}, 'Mensaje'),
         msjs.length ? [situacion, el('div', { style:'margin-top:10px' }, opciones), el('label', {}, 'Texto a enviar (lo podés editar)'), texto,
           el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', icon:'wa', onclick: () => {
@@ -786,8 +823,8 @@ async function abrir(id, seg) {
 
   // ── BUSQUEDA (compra)
   const segBusqueda = () => {
-    const etapa = select(ETAPA_COMPRA, d['ETAPA COMPRA']);
-    const f = formulario(d, CAMPOS_BUSQUEDA, listas);
+    const etapa = select(ETAPA_COMPRA, d['ETAPA COMPRA'], ETAPA_COMPRA_TXT);
+    const f = formulario(d, CAMPOS_BUSQUEDA, listas, ['BUSCA TIPO','BUSCA AMB MIN','BUSCA AMB MAX','BUSCA HASTA USD']);
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de compra'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué busca'), f.nodo,
@@ -800,7 +837,7 @@ async function abrir(id, seg) {
   // ── VENTA
   const segVenta = () => {
     const etapa = select(ETAPA_VENTA, d['ETAPA VENTA']);
-    const f = formulario(d, CAMPOS_VENTA, listas);
+    const f = formulario(d, CAMPOS_VENTA, listas, ['VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION']);
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de venta'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo,
@@ -843,13 +880,11 @@ async function abrir(id, seg) {
   // ── PERFIL
   const segPerfil = () => {
     const estado = select(ESTADOS, d.ESTADO);
-    const cal = formulario(d, CAMPOS_CALIF, listas), con = formulario(d, CAMPOS_CONTACTO, listas);
+    const con = formulario(d, CAMPOS_CONTACTO, listas);
     const motivo = select(MOTIVOS, MOTIVOS[0]);
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Estado'), estado,
         el('div', { style:'margin-top:10px' }, el('button', { cls:'btn sec ancho', onclick: () => guardar(estado.value !== d.ESTADO ? { ESTADO: estado.value } : {}, 'Estado guardado') }, 'Guardar estado'))),
-      el('div', { cls:'card' }, el('h3', {}, 'Calificación'), cal.nodo,
-        el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(cal.cambios(), 'Calificación guardada') }, 'Guardar calificación'))),
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
         el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(con.cambios(), 'Datos guardados') }, 'Guardar datos'))),
       el('div', { cls:'card' }, el('h3', {}, 'Archivar'),
