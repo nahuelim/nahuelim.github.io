@@ -191,7 +191,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '20';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '21';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -732,7 +732,6 @@ async function abrir(id, seg) {
   };
   const segAgenda = () => [tarjetaEvento()];
   // Calificacion de un vistazo: lo que falta se ve en rojo; se edita en Perfil
-  const tarjetaEstado = estado => el('div', { cls:'card' }, el('h3', {}, 'Estado'), estado);
   const tarjetaCalif = f => {
     const campos = [['Urgencia','URGENCIA'],['Motivación','MOTIVACION'],['Quién decide','DECISORES'],['Forma de pago','BUSCA FORMA DE PAGO'],['Hace cuánto busca','HACE CUANTO BUSCA'],['Otras inmobiliarias','OTRAS INMOS'],['Temperatura','TEMPERATURA']];
     const faltan = campos.filter(([, k]) => !d[k]).length;
@@ -772,6 +771,20 @@ async function abrir(id, seg) {
 
     const nota = el('textarea', { placeholder:'Lo que hablaste. Podés dictar con el micrófono del teclado.' });
     const estado = select(ESTADOS, d.ESTADO);
+    // NUEVO, EN PAUSA y vendedores no captados: el próximo paso lo calcula el CRM. EN CONTACTO y CLIENTE: lo decidís vos según la charla.
+    const auto = ['NUEVO','EN CADENCIA','EN PAUSA','ARCHIVADO','REACTIVAR'].includes(d.ESTADO) || ['NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']);
+    const tarjetaProximo = () => {
+      const editar = el('div', {},
+        el('div', { cls:'fila', style:'margin:8px 0 10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
+        el('div', { cls:'grid2' }, fecha, queHacer),
+        el('label', { style:'margin-top:10px' }, 'Estado (cambialo solo si el CRM no lo hizo)'), estado);
+      const agendado = d['PROX CONTACTO'] ? d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') : 'sin fecha';
+      return el('div', { cls:'card' }, el('h3', {}, 'Próximo paso y estado'),
+        el('div', { cls:'actual' }, 'Estado: ' + (d.ESTADO || '—') + ' · Próximo: ' + agendado),
+        auto ? [el('div', { cls:'pregunta', style:'margin-top:6px' }, 'Automático: lo calcula el CRM cada vez que registrás un contacto. No hace falta tocarlo.'),
+                el('details', { style:'margin-top:8px' }, el('summary', { style:'font-size:14px;color:var(--tinta-suave)' }, 'Cambiar a mano (excepción)'), editar)]
+             : [el('div', { cls:'pregunta', style:'margin-top:6px' }, 'Lo decidís vos según la charla (ej.: "llamame el jueves"). Si no ponés nada, al registrar el contacto queda a 2 días hábiles.'), editar]);
+    };
     const fCalif = formulario(d, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'], listas, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA']);
     pend = () => {
       const campos = fCalif.cambios();
@@ -820,11 +833,7 @@ async function abrir(id, seg) {
         ),
       el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
         el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No contestó'), resultado(enLlamadas ? 'LLAMADA_SI' : 'RESPONDIO', 'Contestó', ['LLAMADA_SI','RESPONDIO']))),
-      tarjetaEstado(estado),
-      el('div', { cls:'card' }, el('h3', {}, 'Próximo paso'),
-        el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Agendado: ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') : 'Sin fecha'),
-        el('div', { cls:'fila', style:'margin-bottom:10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
-        el('div', { cls:'grid2' }, fecha, queHacer)),
+      tarjetaProximo(),
       tarjetaCalif(fCalif),
       el('div', { cls:'card' }, el('h3', {}, 'Mensaje'),
         msjs.length ? [situacion, el('div', { style:'margin-top:10px' }, opciones), el('label', {}, 'Texto a enviar (lo podés editar)'), texto,
