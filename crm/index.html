@@ -190,7 +190,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '18';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '19';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -227,7 +227,7 @@ const CAMPOS_CALIF = ['URGENCIA','MOTIVACION','DECISORES','HACE CUANTO BUSCA','O
 const PREGUNTAS = {
   'URGENCIA': '¿Para cuándo te gustaría estar mudado?',
   'MOTIVACION': '¿Qué te llevó a empezar a buscar ahora?',
-  'BUSCA FORMA DE PAGO': 'Para buscarte lo que encaja: ¿la pensás con la venta de algo, contado o con crédito? (si es crédito: ¿ya lo tenés aprobado?)',
+  'BUSCA FORMA DE PAGO': 'Para la compra, ¿querés dejar tu propiedad en parte de pago, al contado, o dependés de un crédito? (si es crédito: ¿ya lo tenés aprobado?)',
   'DECISORES': '¿Hay alguien más que tenga que ver las propiedades antes de decidir?',
   'VIVIENDA': '¿Hoy estás alquilando o tenés algo propio?',
   'HACE CUANTO BUSCA': '¿Hace cuánto que venís mirando?',
@@ -716,6 +716,11 @@ async function abrir(id, seg) {
   };
   const segAgenda = () => [tarjetaEvento()];
   // Calificacion de un vistazo: lo que falta se ve en rojo; se edita en Perfil
+  const tarjetaEstado = () => {
+    const estado = select(ESTADOS, d.ESTADO);
+    return el('div', { cls:'card' }, el('h3', {}, 'Estado'), el('div', { cls:'grid2' }, estado,
+      el('button', { cls:'btn sec', onclick: () => guardar(estado.value !== d.ESTADO ? { ESTADO: estado.value } : {}, 'Estado guardado') }, 'Guardar')));
+  };
   const tarjetaCalif = () => {
     const campos = [['Urgencia','URGENCIA'],['Motivación','MOTIVACION'],['Quién decide','DECISORES'],['Forma de pago','BUSCA FORMA DE PAGO'],['Hace cuánto busca','HACE CUANTO BUSCA'],['Otras inmobiliarias','OTRAS INMOS'],['Temperatura','TEMPERATURA']];
     const faltan = campos.filter(([, k]) => !d[k]).length;
@@ -771,6 +776,7 @@ async function abrir(id, seg) {
         nota ? el('div', {}, el('span', { cls:'actual', style:'display:block;margin:0 0 4px' }, nota.fecha), el('div', { style:'white-space:pre-wrap' }, nota.texto))
              : el('div', { cls:'vacio' }, 'Sin notas todavía. Después de hablar, dejá una nota rápida.'),
         contacto ? el('div', { cls:'actual', style:'margin:10px 0 0' }, 'Último contacto: ' + contacto.fecha + ' · ' + (nombres[contacto.tipo] || contacto.tipo) + (contacto.tipo === 'MENSAJE' && contacto.detalle ? ' (' + contacto.detalle + ')' : '')) : '',
+        d['SOBRE LA PERSONA'] ? el('div', { style:'margin-top:10px' }, el('small', { cls:'actual' }, 'Sobre la persona'), el('div', { style:'white-space:pre-wrap;font-size:14px' }, d['SOBRE LA PERSONA'])) : '',
         d.NOTAS ? el('details', { style:'margin-top:10px' }, el('summary', { style:'font-size:14px;color:var(--tinta-suave)' }, 'Notas del Sheet'), el('div', { style:'white-space:pre-wrap;font-size:14px;margin-top:6px' }, d.NOTAS)) : '');
     };
     const enLlamadas = ['NUEVO','EN CADENCIA'].includes(d.ESTADO) && (parseInt(d.INTENTO) || 0) < 3;
@@ -781,10 +787,9 @@ async function abrir(id, seg) {
     }}, texto);
 
     return [
-      el('div', { cls:'grid3', style:'margin-top:12px' },
+      el('div', { cls:'grid2', style:'margin-top:12px' },
         r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + r.wa) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
-        el('button', { cls:'btn sec', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp'),
-        el('button', { cls:'btn', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Contactos')),
+        el('button', { cls:'btn sec', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp')),
       ultimaConversacion(),
       el('div', { cls:'card' }, el('h3', {}, 'Nota rápida'), nota,
         grupoChips('URGENCIA', 'Urgencia', listas.urgencias || []),
@@ -803,6 +808,7 @@ async function abrir(id, seg) {
         }}, 'Guardar nota'))),
       el('div', { cls:'card' }, el('h3', {}, 'Resultado del contacto' + (marcadoHoy ? ' · registrado hoy' : '')),
         el('div', { cls:'fila' }, resultado('LLAMADA_NO', 'No contestó'), resultado(enLlamadas ? 'LLAMADA_SI' : 'RESPONDIO', 'Contestó', ['LLAMADA_SI','RESPONDIO']))),
+      tarjetaEstado(),
       el('div', { cls:'card' }, el('h3', {}, 'Próximo paso'),
         el('div', { cls:'actual' }, d['PROX CONTACTO'] ? 'Agendado: ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') : 'Sin fecha'),
         el('div', { cls:'fila', style:'margin-bottom:10px' }, ...[['Hoy',0],['+1',1],['+3',3],['+7',7],['+15',15]].map(([t, n]) => el('button', { cls:'chip', type:'button', onclick: () => masDias(n) }, t))),
@@ -879,14 +885,17 @@ async function abrir(id, seg) {
 
   // ── PERFIL
   const segPerfil = () => {
-    const estado = select(ESTADOS, d.ESTADO);
     const con = formulario(d, CAMPOS_CONTACTO, listas);
+    const sobre = el('textarea', { style:'min-height:110px', placeholder:'Familia, hijos y edades, trabajo, qué lo motiva, qué le preocupa, cómo le gusta que le hablen...' }); sobre.value = d['SOBRE LA PERSONA'] || '';
     const motivo = select(MOTIVOS, MOTIVOS[0]);
     return [
-      el('div', { cls:'card' }, el('h3', {}, 'Estado'), estado,
-        el('div', { style:'margin-top:10px' }, el('button', { cls:'btn sec ancho', onclick: () => guardar(estado.value !== d.ESTADO ? { ESTADO: estado.value } : {}, 'Estado guardado') }, 'Guardar estado'))),
+      el('div', { cls:'card' }, el('h3', {}, 'Sobre la persona'), sobre,
+        el('div', { style:'margin-top:10px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(sobre.value !== (d['SOBRE LA PERSONA'] || '') ? { 'SOBRE LA PERSONA': sobre.value } : {}, 'Guardado') }, 'Guardar'))),
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
-        el('div', { style:'margin-top:12px' }, el('button', { cls:'btn pri ancho', onclick: () => guardar(con.cambios(), 'Datos guardados') }, 'Guardar datos'))),
+        el('div', { cls:'grid2', style:'margin-top:12px' },
+          el('button', { cls:'btn pri', onclick: () => guardar(con.cambios(), 'Datos guardados') }, 'Guardar datos'),
+          el('button', { cls:'btn', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Pasar a Contactos')),
+        el('div', { cls:'actual', style:'margin-top:8px' }, '"Pasar a Contactos" actualiza el nombre en tu agenda (y WhatsApp) con el formato "Nombre - Compra..." después de cambiar la búsqueda o la venta. Si solo cambiás el nombre, se pasa solo al guardar.')),
       el('div', { cls:'card' }, el('h3', {}, 'Archivar'),
         el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: () => { if (confirm('¿Archivar a ' + d.NOMBRE + '?')) accion('DESCARTAR', motivo.value); } }, 'Archivar')),
         el('div', { cls:'actual', style:'margin-top:8px' }, '"No busca ahora": vuelve a aparecer en 45 días hábiles. Cualquier otro motivo: no vuelve.'))
