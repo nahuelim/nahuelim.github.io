@@ -203,7 +203,7 @@
 
 <script>
 const VERSION = '25';
-const COMPILACION = '25.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '25.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -640,6 +640,9 @@ function verAjustes() {
   document.getElementById('lista').replaceChildren(el('h2', {}, 'Ajustes de este dispositivo'),
     el('div', { cls:'card' }, el('h3', {}, 'App'),
       el('div', { cls:'actual' }, 'Versión ' + COMPILACION),
+      // Diagnóstico de la barra de arriba (iOS): alto que informa iOS para la zona de la hora y si la app corre como app de inicio
+      el('div', { cls:'actual' }, 'Zona de la hora: ' + Math.round(document.querySelector('.tope-ios').getBoundingClientRect().height) + ' px · ' +
+        (navigator.standalone || matchMedia('(display-mode: standalone)').matches ? 'app de inicio' : 'navegador')),
       el('div', { cls:'actual' }, 'Face ID: ' + (conFace ? 'activado' : 'no activado')),
       conFace ? '' : el('button', { cls:'btn sec ancho', onclick: async () => {
         try { await activarFaceId(); toast('Face ID activado'); verAjustes(); } catch (e) { toast('No se pudo activar: ' + e.message, true); }
