@@ -203,7 +203,7 @@
 
 <script>
 const VERSION = '25';
-const COMPILACION = '25.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '25.4';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -982,16 +982,19 @@ async function abrir(id, seg) {
   const segVenta = () => {
     const etapa = select(ETAPA_VENTA, d['ETAPA VENTA'] === 'CAPTADA' ? 'EN VENTA' : d['ETAPA VENTA'], ETAPA_VENTA_TXT);
     const f = formulario(d, CAMPOS_VENTA, listas, ['VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION']);
-    const seg = VENTA_SEGUIMIENTO.includes(d['ETAPA VENTA']) ? tarjetaSeguimiento() : null;
+    // La tarjeta de seguimiento (inmobiliaria, link, desde cuándo, captura) aparece apenas elegís la etapa, sin guardar antes
+    const seg = tarjetaSeguimiento();
+    const verSeg = () => { seg.nodo.style.display = VENTA_SEGUIMIENTO.includes(etapa.value) ? '' : 'none'; };
+    etapa.addEventListener('change', verSeg); verSeg();
     pend = () => {
-      const campos = Object.assign(f.cambios(), seg ? seg.cambios() : {});
+      const campos = Object.assign(f.cambios(), VENTA_SEGUIMIENTO.includes(etapa.value) ? seg.cambios() : {});
       if (etapa.value !== (d['ETAPA VENTA'] || '') && !campos['ETAPA VENTA']) campos['ETAPA VENTA'] = etapa.value;
       return { campos };
     };
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de venta'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo),
-      seg ? seg.nodo : '',
+      seg.nodo,
       el('div', { cls:'card' }, el('h3', {}, 'Compradores que matchean (' + mVenta.length + ')'), mVenta.length ? mVenta.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin compradores que matcheen.')),
       ['CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']) ? el('div', { cls:'card' }, el('h3', {}, 'Placa'),
         r.placa ? [el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Abrila, descargala y mandásela por WhatsApp.'), el('a', { cls:'btn ancho', href:r.placa, target:'_blank', rel:'noopener' }, 'Ver la placa')]
