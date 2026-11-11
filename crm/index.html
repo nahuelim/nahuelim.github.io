@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">   <!-- con esta, iOS informa el alto de la zona de la hora y .tope-ios la tapa -->
 <meta name="apple-mobile-web-app-title" content="CRM">
 <meta name="theme-color" content="#14231D">
 <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -36,7 +36,7 @@
      El contenido sigue en crema: main pinta crema a los costados y hasta abajo. */
   body { background:var(--tinta); }
   main { background:var(--crema); box-shadow:0 0 0 100vmax var(--crema); clip-path:inset(0 -100vmax); min-height:calc(100vh - 60px); }
-  .tope-ios { position:fixed; top:0; left:0; right:0; height:var(--top); background:var(--tinta); z-index:60; pointer-events:none; }
+  .tope-ios { position:fixed; top:0; left:0; right:0; height:env(safe-area-inset-top, 0px); background:var(--tinta); z-index:60; pointer-events:none; }
   .top { position:relative; z-index:50; background:var(--tinta); color:var(--crema); padding:calc(var(--top) + 6px) 16px 6px; display:flex; align-items:center; gap:12px; }
   .top img { height:26px; display:block; }
   .calif { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 12px; }
@@ -202,7 +202,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '25';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '25';
+const COMPILACION = '25.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -638,7 +639,7 @@ function verAjustes() {
   const conFace = !!localStorage.getItem(LS.cred);
   document.getElementById('lista').replaceChildren(el('h2', {}, 'Ajustes de este dispositivo'),
     el('div', { cls:'card' }, el('h3', {}, 'App'),
-      el('div', { cls:'actual' }, 'Versión ' + VERSION),
+      el('div', { cls:'actual' }, 'Versión ' + COMPILACION),
       el('div', { cls:'actual' }, 'Face ID: ' + (conFace ? 'activado' : 'no activado')),
       conFace ? '' : el('button', { cls:'btn sec ancho', onclick: async () => {
         try { await activarFaceId(); toast('Face ID activado'); verAjustes(); } catch (e) { toast('No se pudo activar: ' + e.message, true); }
