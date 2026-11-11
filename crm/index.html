@@ -73,15 +73,18 @@
   main { padding:12px 16px calc(84px + var(--bottom)); max-width:720px; margin:0 auto; }
   .aviso { background:var(--alerta-fondo); color:var(--alerta); border-radius:12px; padding:12px 14px; margin:8px 0; font-size:14px; }
 
-  .resumen { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:4px 0 8px; }
-  .resumen div { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 6px; text-align:center; }
+  .resumen { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:4px 0 8px; }
+  .resumen div { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 2px; text-align:center; min-width:0; }
   .resumen b { display:block; font-size:24px; font-weight:700; letter-spacing:-.02em; }
-  .resumen span { font-size:12px; color:var(--tinta-suave); }
+  .resumen span { font-size:11px; color:var(--tinta-suave); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   h2 { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--tinta-suave); margin:20px 4px 8px; }
   .item { background:var(--blanco); border:1px solid var(--linea); border-radius:14px; padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; cursor:pointer; }
   .item .cuerpo { flex:1; min-width:0; }
   .item .nombre { font-weight:600; }
   .item .meta { font-size:14px; color:var(--tinta-suave); margin-top:2px; }
+  .item .porque { font-size:14px; font-weight:600; margin-top:6px; }
+  .item .jugada { font-size:14px; color:var(--verde-profundo); margin-top:2px; }
+  .item .texto { font-size:14px; color:var(--tinta-suave); margin-top:6px; white-space:pre-wrap; }
   .item svg { width:18px; height:18px; color:var(--tinta-suave); flex:none; }
   .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
   .tags:empty { display:none; }
@@ -192,7 +195,7 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '24';                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '25';                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 5;                             // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -212,19 +215,22 @@ const ICON = {
 
 const ESTADOS = ['NUEVO','EN CONTACTO','CLIENTE','EN PAUSA','DESCARTADO'];
 const ETAPA_COMPRA = ['','OPCIONES','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
+const DONDE_BUSCAR = [['Zonaprop','https://www.zonaprop.com.ar'],['Argenprop','https://www.argenprop.com'],['Mercado Libre','https://inmuebles.mercadolibre.com.ar'],
+  ['RE/MAX','https://www.remax.com.ar'],['Century 21','https://www.century21.com.ar'],['Coldwell Banker','https://www.coldwellbanker.com.ar'],['Redsuma',''],['Pallarols Santander',''],['Roilands','']];
 const ETAPA_COMPRA_TXT = ['—','Enviar opciones','Calificado','Visitas','Oferta','Reserva','Cerrada'];
-const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','CAPTADA','RESERVA','VENDIDA'];
+const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','EN PUBLICACION','EN VENTA','RESERVA','VENDIDA'];
+const ETAPA_VENTA_TXT = ['—','Captar','Prelisting','ACM','No captada','Con otra inmobiliaria','Captada: en proceso de publicación','Captada: en venta','Reserva','Vendida (por mí)'];
 const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
 const CAMPOS_SEG_VENDEDOR = ['FECHA PRELISTING','OTRA INMO','OTRA INMO LINK','OTRA INMO DESDE','FIN AUTORIZACION'];
 const CATEGORIAS = ['Primer contacto','Responde','Calificar','Opciones y visitas','Cadencia sin respuesta','Vendedores','Reactivar y fechas','Relación'];
-const MOTIVOS = ['NO BUSCA AHORA','COMPRO CON OTRO','ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
-const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Colega','Otro'];
+const MOTIVOS = ['NO BUSCA AHORA','COMPRO CON OTRO','VENDIO CON OTRO','ALQUILER','NUMERO INVALIDO','NO INTERESADO','BARRILETE','COLEGA','OTRO AGENTE C21','BLOQUEADO','OTRO'];
+const FUENTES = ['C21','Instagram','Facebook','TikTok','Rumbo','Referido','Conocido','Amigo','Colega','Otro'];
 const TIPOS = ['Departamento','PH','Casa'];
 const AMBS = ['','1','2','3','4','5+'], AMBS_TXT = ['—','1','2','3','4','5 o más'];
 const AMB_MAX_SUGERIDO = { '1':'2', '2':'3', '3':'4', '4':'5+', '5+':'5+' };   // al elegir el minimo, propone el maximo
 const CAMPOS_BUSQUEDA = ['BUSCA TIPO','BUSCA AMB MIN','BUSCA AMB MAX','BUSCA BARRIOS','BUSCA HASTA USD','BUSCA FORMA DE PAGO','BUSCA COCHERA','BUSCA REQUISITOS'];
 const CAMPOS_VENTA = ['VENDE TIPO','VENDE AMB','VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION'];
-const CAMPOS_CALIF = ['URGENCIA','MOTIVACION','DECISORES','HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'];
+const CAMPOS_CALIF = ['URGENCIA','MOTIVACION','DECISORES','HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA','FECHA LIMITE'];
 // Ayuda memoria: cómo preguntarlo sin incomodar, pero yendo al grano
 const PREGUNTAS = {
   'URGENCIA': '¿Para cuándo te gustaría estar mudado?',
@@ -234,12 +240,14 @@ const PREGUNTAS = {
   'VIVIENDA': '¿Hoy estás alquilando o tenés algo propio?',
   'HACE CUANTO BUSCA': '¿Hace cuánto que venís mirando?',
   'OTRAS INMOS': '¿Viste algo con otras inmobiliarias que te haya gustado?',
-  'TEMPERATURA': 'No se pregunta: es tu impresión después de hablar.'
+  'TEMPERATURA': 'No se pregunta: es tu impresión después de hablar. Define cada cuánto aparece: caliente 1-2 días, tibio 4-5, frío 10-12.',
+  'FECHA LIMITE': 'Solo si la sabés (vence la preaprobación, termina el alquiler...). Si tocás un chip de urgencia, se estima sola.',
+  'MOTIVO LIMITE': ''
 };
 const PRIO_TXT = { 1:'P1 · estar encima', 2:'P2 · estar encima', 3:'P3 · buscar y estar atento', 4:'P4 · cuando haya tiempo', 5:'P5 · cuando haya tiempo' };
 const PRIO_PAGO = { 'PARTE DE PAGO':1, 'VENTA':1, 'CASH':2, 'CREDITO APROBADO':3, 'CREDITO EN TRAMITE':4, 'CREDITO SIN CONFIRMAR':5 };
 const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','RELACION','CUMPLEANOS','FECHA COMPRA','NOTAS'];
-const TILDES = { 'RELACION':'Relación', 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
+const TILDES = { 'RELACION':'Relación', 'FECHA LIMITE':'Fecha límite (si la sabés)', 'MOTIVO LIMITE':'Motivo de la fecha', 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
   'HACE CUANTO BUSCA':'Hace cuánto busca', 'VENDE PUBLICACION':'Publicación', 'BUSCA TIPO':'Tipo', 'BUSCA AMB MIN':'Amb. mínimo', 'BUSCA AMB MAX':'Amb. máximo',
   'BUSCA BARRIOS':'Barrios', 'BUSCA HASTA USD':'Hasta USD', 'BUSCA FORMA DE PAGO':'Forma de pago', 'BUSCA COCHERA':'Cochera', 'BUSCA REQUISITOS':'Requisitos',
   'FECHA PRELISTING':'Fecha del prelisting', 'OTRA INMO':'Inmobiliaria', 'OTRA INMO LINK':'Link de la publicación', 'OTRA INMO DESDE':'Publicada desde', 'FIN AUTORIZACION':'Fin de la autorización',
@@ -424,19 +432,52 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ─── listas ───
+// Tarjeta: quién es, de dónde vino, último contacto, por qué aparece hoy y qué hacer
 function item(x, tag) {
   const tags = el('div', { cls:'tags' },
+    x.deuda ? el('span', { cls:'pill alerta' }, 'Deuda de opciones') : '',
+    x.urgente ? el('span', { cls:'pill alerta' }, 'Fecha límite') : '',
     x.prio ? el('span', { cls:'pill' + (x.prio <= 2 ? ' oro' : '') }, 'P' + x.prio) : '',
+    x.temp ? el('span', { cls:'pill' + (x.temp === 'CALIENTE' ? ' oro' : '') }, x.temp.charAt(0) + x.temp.slice(1).toLowerCase()) : '',
     tag ? el('span', { cls:'pill' }, tag) : '',
-    x.vencido ? el('span', { cls:'pill alerta' }, 'Vencido') : '',
-    x.temp === 'CALIENTE' ? el('span', { cls:'pill oro' }, 'Caliente') : '',
-    x.tel ? '' : el('span', { cls:'pill alerta' }, 'Sin tel'),
-    x.matches ? el('span', { cls:'pill' }, x.matches + (x.matches === 1 ? ' match' : ' matches')) : '');
+    x.tel ? '' : el('span', { cls:'pill alerta' }, 'Sin tel'));
+  const origen = [x.fuente, x.alta ? 'desde ' + x.alta : '', x.ultimo ? 'último: ' + x.ultimo : 'sin contactos registrados'].filter(Boolean).join(' · ');
   return el('div', { cls:'item', onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'cuerpo' }, el('div', { cls:'nombre' }, x.nombre),
-      el('div', { cls:'meta' }, [x.accion, x.prox].filter(Boolean).join(' · ') + (x.ultimo ? ' · último: ' + x.ultimo : '')),
+      x.resumen ? el('div', { cls:'meta' }, x.resumen) : '',
+      el('div', { cls:'meta' }, origen),
+      x.porque ? el('div', { cls:'porque' }, x.porque) : (x.accion ? el('div', { cls:'meta' }, [x.accion, x.prox].filter(Boolean).join(' · ')) : ''),
+      x.jugada ? el('div', { cls:'jugada' }, '→ ' + x.jugada) : '',
       x.nota ? el('div', { cls:'texto' }, '“' + x.nota + (x.nota.length >= 110 ? '…' : '') + '”') : '', tags),
     el('span', { icon:'flecha' }));
+}
+
+// Checklist (revivir, relación, cumpleaños): el mensaje ya elegido, se puede cambiar, Enviar y listo. Sin abrir la ficha.
+function filaEnvio(x, alEnviar) {
+  const ops = x.opciones || [];
+  let k = 0;
+  const texto = el('div', { cls:'texto' }, ops[0] ? ops[0].texto : '');
+  const chips = ops.length > 1 ? el('div', { cls:'fila', style:'margin-top:6px' }, ...ops.map((o, i) => {
+    const b = el('button', { cls:'chip seg' + (i === 0 ? ' on' : ''), type:'button', onclick: e => {
+      e.stopPropagation(); k = i; texto.textContent = o.texto;
+      b.parentNode.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); b.classList.add('on');
+    }}, i === 0 ? 'Principal' : (o.enfoque || 'Otro enfoque').replace(/^Otro enfoque:\s*/, '').split('. ')[0]); return b; })) : '';
+  const fila = el('div', { cls:'item visita' },
+    el('div', { cls:'cuerpo', onclick: () => abrir(x.id, 'contacto') },
+      el('div', { cls:'nombre' }, x.nombre),
+      el('div', { cls:'meta' }, [x.porque || x.accion, x.ultimo ? 'último: ' + x.ultimo : ''].filter(Boolean).join(' · ')),
+      x.resumen ? el('div', { cls:'meta' }, x.resumen) : ''),
+    el('div', { style:'flex:1 1 100%' }, chips, texto),
+    el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
+      if (!x.wa) return toast('Falta un teléfono válido', true);
+      const t = texto.textContent;
+      if (/\{\w+\}/.test(t)) return toast('Este mensaje tiene datos sin completar: abrí la ficha', true);
+      abrirExterno(waUrl(x.wa, t));
+      fila.style.opacity = .4;
+      await api('api_accion', x.id, 'MENSAJE', x.codigo + '-' + (k + 1), t);
+      fila.remove(); if (alEnviar) alEnviar();
+    }}, 'Enviar'));
+  return fila;
 }
 
 // Hoy se muestra al instante con lo último guardado en el dispositivo y se actualiza cuando contesta el servidor
@@ -458,51 +499,23 @@ function pintarHoy(r, viejo) {
   l.replaceChildren();
   if (viejo) l.append(el('div', { cls:'actual', style:'margin:0 2px 6px' }, 'Actualizando…'));
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
-  // Tope del día por sección: Llamar 5, Escribir 10, Revisar 5 (más lo que sumes con el botón). Visitas y cumpleaños no cuentan.
-  const hoyISO = new Date().toLocaleDateString('sv');   // fecha local (en UTC, después de las 21 ya sería mañana)
-  const PASO = { llamar:5, escribir:10, revisar:5 };
-  let topes = Object.assign({}, PASO);
-  try { const t = JSON.parse(localStorage.getItem('crm_topes') || '{}'); if (t.dia === hoyISO) topes = Object.assign(topes, t.n); } catch (e) {}
-  const hechos = Object.assign({ llamar:0, escribir:0, revisar:0 }, r.hechos || {});
-  const visitas = r.visitas || [], fechas = r.fechas || [];
-  // Prioridad: captar → vendedores → nuevos → en contacto → clientes → relación → en pausa
-  // Dentro de cada grupo, primero P1-P2 (parte de pago, venta, cash); los que no tienen forma de pago van entre P3 y P4
-  const porPrio = xs => [...xs].sort((a, b) => (a.prio || 3.5) - (b.prio || 3.5));
-  r.llamadas = porPrio(r.llamadas); r.mensajes = porPrio(r.mensajes); r.seguimiento = porPrio(r.seguimiento);
-  r.clientes = porPrio(r.clientes || []); r.pausa = porPrio(r.pausa || []);
-  const cola = [
-    ...(r.captar || []).map(x => ['revisar', x, 'Captar']), ...(r.vendedores || []).map(x => ['revisar', x]),
-    ...r.llamadas.map(x => ['llamar', x]), ...r.mensajes.map(x => ['escribir', x]),
-    ...r.seguimiento.map(x => ['escribir', x]), ...(r.clientes || []).map(x => ['escribir', x, 'Cliente']),
-    ...(r.relacion || []).map(x => ['escribir', x]), ...(r.pausa || []).map(x => ['escribir', x, 'En pausa']), ...r.reactivar.map(x => ['escribir', x])];
-  const todos = g => cola.filter(c => c[0] === g);
-  const de = g => todos(g).slice(0, Math.max(0, topes[g] - hechos[g]));
-  const llamar = de('llamar'), escribir = de('escribir'), revisar = de('revisar');
-  // Botón para cargar más en cada sección, sin límite
-  const mas = g => {
-    const quedan = todos(g).length - de(g).length;
-    if (quedan <= 0) return;
-    l.append(el('div', { style:'margin:6px 0 4px' },
-      el('div', { cls:'actual', style:'margin-bottom:6px' }, (de(g).length ? 'Quedan ' : 'Listo. Quedan ') + quedan + ' más.'),
-      el('button', { cls:'btn sec ancho', onclick: () => {
-        topes[g] = Math.max(topes[g], hechos[g]) + PASO[g];
-        localStorage.setItem('crm_topes', JSON.stringify({ dia: hoyISO, n: topes })); verHoy();
-      }}, '+' + PASO[g] + ' más')));
-  };
+  const L = k => r[k] || [];
+  // Revivir: mínimo 5 por día, "+5" las veces que quieras (hasta el tope de seguridad de WhatsApp)
+  const hoyISO = new Date().toLocaleDateString('sv');
+  let tope = 5;
+  try { const t = JSON.parse(localStorage.getItem('crm_revivir') || '{}'); if (t.dia === hoyISO) tope = t.n; } catch (e) {}
+  const revivir = L('revivir').slice(0, Math.max(0, tope - (r.revividosHoy || 0)));
 
-  l.append(el('div', { cls:'resumen' },
-    ...[['Llamar', llamar.length], ['Escribir', visitas.length + fechas.length + escribir.length], ['Revisar', revisar.length]]
-      .map(([t, n]) => el('div', { style:'cursor:pointer', onclick: () => document.getElementById('sec-' + t.toLowerCase()).scrollIntoView({ behavior:'smooth', block:'start' }) }, el('b', {}, n), el('span', {}, t)))));
-  l.append(el('div', { cls:'actual', style:'margin:0 2px 4px' }, 'Hechos hoy: ' + (hechos.llamar + hechos.escribir + hechos.revisar) + '.'));
-  const pintar = xs => xs.forEach(([, x, tag]) => l.append(item(x, tag)));
+  const BLOQUES = [['nuevos','Nuevos'],['vendedores','Venden'],['compradores','Compran'],['relacion','Relación'],['revivir','Revivir']];
+  const cuenta = { revivir: revivir.length };
+  l.append(el('div', { cls:'resumen' }, ...BLOQUES.map(([k, t]) => el('div', { style:'cursor:pointer', onclick: () => document.getElementById('sec-' + k).scrollIntoView({ behavior:'smooth', block:'start' }) },
+    el('b', {}, k in cuenta ? cuenta[k] : L(k).length), el('span', {}, t)))));
+  if (r.incompletos) l.append(el('div', { cls:'aviso', style:'cursor:pointer', onclick: () => { sessionStorage.setItem('crm_lista', 'incompletos'); verBuscar(); } },
+    r.incompletos + ' contactos en contacto no tienen forma de pago o temperatura, y sin eso no se pueden priorizar. Tocá para completarlos.'));
 
-  // 1. Llamar: solo las 3 llamadas de la cadencia
-  l.append(el('h2', { id:'sec-llamar' }, 'Llamar'));
-  if (!llamar.length) l.append(el('div', { cls:'vacio' }, 'Nada para llamar.')); else pintar(llamar);
-  mas('llamar');
-
-  // 2. Escribir: visitas a confirmar y cumpleaños primero (fuera del tope), después el resto
-  l.append(el('h2', { id:'sec-escribir' }, 'Escribir'));
+  // Fecha fija, arriba de todo: visitas a confirmar y cumpleaños
+  const visitas = L('visitas'), fechas = L('fechas');
+  if (visitas.length || fechas.length) l.append(el('h2', {}, 'Con fecha fija'));
   visitas.forEach(v => l.append(el('div', { cls:'item visita' },
     el('div', { cls:'cuerpo', onclick: () => abrir(v.id, 'contacto') },
       el('div', { cls:'nombre' }, v.nombre), el('div', { cls:'meta' }, v.accion + ' · ' + v.cuando), el('div', { cls:'meta' }, v.evento),
@@ -512,15 +525,24 @@ function pintarHoy(r, viejo) {
       abrirExterno(waUrl(v.wa, v.texto));
       await api('api_accion', v.id, 'AVISO', v.clave, v.texto); verHoy();
     }}, 'Enviar'))));
-  fechas.forEach(x => l.append(item(x)));
-  pintar(escribir);
-  if (!visitas.length && !fechas.length && !escribir.length) l.append(el('div', { cls:'vacio' }, 'Ningún mensaje.'));
-  mas('escribir');
+  fechas.forEach(x => l.append(filaEnvio(x)));
 
-  // 3. Revisar: vendedores no captados (si publicaron, a qué precio, recaptar) y los que estás por captar
-  l.append(el('h2', { id:'sec-revisar' }, 'Revisar'));
-  if (!revisar.length) l.append(el('div', { cls:'vacio' }, 'Nada para revisar.')); else pintar(revisar);
-  mas('revisar');
+  const sec = (k, titulo, ayuda, vacio, pintar) => {
+    l.append(el('h2', { id:'sec-' + k }, titulo));
+    if (ayuda) l.append(el('div', { cls:'actual', style:'margin:-4px 2px 8px' }, ayuda));
+    const xs = k === 'revivir' ? revivir : L(k);
+    if (!xs.length) l.append(el('div', { cls:'vacio' }, vacio)); else xs.forEach(pintar);
+  };
+  const ETQ_V = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Con otra inmo', 'EN VENTA':'En venta' };
+  sec('nuevos', 'Leads nuevos', 'Todos, en el día.', 'No hay leads nuevos para hoy.', x => l.append(item(x)));
+  sec('vendedores', 'Vendedores', '', 'Ningún vendedor para hoy.', x => l.append(item(x, ETQ_V[x.etapa] || x.etapa)));
+  sec('compradores', 'Compradores', 'Primero las deudas y las fechas límite; después por forma de pago.', 'Ningún comprador para hoy.', x => l.append(item(x, x.tipo === 'calificar' ? 'Por calificar' : '')));
+  sec('relacion', 'Relación', 'Hasta 5 por día. Solo saludar.', 'Nadie de relación para hoy.', x => l.append(filaEnvio(x)));
+  sec('revivir', 'Revivir', 'Del más viejo al más nuevo. Mirá el mensaje, cambialo si querés y Enviar.', (r.revividosHoy || 0) >= tope ? 'Listo por hoy.' : 'Nadie para revivir.', x => l.append(filaEnvio(x)));
+  const quedan = Math.min(L('revivir').length, (r.revivirPendientes || 0)) - revivir.length;
+  if (quedan > 0) l.append(el('button', { cls:'btn sec ancho', style:'margin:6px 0', onclick: () => {
+    localStorage.setItem('crm_revivir', JSON.stringify({ dia: hoyISO, n: Math.max(tope, r.revividosHoy || 0) + 5 })); verHoy();
+  }}, '+5 más (quedan ' + quedan + ' hoy)'));
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
@@ -542,7 +564,7 @@ function verBuscar() {
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
   // Listas por segmento (la permuta cuenta como vendedor: tiene algo para vender)
-  const SEGS = [['vendedores','Vendedores y permuta'],['cash','Búsquedas cash'],['credito','Búsquedas crédito'],['sinpago','Sin forma de pago']];
+  const SEGS = [['incompletos','Para completar'],['vendedores','Vendedores y permuta'],['cash','Búsquedas cash'],['credito','Búsquedas crédito'],['sinpago','Sin forma de pago']];
   const segs = el('div', { cls:'fila', style:'margin:10px 0 4px' }, ...SEGS.map(([k, t]) => el('button', { cls:'chip seg', type:'button', onclick: async e => {
     segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on');
     inp.value = ''; ultimo = k; sessionStorage.setItem('crm_lista', k);
@@ -818,7 +840,7 @@ async function abrir(id, seg) {
                 el('details', { style:'margin-top:8px' }, el('summary', { style:'font-size:14px;color:var(--tinta-suave)' }, 'Cambiar a mano (excepción)'), editar)]
              : [el('div', { cls:'pregunta', style:'margin-top:6px' }, 'Lo decidís vos según la charla (ej.: "llamame el jueves"). Si no ponés nada, al registrar el contacto queda a 2 días hábiles.'), editar]);
     };
-    const fCalif = formulario(d, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA'], listas, ['HACE CUANTO BUSCA','OTRAS INMOS','TEMPERATURA']);
+    const fCalif = formulario(d, ['TEMPERATURA','FECHA LIMITE','MOTIVO LIMITE','HACE CUANTO BUSCA','OTRAS INMOS'], listas, ['TEMPERATURA','HACE CUANTO BUSCA','OTRAS INMOS']);
     pend = () => {
       const campos = fCalif.cambios();
       ['URGENCIA', 'MOTIVACION', 'BUSCA FORMA DE PAGO', 'DECISORES'].forEach(k => { if (chips[k] && chips[k] !== d[k]) campos[k] = chips[k]; });
@@ -856,6 +878,7 @@ async function abrir(id, seg) {
       el('div', { cls:'grid2', style:'margin-top:12px' },
         r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + r.wa) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
         el('button', { cls:'btn sec', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp')),
+      r.jugada ? el('div', { cls:'card' }, el('h3', {}, 'Hoy'), el('div', { style:'font-weight:600' }, r.jugada.porque), el('div', { style:'color:var(--verde-profundo);margin-top:4px' }, '→ ' + r.jugada.jugada)) : '',
       ultimaConversacion(),
       el('div', { cls:'card' }, el('h3', {}, 'Nota rápida'), nota,
         grupoChips('URGENCIA', 'Urgencia', listas.urgencias || []),
@@ -888,14 +911,65 @@ async function abrir(id, seg) {
     return [
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de compra'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué busca'), f.nodo),
-      el('div', { cls:'card' }, el('h3', {}, 'Matches (' + mCompra.length + ')'), mCompra.length ? mCompra.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin matches. Hace falta tipo, barrios, ambientes y presupuesto.')),
-      mEnviadas.length ? el('div', { cls:'card' }, el('h3', {}, 'Fichas ya enviadas (' + mEnviadas.length + ')'), mEnviadas.map(filaMatch)) : ''
+      tarjetaOpciones(),
+      tarjetaEnviadas(),
+      el('div', { cls:'card' }, el('h3', {}, 'Dónde buscar'), el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Filtrá por los más recientes.'),
+        el('div', { cls:'fila' }, ...DONDE_BUSCAR.map(([t, u]) => u ? el('a', { cls:'chip', href:u, target:'_blank', rel:'noopener' }, t) : el('span', { cls:'chip' }, t))))
     ];
+  };
+
+  // "Le mandé opciones": marcás los matches que mandaste o cargás opciones sueltas (dirección obligatoria: el link puede morir)
+  const tarjetaOpciones = () => {
+    const marcados = new Set();
+    const filaOpcion = m => {
+      const chk = el('input', { type:'checkbox', style:'width:auto;margin-top:3px' });
+      chk.onchange = () => chk.checked ? marcados.add(m) : marcados.delete(m);
+      return el('div', { cls:'match' },
+        el('label', { style:'display:flex;gap:8px;align-items:flex-start;flex:1;margin:0;font-size:15px;color:var(--tinta)' }, chk, el('span', {}, m.texto)),
+        m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Ver') : '',
+        m.link && m.tipo !== 'Vendedor' ? el('a', { href:'#', style:'color:var(--alerta)', onclick: async e => {
+          e.preventDefault();
+          if (!confirm('¿Marcar esta ficha como que ya no está? Deja de aparecer como match para todos.')) return;
+          await api('api_fichaBaja', m.link); toast('Listo: esa ficha ya no aparece'); abrir(id, 'busqueda');
+        }}, 'Ya no está') : '',
+        m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
+    };
+    const sueltas = el('div');
+    const otra = () => {
+      const dir = el('input', { placeholder:'Dirección (obligatoria)' }), link = el('input', { type:'url', placeholder:'Link (opcional)' });
+      const f = el('div', { cls:'grid2', style:'margin-top:8px' }, dir, link); f.valor = () => ({ direccion: dir.value.trim(), link: link.value.trim() });
+      sueltas.append(f);
+    };
+    otra();
+    const motivo = select(['Precio','Zona','Distribución','Metros','Estado','Otro'], 'Precio');
+    return el('div', { cls:'card' }, el('h3', {}, 'Opciones para mandarle (' + mCompra.length + ')'),
+      el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Antes de mandar, tocá "Ver" para chequear que siga publicada.'),
+      mCompra.length ? mCompra.map(filaOpcion) : el('div', { cls:'vacio' }, 'Sin matches. Hace falta tipo, barrios, ambientes y presupuesto, o buscá a mano (abajo).'),
+      el('label', { style:'margin-top:12px' }, 'Opciones sueltas (las que mandás sin el generador)'), sueltas,
+      el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: otra }, '+ otra'),
+      el('button', { cls:'btn pri ancho', style:'margin-top:12px', onclick: async () => {
+        const sueltasV = [...sueltas.children].map(f => f.valor()).filter(x => x.direccion || x.link);
+        if (sueltasV.some(x => !x.direccion)) return toast('Cargá la dirección de cada opción suelta: el link puede dejar de existir', true);
+        const items = [...marcados].map(m => ({ direccion: m.direccion || m.texto, link: m.link || '' })).concat(sueltasV);
+        if (!items.length) return toast('Marcá o cargá al menos una opción', true);
+        await api('api_opciones', id, items); toast('Registrado: le mandaste ' + items.length + (items.length === 1 ? ' opción' : ' opciones')); abrir(id, 'busqueda'); refrescar();
+      }}, 'Le mandé estas opciones'),
+      el('label', { style:'margin-top:14px' }, '¿No le gustó lo que le mandaste?'),
+      el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn', onclick: () => accion('NO_GUSTO', motivo.value) }, 'No le gustó')));
+  };
+  // Lo que ya le mandaste: las fichas del generador y lo registrado con "Le mandé opciones"
+  const tarjetaEnviadas = () => {
+    const regs = r.hist.filter(x => x.tipo === 'OPCIONES' || x.tipo === 'NO_GUSTO');
+    if (!mEnviadas.length && !regs.length) return '';
+    return el('div', { cls:'card' }, el('h3', {}, 'Ya le mandaste'),
+      ...regs.map(x => el('div', { cls:'match gris' }, el('div', { style:'flex:1;white-space:pre-wrap' },
+        x.fecha + ' · ' + (x.tipo === 'NO_GUSTO' ? 'No le gustó: ' + x.detalle : x.detalle + (x.detalle === '1' ? ' opción' : ' opciones') + '\n' + x.texto)))),
+      ...mEnviadas.map(filaMatch));
   };
 
   // ── VENTA
   const segVenta = () => {
-    const etapa = select(ETAPA_VENTA, d['ETAPA VENTA']);
+    const etapa = select(ETAPA_VENTA, d['ETAPA VENTA'] === 'CAPTADA' ? 'EN VENTA' : d['ETAPA VENTA'], ETAPA_VENTA_TXT);
     const f = formulario(d, CAMPOS_VENTA, listas, ['VENDE BARRIO','VENDE DIRECCION','VENDE PRECIO USD','VENDE PUBLICACION']);
     const seg = VENTA_SEGUIMIENTO.includes(d['ETAPA VENTA']) ? tarjetaSeguimiento() : null;
     pend = () => {
@@ -907,7 +981,10 @@ async function abrir(id, seg) {
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de venta'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo),
       seg ? seg.nodo : '',
-      el('div', { cls:'card' }, el('h3', {}, 'Compradores que matchean (' + mVenta.length + ')'), mVenta.length ? mVenta.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin compradores que matcheen.'))
+      el('div', { cls:'card' }, el('h3', {}, 'Compradores que matchean (' + mVenta.length + ')'), mVenta.length ? mVenta.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin compradores que matcheen.')),
+      ['CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']) ? el('div', { cls:'card' }, el('h3', {}, 'Placa'),
+        r.placa ? [el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Abrila, descargala y mandásela por WhatsApp.'), el('a', { cls:'btn ancho', href:r.placa, target:'_blank', rel:'noopener' }, 'Ver la placa')]
+                : el('div', { cls:'vacio' }, 'No hay placa para su barrio, tipo y ambientes. Si la armás, cargala en la pestaña PLACAS del Sheet.')) : ''
     ];
   };
   // Vendedor no captado: revisar si publico con otra inmobiliaria, guardar la prueba y recaptar
