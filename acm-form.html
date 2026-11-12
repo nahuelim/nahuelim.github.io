@@ -323,7 +323,7 @@ const AR_IG=1.0000;
       <a href="crm/" class="btn-sm btn-ghost" style="margin-left:auto;height:32px;display:flex;align-items:center;text-decoration:none;flex-shrink:0" title="Volver al CRM">‹ CRM</a>
     </div>
     <div class="topbar-actions">
-      <button class="btn-sm btn-ghost" onclick="showDraftModal()">Borrador</button>
+      <button class="btn-sm btn-ghost" onclick="showDraftModal()">Abrir</button>
       <button class="btn-sm btn-ghost" onclick="resetForm()">Nueva</button>
     </div>
   </div>
@@ -764,8 +764,8 @@ const AR_IG=1.0000;
   <!-- MODAL BORRADORES -->
   <div id="draft-modal">
     <div class="modal-box">
-      <div class="modal-title">Borradores</div>
-      <div class="modal-sub">Borradores guardados en este dispositivo.</div>
+      <div class="modal-title">Abrir un ACM</div>
+      <div class="modal-sub">Borradores y ACM con PDF generado en este dispositivo. Cargás uno, lo editás y "Finalizar" genera el PDF nuevo (en Drive reemplaza al anterior).</div>
       <div id="draft-list" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;margin-bottom:16px"></div>
       <div class="divider" style="margin-bottom:16px;background:rgba(255,255,255,.1)"></div>
       <div class="modal-sub" style="margin-bottom:8px">Recuperar desde otro dispositivo (Sheets)</div>
@@ -1416,11 +1416,11 @@ function renderDraftList() {
     div.className = 'draft-item';
     const nombre = typeof d.cliente === 'object' ? (d.cliente?.nombre || 'Sin nombre') : (d.cliente || 'Sin nombre');
     const dt = new Date(d.ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-    div.innerHTML = `
-      <button class="draft-item-load" onclick="loadDraftFromLS(${i})">Cargar</button>
-      <div class="draft-item-name">${nombre}</div>
-      <div class="draft-item-meta">${d.fecha||''} · Guardado: ${dt}</div>
-    `;
+    // como texto, nunca como HTML (el nombre lo escribe el usuario)
+    const btn = document.createElement('button'); btn.className = 'draft-item-load'; btn.textContent = 'Cargar'; btn.onclick = () => loadDraftFromLS(i);
+    const nom = document.createElement('div'); nom.className = 'draft-item-name'; nom.textContent = nombre + (d.final ? ' · PDF generado' : ' · borrador');
+    const meta = document.createElement('div'); meta.className = 'draft-item-meta'; meta.textContent = (d.fecha || '') + ' · ' + (d.final ? 'Generado: ' : 'Guardado: ') + dt;
+    div.append(btn, nom, meta);
     listDiv.appendChild(div);
   });
 }
@@ -1431,7 +1431,7 @@ function loadDraftFromLS(idx) {
   if (!d || !d.json) return;
   populateForm(d.json);
   closeDraftModal();
-  showToast('✓ Borrador cargado');
+  showToast('✓ Cargado: editalo y tocá Finalizar para el PDF nuevo');
 }
 
 async function loadDraftsFromSheets() {
@@ -1448,7 +1448,7 @@ async function loadDraftsFromSheets() {
       listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:13px;padding:8px 0">No hay borradores en Sheets.</div>';
       return;
     }
-    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:11px;margin-bottom:8px">BORRADORES EN SHEETS</div>';
+    listDiv.innerHTML = '<div style="color:rgba(255,255,255,.92);font-size:11px;margin-bottom:8px">EN SHEETS (BORRADORES Y FINALIZADOS)</div>';
     json.drafts.forEach((d, i) => {
       const div = document.createElement('div');
       div.className = 'draft-item';
@@ -1457,7 +1457,7 @@ async function loadDraftsFromSheets() {
       const ts = d._draft_ts || d.ts;
       const btn = document.createElement('button'); btn.className = 'draft-item-load'; btn.textContent = 'Cargar';
       btn.onclick = () => loadDraftFromSheets(i);
-      const nom = document.createElement('div'); nom.className = 'draft-item-name'; nom.textContent = nombre;
+      const nom = document.createElement('div'); nom.className = 'draft-item-name'; nom.textContent = nombre + (d._final ? ' · PDF generado' : ' · borrador');
       const meta = document.createElement('div'); meta.className = 'draft-item-meta';
       meta.textContent = ts ? 'Guardado: ' + new Date(ts).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
       div.append(btn, nom, meta);
@@ -1585,6 +1585,9 @@ async function saveAll(){
   if(url) localStorage.setItem('acm_webhook',url);
   if(url) await sendToSheets(collect(),url);
   const doc = generatePDF(); closeModal();
+  // Queda en "Abrir" para poder editarlo y regenerar el PDF (uno por cliente y dirección)
+  try { const dd = collect(); const drafts = getDraftsFromLS().filter(x => !(x.final && x.cliente === (dd.cliente?.nombre||'Sin nombre') && (x.json?.propiedad?.direccion||'') === (dd.propiedad?.direccion||'')));
+    drafts.unshift({ id:'FINAL_' + Date.now(), ts:new Date().toISOString(), cliente: dd.cliente?.nombre||'Sin nombre', fecha: dd.fecha, json: dd, final:true }); if (drafts.length > 20) drafts.splice(20); saveDraftsToLS(drafts); } catch(e) {}
   // Copia en Drive: carpeta "Nombre - Dirección" en "2. Inmobiliaria / ACMs por cliente" + fila en la planilla ACMs
   if(url && doc){
     const d = collect();
