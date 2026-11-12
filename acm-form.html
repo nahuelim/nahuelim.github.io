@@ -1350,8 +1350,11 @@ function generatePDF() {
     doc.setFontSize(6); doc.text('Pág. '+i+' / '+total,W/2,294,{align:'center'});
   }
 
-  doc.save(`ACM_${(d.cliente.nombre||'cliente').replace(/\s+/g,'_')}_${d.fecha||'fecha'}.pdf`);
+  // Nombre: "Nombre Apellido_Dirección.pdf" (el mismo que queda en Drive)
+  const limpio = x => String(x||'').replace(/[\\/:*?"<>|#]/g,' ').replace(/\s+/g,' ').trim();
+  doc.save(`${limpio(d.cliente.nombre)||'Sin nombre'}_${limpio(d.propiedad&&d.propiedad.direccion)||'Sin direccion'}.pdf`);
   showToast('PDF generado');
+  return doc;
 }
 
 // ── DRAFT SAVE / LOAD ──
@@ -1581,7 +1584,13 @@ async function saveAll(){
   const url=document.getElementById('webhook-url').value.trim();
   if(url) localStorage.setItem('acm_webhook',url);
   if(url) await sendToSheets(collect(),url);
-  generatePDF(); closeModal(); showToast('Guardado + PDF generado');
+  const doc = generatePDF(); closeModal();
+  // Copia en Drive: carpeta "Nombre - Dirección" en "2. Inmobiliaria / ACMs por cliente" + fila en la planilla ACMs
+  if(url && doc){
+    const d = collect();
+    const ok = await sendToSheets({ _pdf: doc.output('datauristring'), fecha: d.fecha, cliente: { nombre: d.cliente && d.cliente.nombre }, propiedad: d.propiedad, ventana: d.ventana }, url);
+    showToast(ok ? 'Guardado + PDF generado y subido a Drive' : 'PDF generado (no se pudo subir a Drive: sin conexión)');
+  } else showToast('Guardado + PDF generado');
 }
 
 function showModal(){document.getElementById('modal').classList.add('show');}
