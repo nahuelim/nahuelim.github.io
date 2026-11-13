@@ -215,7 +215,7 @@
 
 <script>
 const VERSION = '27';
-const COMPILACION = '27';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '27.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -820,6 +820,7 @@ async function abrir(id, seg) {
     const x = pend && pend();
     if (vacio(x)) return toast('No hay cambios');
     if (x.error) return toast(x.error, true);
+    if (x.aviso && !confirm(x.aviso)) return;   // Cancelar = volver a cambiarlo; Aceptar = guardar igual
     await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null);
     pend = null; toast('Guardado'); reabrir(); refrescar();
   };
@@ -980,6 +981,11 @@ async function abrir(id, seg) {
       else if (t && !x.proximo) x.error = 'Definí el próximo paso (cuándo) o elegí "Que lo decida el CRM"';
       else if (x.proximo && x.proximo.fecha && !paso) x.error = 'Escribí cuál es el próximo paso';
       else if (paso && !x.proximo) x.error = 'Elegí cuándo es el próximo paso';
+      // Un paso tuyo calla al CRM hasta esa fecha: si queda más lejos que su ritmo, avisar antes de guardar
+      const tt = temp.valor() || String(d.TEMPERATURA || '').toUpperCase(), tope = RITMO_MAX[tt];
+      const dias = x.proximo && x.proximo.fecha ? Math.round((new Date(x.proximo.fecha + 'T12:00') - new Date(isoLocal(new Date()) + 'T12:00')) / 864e5) : 0;
+      if (tope && dias > tope) x.aviso = (d.NOMBRE || '').split(' - ')[0] + ' es ' + tt.toLowerCase() + ' (contacto cada ' + { CALIENTE:'1-2', TIBIO:'4-5', FRIO:'10-12' }[tt] + ' días) y le pusiste el próximo paso en ' + dias + ' días. '
+        + 'Hasta ese día el CRM no te lo va a mostrar.\n\nCancelar: lo cambio. Aceptar: guardar igual.';
       return x;
     };
 
