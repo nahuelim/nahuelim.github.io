@@ -112,15 +112,22 @@
   .chip.seg.on::after { content:none; }
   .chip.chico { padding:4px 10px; font-size:13px; }
   .item .botones { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-  .item .botones .btn { padding:8px 12px; font-size:14px; }
+  .item .botones .btn { padding:10px 12px; font-size:14px; flex:1 1 40%; justify-content:center; }
   .rojo { color:var(--alerta); font-weight:600; }
   .sobre { font-size:14px; background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:8px 12px; margin-bottom:10px; white-space:pre-wrap;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
   .sobre.abierto { display:block; }
   .sugerencia { background:var(--verde-claro); border-radius:12px; padding:10px 12px; margin:12px 0; font-size:14px; }
-  .cartera { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:6px 0 10px; }
-  .cartera .card { margin:0; padding:12px; }
-  .cartera .fila { gap:6px; }
+  .deslizable { display:flex; gap:6px; overflow-x:auto; margin:10px -16px 4px; padding:0 16px 4px; scrollbar-width:none; }
+  .deslizable::-webkit-scrollbar { display:none; }
+  .deslizable .chip { white-space:nowrap; flex:none; }
+  .grupo { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-suave); margin:16px 2px 6px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(78px, 1fr)); gap:8px; }
+  .tile { background:var(--blanco); border:1px solid var(--linea); border-radius:14px; padding:12px 6px 10px; text-align:center; cursor:pointer; }
+  .tile b { display:block; font-size:24px; font-weight:700; letter-spacing:-.02em; line-height:1.1; }
+  .tile span { display:block; font-size:12px; color:var(--tinta-suave); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tile.alerta { border-color:var(--alerta); } .tile.alerta b { color:var(--alerta); }
+  .tile.cero { opacity:.5; }
   .fila { display:flex; gap:8px; flex-wrap:wrap; }
   .fila > .btn { flex:1; min-width:0; padding:10px 6px; }
   .grid2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; }
@@ -162,7 +169,7 @@
   .segmentos button { background:none; border:0; color:var(--crema); opacity:.75; padding:10px 12px 12px; font-size:15px; font-weight:600; white-space:nowrap; border-bottom:3px solid transparent; }
   .segmentos button.on { opacity:1; color:var(--dorado); border-bottom-color:var(--dorado); }
   .segmentos .n { font-size:11px; background:var(--dorado); color:var(--tinta); border-radius:999px; padding:1px 6px; margin-left:4px; }
-  .ficha-body { padding:4px 16px calc(32px + var(--bottom)); max-width:720px; margin:0 auto; }
+  .ficha-body { padding:16px 16px calc(32px + var(--bottom)); max-width:720px; margin:0 auto; }
   .card { background:var(--blanco); border:1px solid var(--linea); border-radius:16px; padding:14px; margin:12px 0; }
   .card > h3 { margin:0 0 10px; font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-suave); }
   .opcion { border:1px solid var(--linea); border-radius:12px; padding:10px 12px; margin-bottom:8px; font-size:15px; cursor:pointer; }
@@ -214,8 +221,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '27';
-const COMPILACION = '27.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '28';
+const COMPILACION = '28';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -497,6 +504,12 @@ function item(x, tag, o) {
       o.botones && o.botones.length ? el('div', { cls:'botones', onclick: e => e.stopPropagation() }, ...o.botones) : ''),
     el('span', { icon:'flecha' }));
 }
+// El mismo orden en todas las listas: temperatura → forma de pago (P1 primero) → el que hace más que no hablan
+const ORDEN_TEMP = { CALIENTE:0, TIBIO:1, FRIO:2 };
+const ordenar = xs => xs.slice().sort((a, b) =>
+  (ORDEN_TEMP[String(a.temp || '').toUpperCase()] ?? 3) - (ORDEN_TEMP[String(b.temp || '').toUpperCase()] ?? 3)
+  || (a.prio || 9) - (b.prio || 9)
+  || (b.diasSin ?? 9999) - (a.diasSin ?? 9999));
 // Botones de las tarjetas de Hoy
 const bLlamar = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + x.wa) }, 'Llamar') : '';
 const bWhatsApp = x => x.wa ? el('button', { cls:'btn sec', icon:'wa', onclick: () => abrirExterno(waUrl(x.wa)) }, 'WhatsApp') : '';
@@ -622,48 +635,54 @@ function verBuscar() {
   tabs('tBuscar');
   const l = document.getElementById('lista');
   const res = el('div');
-  let t, ultimo = '';
+  let t, ultimo = '', cartera = null;
+  const lista = (titulo, xs) => res.replaceChildren(
+    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:14px 2px 6px' }, el('h2', { style:'margin:0' }, titulo + ' (' + xs.length + ')'),
+      el('button', { cls:'chip chico', type:'button', onclick: volver }, '‹ Cartera')),
+    ...(xs.length ? ordenar(xs).map(x => item(x)) : [el('div', { cls:'vacio' }, 'Nadie en esta lista.')]));
+  const volver = () => { inp.value = ''; ultimo = ''; sessionStorage.removeItem('crm_lista'); segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); pintarCartera(); };
   const buscar = async () => {
     const q = inp.value.trim();
-    if (q.length < 2) { res.replaceChildren(el('div', { cls:'vacio' }, 'Escribí al menos 2 letras o 4 números, o elegí una lista.')); return; }
+    if (q.length < 2) { if (!q) volver(); return; }
     segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); sessionStorage.removeItem('crm_lista');
     ultimo = q;
     const xs = await api('api_buscar', q);
     if (q !== ultimo) return;
-    res.replaceChildren(el('h2', {}, xs.length + ' resultados'), ...(xs.length ? xs.map(item) : [el('div', { cls:'vacio' }, 'Sin resultados.')]));
+    lista('Resultados', xs);
   };
-  const inp = el('input', { type:'search', placeholder:'Nombre o teléfono', autocomplete:'off', enterkeyhint:'search',
+  const inp = el('input', { type:'search', placeholder:'Buscar por nombre o teléfono', autocomplete:'off', enterkeyhint:'search',
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
   // Listas por segmento (la permuta cuenta como vendedor: tiene algo para vender)
   const SEGS = [['incompletos','Para completar'],['vendedores','Vendedores y permuta'],['cash','Búsquedas cash'],['credito','Búsquedas crédito'],['sinpago','Sin forma de pago']];
-  const segs = el('div', { cls:'fila', style:'margin:10px 0 4px' }, ...SEGS.map(([k, t]) => el('button', { cls:'chip seg', type:'button', onclick: async e => {
+  const segs = el('div', { cls:'deslizable' }, ...SEGS.map(([k, tt]) => el('button', { cls:'chip seg chico', type:'button', onclick: async e => {
     segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on');
     inp.value = ''; ultimo = k; sessionStorage.setItem('crm_lista', k);
     const xs = await api('api_lista', k);
     if (ultimo !== k) return;
-    res.replaceChildren(el('h2', {}, t + ' (' + xs.length + ')'), ...(xs.length ? xs.map(x => item(x)) : [el('div', { cls:'vacio' }, 'Nadie en esta lista.')]));
-  }}, t)));
-  // Cartera: cuántos tenés en cada lugar del embudo. Tocá un número para ver la lista.
-  const cartera = el('div');
-  const ETQ_VC = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Con otra inmo', 'EN PUBLICACION':'En publicación', 'EN VENTA':'En venta', RESERVA:'Reserva' };
-  api('api_cartera').then(g => {
-    const ver = (t, xs) => { segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); ultimo = t;
-      res.replaceChildren(el('h2', {}, t + ' (' + xs.length + ')'), ...(xs.length ? xs.map(x => item(x)) : [el('div', { cls:'vacio' }, 'Nadie.')])); };
-    const n = (t, xs) => el('button', { cls:'chip chico', type:'button', onclick: () => ver(t, xs) }, t + ' ' + xs.length);
-    const c = g.compradores || {};
-    cartera.replaceChildren(el('div', { cls:'cartera' },
-      el('div', { cls:'card' }, el('small', { cls:'actual' }, 'Leads nuevos'), el('div', { cls:'fila' }, n('Leads', g.leads || []))),
-      el('div', { cls:'card' }, el('small', { cls:'actual' }, 'Clientes'), el('div', { cls:'fila' }, n('Clientes', g.clientes || []))),
-      el('div', { cls:'card' }, el('small', { cls:'actual' }, 'Compradores en contacto'), el('div', { cls:'fila' },
-        n('Calientes', c.CALIENTE || []), n('Tibios', c.TIBIO || []), n('Fríos', c.FRIO || []), (c.SIN || []).length ? n('Sin temp.', c.SIN) : '')),
-      el('div', { cls:'card' }, el('small', { cls:'actual' }, 'Vendedores'), el('div', { cls:'fila' },
-        ...Object.keys(ETQ_VC).filter(k => (g.vendedores || {})[k]).map(k => n(ETQ_VC[k], g.vendedores[k]))))));
-  }).catch(() => {});
-  l.replaceChildren(el('h2', {}, 'Contactos'), cartera, inp, segs, res);
+    lista(tt, xs);
+  }}, tt)));
+  // Cartera: cuántos tenés en cada lugar del embudo. Tocás un número y ves la lista.
+  const ETQ_VC = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Otra inmo', 'EN PUBLICACION':'Publicando', 'EN VENTA':'En venta', RESERVA:'Reserva' };
+  const tile = (txt, xs, alerta) => el('div', { cls:'tile' + (alerta && xs.length ? ' alerta' : '') + (xs.length ? '' : ' cero'), onclick: () => xs.length && lista(txt, xs) }, el('b', {}, xs.length), el('span', {}, txt));
+  const pintarCartera = () => {
+    if (!cartera) return res.replaceChildren(el('div', { cls:'vacio' }, 'Cargando la cartera…'));
+    const g = cartera, c = g.compradores || {}, v = g.vendedores || {};
+    res.replaceChildren(
+      el('div', { cls:'grupo' }, 'Compradores en contacto'),
+      el('div', { cls:'tiles' }, tile('Calientes', c.CALIENTE || []), tile('Tibios', c.TIBIO || []), tile('Fríos', c.FRIO || []), tile('Sin temp.', c.SIN || [], true)),
+      el('div', { cls:'grupo' }, 'Vendedores'),
+      el('div', { cls:'tiles' }, ...Object.keys(ETQ_VC).filter(k => (v[k] || []).length).map(k => tile(ETQ_VC[k], v[k])),
+        Object.keys(ETQ_VC).some(k => (v[k] || []).length) ? '' : el('div', { cls:'vacio' }, 'Ninguno.')),
+      el('div', { cls:'grupo' }, 'Leads y clientes'),
+      el('div', { cls:'tiles' }, tile('Leads nuevos', g.leads || []), tile('Clientes', g.clientes || [])));
+  };
+  l.replaceChildren(el('h2', {}, 'Contactos'), inp, segs, res);
+  pintarCartera();
+  api('api_cartera').then(g => { cartera = g; if (!ultimo) pintarCartera(); }).catch(() => {});
   const previa = sessionStorage.getItem('crm_lista');
   const b = previa && [...segs.children].find((x, i) => SEGS[i][0] === previa);
-  if (b) b.click(); else inp.focus();
+  if (b) b.click();
 }
 
 // Menu lateral: links a las otras herramientas, ajustes y, al final, cerrar sesion.
@@ -906,6 +925,13 @@ async function abrir(id, seg) {
     return fila;
   };
 
+  // Corregir lo que anotaste (Qué pasó o nota). El próximo paso se corrige poniendo otro en "Qué tengo que hacer".
+  const editar = x => ['CONTACTO','NOTA'].includes(x.tipo) && x.ts ? el('a', { href:'#', style:'margin-left:6px;color:var(--verde-profundo);font-weight:600', onclick: async e => {
+    e.preventDefault();
+    const t = prompt('Corregir lo que anotaste:', x.texto); if (t === null || t === x.texto) return;
+    await api('api_editarHist', id, x.ts, t); toast('Corregido'); reabrir();
+  }}, 'Editar') : '';
+
   const segContacto = () => {
     // ── Mensaje sugerido (dentro de "Hacerlo ahora")
     const msjs = Array.isArray(r.mensajes) ? r.mensajes.filter(m => Array.isArray(m.variantes)) : [];
@@ -959,16 +985,20 @@ async function abrir(id, seg) {
     const proxTxt = el('textarea', { placeholder:'Próximo paso. Ej.: mandarle el ACM corregido, llamarla después de que hable con el ex' , style:'min-height:70px' });
     const fecha = el('input', { type:'date' });
     let crmDecide = false;
-    const cuando = elegible([['1','Mañana'],['3','+3'],['7','+7'],['15','+15'],['CRM','Que lo decida el CRM']], v => {
+    // Hasta las 4 de la mañana cuenta como el día anterior: "Mañana" a las 00:40 del viernes es el viernes
+    const cae = el('div', { cls:'actual', style:'margin:6px 2px 0' });
+    const mostrarCae = () => { const x = new Date(fecha.value + 'T12:00');
+      cae.textContent = fecha.value ? '→ ' + x.toLocaleDateString('es-AR', { weekday:'long' }) + ' ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0') : ''; };
+    const cuando = elegible([['1','Mañana'],['2','+2'],['3','+3'],['5','+5'],['7','+7'],['15','+15'],['CRM','Que lo decida el CRM']], v => {
       crmDecide = v === 'CRM';
-      if (v && !crmDecide) { const x = new Date(); x.setDate(x.getDate() + parseInt(v)); fecha.value = isoLocal(x); } else fecha.value = '';
+      if (v && !crmDecide) { const x = new Date(); if (x.getHours() < 4) x.setDate(x.getDate() - 1); x.setDate(x.getDate() + parseInt(v)); fecha.value = isoLocal(x); } else fecha.value = '';
+      mostrarCae();
     });
-    fecha.addEventListener('change', () => { cuando.limpiar(); crmDecide = false; });
+    fecha.addEventListener('change', () => { cuando.limpiar(); crmDecide = false; mostrarCae(); });
     const como = elegible([['Llamada','Llamada'],['WhatsApp','WhatsApp'],['Reunión','Reunión'],['Visita','Visita']]);
     const manualHoy = d['PROX DEFINIDO'] && d['PROX CONTACTO'];
     const agendado = manualHoy ? 'Tenés puesto: ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' · ' + d['PROX ACCION'] : '') + (d['PROX CANAL'] ? ' · por ' + d['PROX CANAL'] : '')
       : d['PROX CONTACTO'] ? 'El CRM lo tiene para el ' + d['PROX CONTACTO'] + (d['PROX ACCION'] ? ' (' + d['PROX ACCION'] + ')' : '') : 'Sin próximo paso';
-    const vence = !d['PROX CONTACTO'] || aISO(d['PROX CONTACTO']) <= isoLocal(new Date());
 
     pend = () => {
       const campos = {};
@@ -994,7 +1024,7 @@ async function abrir(id, seg) {
     const dir = [d['VENDE DIRECCION'], d['VENDE BARRIO']].filter(Boolean).join(', ');
     const q = '"' + (d['VENDE DIRECCION'] || '') + '" (site:zonaprop.com.ar OR site:argenprop.com OR site:mercadolibre.com.ar)';
     const compra = !!d['BUSCA TIPO'];
-    const herramientas = el('details', { style:'margin-top:14px', open: vence ? '' : undefined },
+    const herramientas = el('details', { style:'margin-top:14px' },
       el('summary', { style:'font-weight:600;cursor:pointer' }, 'Hacerlo ahora'),
       el('div', { cls:'grid2', style:'margin-top:10px' },
         r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + r.wa) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
@@ -1016,12 +1046,12 @@ async function abrir(id, seg) {
       sobre,
       el('div', { cls:'card' }, el('h3', {}, 'Qué pasó'), tipo, el('div', { style:'margin-top:10px' }, hablo),
         el('label', { style:'margin-top:10px' }, 'Últimos registros'),
-        hechos.length ? hechos.map(x => el('div', { style:'margin-bottom:4px;font-size:14px;white-space:pre-wrap' }, el('span', { cls:'actual' }, x.fecha + ' · '), det(x)))
+        hechos.length ? hechos.map(x => el('div', { style:'margin-bottom:4px;font-size:14px;white-space:pre-wrap' }, el('span', { cls:'actual' }, x.fecha + ' · '), det(x), editar(x)))
                       : el('div', { cls:'vacio' }, 'Todavía no hay contactos registrados.')),
       el('div', { cls:'card' }, el('h3', {}, 'Qué tengo que hacer'),
         el('div', { cls:'actual', style:'margin-bottom:8px' }, agendado),
         proxTxt,
-        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { style:'margin-top:8px' }, fecha),
+        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { style:'margin-top:8px' }, fecha), cae,
         el('label', { style:'margin-top:10px' }, 'Cómo'), como,
         r.jugada ? el('div', { cls:'sugerencia' }, el('b', {}, 'Sugerencia del CRM: '), r.jugada.porque, el('div', { style:'margin-top:4px' }, '→ ' + r.jugada.jugada),
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
@@ -1188,7 +1218,7 @@ async function abrir(id, seg) {
 
   const segHistorial = () => [el('div', { cls:'card' }, el('h3', {}, 'Historial'),
     r.hist.length ? r.hist.map(x => el('div', { cls:'hist' }, el('span', { cls:'cuando' }, x.fecha),
-      el('b', {}, x.tipo), x.detalle ? ' · ' + x.detalle : '', x.texto ? '\n' + x.texto : '')) : el('div', { cls:'vacio' }, 'Sin historial todavía.'))];
+      el('b', {}, x.tipo), x.detalle ? ' · ' + x.detalle : '', x.texto ? '\n' + x.texto : '', editar(x))) : el('div', { cls:'vacio' }, 'Sin historial todavía.'))];
 
   const SEGMENTOS = [['contacto','Contacto',segContacto,0], ['perfil','Perfil',segPerfil,0], ['busqueda','Búsqueda',segBusqueda,mCompra.length],
     ['venta','Venta',segVenta,mVenta.length], ['agenda','Agenda',segAgenda,0], ['historial','Historial',segHistorial,0]];
@@ -1211,8 +1241,7 @@ async function abrir(id, seg) {
         el('button', { cls:'icono', 'aria-label':'Cerrar', icon:'cerrar', onclick: cerrar }),
         el('h1', {}, String(d.NOMBRE || '').split(' - ')[0]),
         el('img', { cls:'mono', src:'../assets/nl-mono-crema.svg', alt:'NL' })),
-      r.etiqueta.includes(' - ') ? el('div', { cls:'etiqueta' }, el('span', {}, r.etiqueta),
-        el('button', { onclick: () => navigator.clipboard.writeText(r.etiqueta).then(() => toast('Nombre copiado')) }, 'Copiar')) : '',
+      r.etiqueta.includes(' - ') ? el('div', { cls:'etiqueta' }, el('span', {}, r.etiqueta.split(' - ').slice(1).join(' - '))) : '',
       el('div', { cls:'estado-linea' }, el('span', { cls:'pill' }, d.ESTADO || 'Sin estado'),
         d['ETAPA COMPRA'] ? el('span', { cls:'pill' }, 'Compra: ' + d['ETAPA COMPRA']) : '',
         d['ETAPA VENTA'] ? el('span', { cls:'pill' }, 'Venta: ' + d['ETAPA VENTA']) : ''),
