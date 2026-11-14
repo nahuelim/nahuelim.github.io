@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '29';
-const COMPILACION = '29.4';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '29.5';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -585,7 +585,9 @@ const ordenar = xs => xs.slice().sort((a, b) =>
   || (a.prio || 9) - (b.prio || 9)
   || (b.diasSin ?? 9999) - (a.diasSin ?? 9999));
 // Botones de las tarjetas de Hoy
-const bLlamar = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + x.wa) }, 'Llamar') : '';
+// Llamar abre el chat de WhatsApp (no la línea): la llamada se hace desde ahí con el ícono del teléfono.
+// ponytail: WhatsApp no tiene un enlace público para iniciar la llamada directo; si lo saca, va acá.
+const bLlamar = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(x.wa)) }, 'Llamar') : '';
 const bWhatsApp = x => x.wa ? el('button', { cls:'btn sec', icon:'wa', onclick: () => abrirExterno(waUrl(x.wa)) }, 'WhatsApp') : '';
 const bNoContesto = x => el('button', { cls:'btn', onclick: async e => {
   e.currentTarget.closest('.t').style.opacity = .4;
@@ -594,7 +596,7 @@ const bNoContesto = x => el('button', { cls:'btn', onclick: async e => {
 // Leads: al tocar Llamar, la tarjeta pregunta qué pasó (Atendió abre la ficha con "Llamada" ya elegida)
 const bLlamarLead = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: e => {
   const acc = e.currentTarget.parentNode;
-  abrirExterno('tel:+' + x.wa);
+  abrirExterno(waUrl(x.wa));
   acc.replaceChildren(el('button', { cls:'btn pri', onclick: () => { sessionStorage.setItem('crm_atendio', x.id); abrir(x.id, 'contacto'); } }, 'Atendió'), bNoContesto(x));
 }}, 'Llamar') : '';
 const bAbrir = (x, t, pri) => el('button', { cls:'btn' + (pri ? ' pri' : ''), onclick: () => abrir(x.id, 'contacto') }, t);
@@ -1143,7 +1145,7 @@ async function abrir(id, seg) {
     const herramientas = el('details', { style:'margin-top:14px' },
       el('summary', { style:'font-weight:600;cursor:pointer' }, 'Hacerlo ahora'),
       el('div', { cls:'grid2', style:'margin-top:10px' },
-        r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno('tel:+' + r.wa) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
+        r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(r.wa)) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
         el('button', { cls:'btn', onclick: () => accion('LLAMADA_NO') }, 'Llamé y no contestó'),
         el('button', { cls:'btn sec ancho2', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp')),
       tarjetaMensaje(),
