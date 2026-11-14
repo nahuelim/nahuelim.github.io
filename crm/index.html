@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '30';
-const COMPILACION = '30.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '30.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -732,7 +732,11 @@ function pintarHoy(r, viejo) {
   // 3. Calientes y tibios que ya sabés qué buscan y no les mandaste nada
   sec('opciones', 'Mandale opciones', 'calientes y tibios', 'Nadie esperando opciones.', L('opciones'), x => item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
   // 4. Leads: las 3 llamadas (de a 5)
-  sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', L('llamar'), x => item(x, '', { botones:[bLlamarLead(x), bNoContesto(x)] }));
+  // Los que ya llamaste hoy (no atendieron) van al final, con el aviso de probar en otro horario
+  const yaHoy = x => x.intento > 0 && x.diasSin === 0;
+  sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', L('llamar').filter(x => !yaHoy(x)).concat(L('llamar').filter(yaHoy)), x => item(x, '', {
+    extra: yaHoy(x) ? el('div', { cls:'dato', style:'color:var(--dorado-oscuro);font-weight:600' }, 'Ya lo llamaste hoy: probá en otro horario') : '',
+    botones:[bLlamarLead(x), bNoContesto(x)] }));
   // 5. Mensajes de la cadencia (de a 5)
   sec('mensajes', 'Mensajes', 'cadencia', 'No hay mensajes para hoy.', L('mensajes'), x => filaEnvio(x));
   // 6. Lo que sugiere el CRM
