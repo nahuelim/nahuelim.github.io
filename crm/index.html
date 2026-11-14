@@ -140,6 +140,20 @@
   .seg3 button.on { background:var(--verde-profundo); color:var(--crema); }
   .seg3.pide { border-color:var(--alerta); }
   .pide-txt { font-size:13px; color:var(--alerta); font-weight:600; margin:12px 0 6px; }
+  .t .msg { font-size:14px; background:var(--crema); border-radius:10px; padding:10px 12px; margin-top:10px; white-space:pre-wrap; }
+  .t .enfoques { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  details.semana { background:var(--blanco); border:1px solid var(--linea); border-radius:16px; margin:4px 0 10px; }
+  details.semana summary { list-style:none; padding:14px; font-weight:700; font-size:16px; display:flex; align-items:center; cursor:pointer; }
+  details.semana summary::-webkit-details-marker { display:none; }
+  details.semana summary::after { content:'›'; margin-left:auto; font-size:20px; color:var(--tinta-suave); transition:transform .15s; }
+  details.semana[open] summary::after { transform:rotate(90deg); }
+  .semana .dia { padding:0 14px 10px; }
+  .semana .dia h4 { margin:6px 0 4px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:var(--tinta-suave); }
+  .semana .ev { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--linea); font-size:14px; }
+  .semana .ev .h { width:44px; flex:none; color:var(--tinta-suave); font-variant-numeric:tabular-nums; }
+  .semana .ev .c { margin-left:auto; flex:none; font-size:12px; color:var(--tinta-suave); }
+  .semana .ev.evento { color:var(--verde-profundo); }
+  .semana .nada { font-size:13px; color:var(--tinta-suave); padding:2px 0 4px; }
   .bloque { display:flex; align-items:baseline; gap:8px; margin:22px 2px 8px; }
   .bloque h3 { margin:0; font-size:17px; letter-spacing:-.01em; text-transform:none; color:var(--tinta); }
   .bloque .c { font-size:13px; font-weight:700; color:var(--crema); background:var(--tinta); border-radius:999px; padding:1px 8px; }
@@ -253,8 +267,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '28';
-const COMPILACION = '29';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '29';
+const COMPILACION = '29.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -572,31 +586,59 @@ const bLlamarLead = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclic
 const bAbrir = (x, t, pri) => el('button', { cls:'btn' + (pri ? ' pri' : ''), onclick: () => abrir(x.id, 'contacto') }, t);
 
 // Checklist (revivir, relación, cumpleaños): el mensaje ya elegido, se puede cambiar, Enviar y listo. Sin abrir la ficha.
-function filaEnvio(x, alEnviar) {
+// Tarjeta de envío (cumpleaños, fiestas, mensajes, relación, revivir): mismo formato que las demás, con el mensaje listo y Enviar.
+function tarjetaEnvio(x, texto0, enviar, chips) {
+  const texto = el('div', { cls:'msg' }, texto0);
+  const t = el('div', { cls:'t', onclick: () => abrir(x.id, 'contacto') },
+    el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), x.cuando ? el('span', { cls:'dias' }, x.cuando) : ''),
+    x.resumen ? el('div', { cls:'busca' }, x.resumen) : '',
+    x.evento ? el('div', { cls:'busca' }, x.evento) : '',
+    el('div', { cls:'porque' }, x.porque || x.accion || ''),
+    x.ultimo ? el('div', { cls:'dato' }, 'Último: ' + x.ultimo) : '',
+    chips || '', texto,
+    el('div', { cls:'acc', onclick: e => e.stopPropagation() }, el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
+      if (!x.wa) return toast('Falta un teléfono válido', true);
+      const tx = texto.textContent;
+      if (/\{\w+\}/.test(tx)) return toast('Este mensaje tiene datos sin completar: abrí la ficha', true);
+      abrirExterno(waUrl(x.wa, tx));
+      t.style.opacity = .4;
+      await enviar(tx); t.remove();
+    }}, 'Enviar')));
+  t.texto = texto;
+  return t;
+}
+function filaEnvio(x) {
   const ops = x.opciones || [];
   let k = 0;
-  const texto = el('div', { cls:'texto' }, ops[0] ? ops[0].texto : '');
-  const chips = ops.length > 1 ? el('div', { cls:'fila', style:'margin-top:6px' }, ...ops.map((o, i) => {
-    const b = el('button', { cls:'chip seg' + (i === 0 ? ' on' : ''), type:'button', onclick: e => {
-      e.stopPropagation(); k = i; texto.textContent = o.texto;
+  const chips = ops.length > 1 ? el('div', { cls:'enfoques', onclick: e => e.stopPropagation() }, ...ops.map((o, i) => {
+    const b = el('button', { cls:'chip seg chico' + (i === 0 ? ' on' : ''), type:'button', onclick: () => {
+      k = i; t.texto.textContent = o.texto;
       b.parentNode.querySelectorAll('.chip').forEach(c => c.classList.remove('on')); b.classList.add('on');
     }}, i === 0 ? 'Principal' : (o.enfoque || 'Otro enfoque').replace(/^Otro enfoque:\s*/, '').split('. ')[0]); return b; })) : '';
-  const fila = el('div', { cls:'item visita' },
-    el('div', { cls:'cuerpo', onclick: () => abrir(x.id, 'contacto') },
-      el('div', { cls:'nombre' }, String(x.nombre).split(' - ')[0]),
-      el('div', { cls:'meta' }, [x.porque || x.accion, x.ultimo ? 'último: ' + x.ultimo : ''].filter(Boolean).join(' · ')),
-      x.resumen ? el('div', { cls:'meta' }, x.resumen) : ''),
-    el('div', { style:'flex:1 1 100%' }, chips, texto),
-    el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
-      if (!x.wa) return toast('Falta un teléfono válido', true);
-      const t = texto.textContent;
-      if (/\{\w+\}/.test(t)) return toast('Este mensaje tiene datos sin completar: abrí la ficha', true);
-      abrirExterno(waUrl(x.wa, t));
-      fila.style.opacity = .4;
-      await api('api_accion', x.id, 'MENSAJE', x.codigo + '-' + (k + 1), t);
-      fila.remove(); if (alEnviar) alEnviar();
-    }}, 'Enviar'));
-  return fila;
+  const t = tarjetaEnvio(x, ops[0] ? ops[0].texto : '', tx => api('api_accion', x.id, 'MENSAJE', x.codigo + '-' + (k + 1), tx), chips);
+  return t;
+}
+
+// Esta semana: tus próximos pasos y los eventos del calendario, día por día. Se pide recién al abrirla (Hoy carga igual de rápido).
+let semanaAbierta = false;   // si la abriste, sigue abierta cuando Hoy se actualiza
+function semana() {
+  const cuerpo = el('div');
+  const d = el('details', { cls:'semana' }, el('summary', {}, 'Esta semana'), cuerpo);
+  setTimeout(() => { if (semanaAbierta) d.open = true; });
+  d.addEventListener('toggle', async () => {
+    semanaAbierta = d.open;
+    if (!d.open || cuerpo.dataset.ok) return;
+    cuerpo.replaceChildren(el('div', { cls:'dia nada' }, 'Cargando…'));
+    const r = await api('api_semana');
+    cuerpo.dataset.ok = 1;
+    cuerpo.replaceChildren(
+      r.atrasados ? el('div', { cls:'dia' }, el('div', { cls:'rojo', style:'font-size:14px' }, r.atrasados + (r.atrasados === 1 ? ' paso atrasado' : ' pasos atrasados') + ': están en Tus próximos pasos.')) : '',
+      ...r.dias.map(dia => el('div', { cls:'dia' }, el('h4', {}, dia.titulo),
+        dia.items.length ? dia.items.map(x => el('div', { cls:'ev' + (x.canal === 'Evento' ? ' evento' : ''), style: x.id ? 'cursor:pointer' : '', onclick: () => x.id && abrir(x.id, 'contacto') },
+          x.hora ? el('span', { cls:'h' }, x.hora) : '', el('span', {}, x.nombre ? el('b', {}, x.nombre + ' · ') : '', x.texto), x.canal && x.canal !== 'Evento' ? el('span', { cls:'c' }, x.canal) : ''))
+          : el('div', { cls:'nada' }, 'Nada agendado'))));
+  });
+  return d;
 }
 
 // Hoy se muestra al instante con lo último guardado en el dispositivo y se actualiza cuando contesta el servidor
@@ -625,6 +667,7 @@ function pintarHoy(r, viejo) {
   try { const t = JSON.parse(localStorage.getItem('crm_revivir') || '{}'); if (t.dia === hoyISO) tope = t.n; } catch (e) {}
   const revivir = L('revivir').slice(0, Math.max(0, tope - (r.revividosHoy || 0)));
 
+  l.append(semana());
   const BLOQUES = [['proximos','Tuyos'],['opciones','Opciones'],['llamar','Llamar'],['mensajes','Mensajes'],['atento','Atento']];
   l.append(el('div', { cls:'resumen' }, ...BLOQUES.map(([k, t]) => el('div', { cls: L(k).some(urgente) ? 'alerta' : '', style:'cursor:pointer', onclick: () => document.getElementById('sec-' + k).scrollIntoView({ behavior:'smooth', block:'start' }) },
     el('b', {}, L(k).length), el('span', {}, t)))));
@@ -633,16 +676,8 @@ function pintarHoy(r, viejo) {
 
   // 1. Con fecha fija: visitas a confirmar, cumpleaños (el día después) y fiestas
   const visitas = L('visitas'), fechas = L('fechas'), fiestas = L('fiestas');
-  if (visitas.length || fechas.length || fiestas.length) l.append(el('h2', {}, 'Con fecha fija'));
-  visitas.forEach(v => l.append(el('div', { cls:'item visita' },
-    el('div', { cls:'cuerpo', onclick: () => abrir(v.id, 'contacto') },
-      el('div', { cls:'nombre' }, v.nombre), el('div', { cls:'meta' }, v.accion + ' · ' + v.cuando), el('div', { cls:'meta' }, v.evento),
-      el('div', { cls:'texto' }, v.texto)),
-    el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
-      if (!v.wa) return toast('Falta un teléfono válido', true);
-      abrirExterno(waUrl(v.wa, v.texto));
-      await api('api_accion', v.id, 'AVISO', v.clave, v.texto); verHoy();
-    }}, 'Enviar'))));
+  if (visitas.length || fechas.length || fiestas.length) l.append(el('div', { cls:'bloque' }, el('h3', {}, 'Con fecha fija'), el('span', { cls:'c' }, visitas.length + fechas.length + fiestas.length)));
+  visitas.forEach(v => l.append(tarjetaEnvio(Object.assign({}, v, { resumen:'' }), v.texto, tx => api('api_accion', v.id, 'AVISO', v.clave, tx))));
   fechas.forEach(x => l.append(filaEnvio(x)));
   fiestas.forEach(x => l.append(filaEnvio(x)));
   if ((r.fiestasPendientes || 0) > fiestas.length && fiestas.length) l.append(el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Hasta 20 saludos por día. El resto aparece mañana.'));
