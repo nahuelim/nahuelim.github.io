@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '29';
-const COMPILACION = '29.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '29.4';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -688,10 +688,7 @@ function pintarHoy(r, viejo) {
   const guardarEstado = () => localStorage.setItem('crm_hoy_ui', JSON.stringify(estado));
   const PASO = { llamar:5, mensajes:5, revivir:3 };
 
-  const BLOQUES = [['proximos','Tuyos'],['opciones','Opciones'],['llamar','Llamar'],['mensajes','Mensajes'],['atento','Atento']];
-  l.append(el('div', { cls:'resumen' }, ...BLOQUES.map(([k, t]) => el('div', { cls: L(k).some(urgente) ? 'alerta' : '', style:'cursor:pointer', onclick: () => {
-    const d = document.getElementById('sec-' + k); d.open = true; d.scrollIntoView({ behavior:'smooth', block:'start' }); } },
-    el('b', {}, L(k).length), el('span', {}, t)))));
+  // ponytail: sin contadores arriba: los títulos de los bloques ya dicen cuántos hay y se ponen rojos si hay algo urgente
   l.append(semana());
   if (r.incompletos) l.append(el('div', { cls:'aviso', style:'cursor:pointer', onclick: () => { sessionStorage.setItem('crm_lista', 'incompletos'); verBuscar(); } },
     r.incompletos + ' contactos en contacto no tienen forma de pago o temperatura, y sin eso no se pueden priorizar. Tocá para completarlos.'));
