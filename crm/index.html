@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '29';
-const COMPILACION = '29.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '29.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -636,7 +636,7 @@ function filaEnvio(x) {
 // Esta semana: tus próximos pasos y los eventos del calendario, día por día. Se pide recién al abrirla (Hoy carga igual de rápido).
 // Esta semana: tus próximos pasos y los eventos del calendario, día por día. Se pide recién al abrirla y queda en memoria:
 // cuando Hoy se actualiza, se vuelve a dibujar abierta y sin recargar.
-let semanaAbierta = false, semanaDatos = null;
+let semanaAbierta = false, semanaDatos = null, semanaCuerpo = null;
 function pintarSemana(cuerpo, r) {
   cuerpo.replaceChildren(
     r.atrasados ? el('div', { cls:'dia' }, el('div', { cls:'rojo', style:'font-size:14px' }, r.atrasados + (r.atrasados === 1 ? ' paso atrasado' : ' pasos atrasados') + ': están en Tus próximos pasos.')) : '',
@@ -646,7 +646,7 @@ function pintarSemana(cuerpo, r) {
         : el('div', { cls:'nada' }, 'Nada agendado'))));
 }
 function semana() {
-  const cuerpo = el('div');
+  const cuerpo = semanaCuerpo = el('div');
   const d = el('details', { cls:'semana', open: semanaAbierta ? '' : undefined }, el('summary', {}, 'Esta semana'), cuerpo);
   if (semanaDatos) pintarSemana(cuerpo, semanaDatos);
   d.addEventListener('toggle', async () => {
@@ -671,6 +671,9 @@ async function verHoy() {
   if (n !== hoyPedido || !document.getElementById('tHoy').classList.contains('on')) return;   // ya se fue a otra pantalla
   try { localStorage.setItem(LS_HOY, JSON.stringify({ dia: new Date().toLocaleDateString('sv'), r })); } catch (e) {}
   pintarHoy(r, false);
+  // La semana: si está abierta, se actualiza en el lugar (sin cerrarse); si está cerrada, se vuelve a pedir al abrirla
+  if (!semanaAbierta) semanaDatos = null;
+  else api('api_semana').then(x => { semanaDatos = x; if (semanaCuerpo) pintarSemana(semanaCuerpo, x); }).catch(() => {});
 }
 function pintarHoy(r, viejo) {
   const l = document.getElementById('lista');
