@@ -281,8 +281,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '31';
-const COMPILACION = '31.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '32';
+const COMPILACION = '32';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1347,8 +1347,8 @@ async function abrir(id, seg) {
       el('div', { cls:'card' }, el('h3', {}, 'Estado'), estado,
         el('div', { cls:'actual', style:'margin-top:8px' }, 'Lo maneja el CRM solo. Cambialo a mano solo si quedó mal.')),
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
-        el('button', { cls:'btn ancho', style:'margin-top:12px', icon:'contacto', onclick: async () => toast('Contactos de Google: ' + await api('api_contactoGoogle', id)) }, 'Pasar a Contactos'),
-        el('div', { cls:'actual', style:'margin-top:8px' }, '"Pasar a Contactos" actualiza el nombre en tu agenda (y WhatsApp) con el formato "Nombre - Compra..." después de cambiar la búsqueda o la venta. Si solo cambiás el nombre, se pasa solo al guardar.')),
+        el('div', { cls:'actual', style:'margin-top:10px' }, 'El nombre en tu agenda (y en WhatsApp) se actualiza solo al guardar el nombre, la búsqueda o la venta. ',
+          el('a', { href:'#', style:'color:var(--verde-profundo);font-weight:600', onclick: async e => { e.preventDefault(); toast('Contactos de Google: ' + await api('api_contactoGoogle', id)); } }, 'Forzar ahora'))),
       el('div', { cls:'card' }, el('h3', {}, 'Archivar'),
         el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: () => { if (confirm('¿Archivar a ' + d.NOMBRE + '?')) accion('DESCARTAR', motivo.value); } }, 'Archivar')),
         el('div', { cls:'actual', style:'margin-top:8px' }, '"No busca ahora": vuelve a aparecer en 45 días hábiles. Cualquier otro motivo: no vuelve.'))
