@@ -148,16 +148,30 @@
   details.semana summary::after { content:'›'; margin-left:auto; font-size:20px; color:var(--tinta-suave); transition:transform .15s; }
   details.semana[open] summary::after { transform:rotate(90deg); }
   .semana .dia { padding:0 14px 10px; }
-  .semana .dia h4 { margin:6px 0 4px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:var(--tinta-suave); }
-  .semana .ev { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--linea); font-size:14px; }
+  .semana .dia h4 { margin:10px -14px 4px; padding:7px 14px; font-size:15px; font-weight:700; color:var(--tinta); background:var(--crema); border-top:1px solid var(--linea); border-bottom:1px solid var(--linea); }
+  .semana .dia h4.hoy { background:var(--verde-claro); color:var(--verde-profundo); }
+  .semana .dia h4 small { font-weight:500; color:var(--tinta-suave); margin-left:6px; font-size:13px; }
+  .semana .ev b { font-weight:700; }
+  .semana .ev { display:flex; gap:10px; padding:8px 0 8px 10px; font-size:14px; border-left:3px solid var(--linea); margin:4px 0; }
+  .semana .ev.evento { border-left-color:var(--verde); }
   .semana .ev .h { width:44px; flex:none; color:var(--tinta-suave); font-variant-numeric:tabular-nums; }
   .semana .ev .c { margin-left:auto; flex:none; font-size:12px; color:var(--tinta-suave); }
   .semana .ev.evento { color:var(--verde-profundo); }
   .semana .nada { font-size:13px; color:var(--tinta-suave); padding:2px 0 4px; }
+  details.blk > summary { list-style:none; cursor:pointer; }
+  details.blk > summary::-webkit-details-marker { display:none; }
+  details.blk > summary .bloque::after { content:'›'; font-size:20px; color:var(--tinta-suave); transition:transform .15s; margin-left:8px; }
+  details.blk[open] > summary .bloque::after { transform:rotate(90deg); }
+  details.blk.vacio > summary { opacity:.55; }
+  .fecha-linda { position:relative; }
+  .fecha-linda .ver { border:1px solid var(--linea); border-radius:12px; padding:11px 12px; background:var(--blanco); min-height:46px; font-weight:600; }
+  .fecha-linda .ver.vacia { font-weight:400; color:#8A8F8B; }
+  .fecha-linda input { position:absolute; inset:0; opacity:0; width:100%; height:100%; }
   .bloque { display:flex; align-items:baseline; gap:8px; margin:22px 2px 8px; }
   .bloque h3 { margin:0; font-size:17px; letter-spacing:-.01em; text-transform:none; color:var(--tinta); }
   .bloque .c { font-size:13px; font-weight:700; color:var(--crema); background:var(--tinta); border-radius:999px; padding:1px 8px; }
-  .bloque small { margin-left:auto; font-size:13px; color:var(--tinta-suave); }
+  .bloque h3.rojo { color:var(--alerta); }
+  .bloque small { margin-left:auto; text-align:right; font-size:13px; color:var(--tinta-suave); }
   .resumen div.alerta { border-color:var(--alerta); } .resumen div.alerta b { color:var(--alerta); }
   .grilla { display:grid; gap:8px; } .grilla.g2 { grid-template-columns:repeat(2,1fr); } .grilla.g3 { grid-template-columns:repeat(3,1fr); } .grilla.g4 { grid-template-columns:repeat(4,1fr); }
   .grilla .chip { white-space:pre-line; border-radius:12px; min-height:44px; padding:6px 4px; text-align:center; font-size:15px; }
@@ -268,7 +282,7 @@
 
 <script>
 const VERSION = '29';
-const COMPILACION = '29.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '29.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -620,23 +634,27 @@ function filaEnvio(x) {
 }
 
 // Esta semana: tus próximos pasos y los eventos del calendario, día por día. Se pide recién al abrirla (Hoy carga igual de rápido).
-let semanaAbierta = false;   // si la abriste, sigue abierta cuando Hoy se actualiza
+// Esta semana: tus próximos pasos y los eventos del calendario, día por día. Se pide recién al abrirla y queda en memoria:
+// cuando Hoy se actualiza, se vuelve a dibujar abierta y sin recargar.
+let semanaAbierta = false, semanaDatos = null;
+function pintarSemana(cuerpo, r) {
+  cuerpo.replaceChildren(
+    r.atrasados ? el('div', { cls:'dia' }, el('div', { cls:'rojo', style:'font-size:14px' }, r.atrasados + (r.atrasados === 1 ? ' paso atrasado' : ' pasos atrasados') + ': están en Tus próximos pasos.')) : '',
+    ...r.dias.map((dia, i) => el('div', { cls:'dia' }, el('h4', { cls: i === 0 ? 'hoy' : '' }, dia.titulo, dia.items.length ? el('small', {}, dia.items.length + (dia.items.length === 1 ? ' cosa' : ' cosas')) : ''),
+      dia.items.length ? dia.items.map(x => el('div', { cls:'ev' + (x.canal === 'Evento' ? ' evento' : ''), style: x.id ? 'cursor:pointer' : '', onclick: () => x.id && abrir(x.id, 'contacto') },
+        x.hora ? el('span', { cls:'h' }, x.hora) : '', el('span', {}, x.nombre ? el('b', {}, x.nombre + ' · ') : '', x.texto), x.canal && x.canal !== 'Evento' ? el('span', { cls:'c' }, x.canal) : ''))
+        : el('div', { cls:'nada' }, 'Nada agendado'))));
+}
 function semana() {
   const cuerpo = el('div');
-  const d = el('details', { cls:'semana' }, el('summary', {}, 'Esta semana'), cuerpo);
-  setTimeout(() => { if (semanaAbierta) d.open = true; });
+  const d = el('details', { cls:'semana', open: semanaAbierta ? '' : undefined }, el('summary', {}, 'Esta semana'), cuerpo);
+  if (semanaDatos) pintarSemana(cuerpo, semanaDatos);
   d.addEventListener('toggle', async () => {
     semanaAbierta = d.open;
-    if (!d.open || cuerpo.dataset.ok) return;
+    if (!d.open || semanaDatos) return;
     cuerpo.replaceChildren(el('div', { cls:'dia nada' }, 'Cargando…'));
-    const r = await api('api_semana');
-    cuerpo.dataset.ok = 1;
-    cuerpo.replaceChildren(
-      r.atrasados ? el('div', { cls:'dia' }, el('div', { cls:'rojo', style:'font-size:14px' }, r.atrasados + (r.atrasados === 1 ? ' paso atrasado' : ' pasos atrasados') + ': están en Tus próximos pasos.')) : '',
-      ...r.dias.map(dia => el('div', { cls:'dia' }, el('h4', {}, dia.titulo),
-        dia.items.length ? dia.items.map(x => el('div', { cls:'ev' + (x.canal === 'Evento' ? ' evento' : ''), style: x.id ? 'cursor:pointer' : '', onclick: () => x.id && abrir(x.id, 'contacto') },
-          x.hora ? el('span', { cls:'h' }, x.hora) : '', el('span', {}, x.nombre ? el('b', {}, x.nombre + ' · ') : '', x.texto), x.canal && x.canal !== 'Evento' ? el('span', { cls:'c' }, x.canal) : ''))
-          : el('div', { cls:'nada' }, 'Nada agendado'))));
+    semanaDatos = await api('api_semana');
+    pintarSemana(cuerpo, semanaDatos);
   });
   return d;
 }
@@ -661,59 +679,66 @@ function pintarHoy(r, viejo) {
   if (viejo) l.append(el('div', { cls:'actual', style:'margin:0 2px 6px' }, 'Actualizando…'));
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   const L = k => r[k] || [];
-  // Revivir: mínimo 5 por día, "+5" las veces que quieras (hasta el tope de seguridad de WhatsApp)
   const hoyISO = new Date().toLocaleDateString('sv');
-  let tope = 5;
-  try { const t = JSON.parse(localStorage.getItem('crm_revivir') || '{}'); if (t.dia === hoyISO) tope = t.n; } catch (e) {}
-  const revivir = L('revivir').slice(0, Math.max(0, tope - (r.revividosHoy || 0)));
+  // Cuántos muestra cada bloque (Llamar y Mensajes de a 5, Revivir de a 3) y qué bloques abriste: se recuerda en el día
+  const estado = (() => { try { const e = JSON.parse(localStorage.getItem('crm_hoy_ui') || '{}'); return e.dia === hoyISO ? e : { dia: hoyISO, ver: {}, abiertos: {} }; } catch (e) { return { dia: hoyISO, ver: {}, abiertos: {} }; } })();
+  const guardarEstado = () => localStorage.setItem('crm_hoy_ui', JSON.stringify(estado));
+  const PASO = { llamar:5, mensajes:5, revivir:3 };
 
-  l.append(semana());
   const BLOQUES = [['proximos','Tuyos'],['opciones','Opciones'],['llamar','Llamar'],['mensajes','Mensajes'],['atento','Atento']];
-  l.append(el('div', { cls:'resumen' }, ...BLOQUES.map(([k, t]) => el('div', { cls: L(k).some(urgente) ? 'alerta' : '', style:'cursor:pointer', onclick: () => document.getElementById('sec-' + k).scrollIntoView({ behavior:'smooth', block:'start' }) },
+  l.append(el('div', { cls:'resumen' }, ...BLOQUES.map(([k, t]) => el('div', { cls: L(k).some(urgente) ? 'alerta' : '', style:'cursor:pointer', onclick: () => {
+    const d = document.getElementById('sec-' + k); d.open = true; d.scrollIntoView({ behavior:'smooth', block:'start' }); } },
     el('b', {}, L(k).length), el('span', {}, t)))));
+  l.append(semana());
   if (r.incompletos) l.append(el('div', { cls:'aviso', style:'cursor:pointer', onclick: () => { sessionStorage.setItem('crm_lista', 'incompletos'); verBuscar(); } },
     r.incompletos + ' contactos en contacto no tienen forma de pago o temperatura, y sin eso no se pueden priorizar. Tocá para completarlos.'));
 
-  // 1. Con fecha fija: visitas a confirmar, cumpleaños (el día después) y fiestas
-  const visitas = L('visitas'), fechas = L('fechas'), fiestas = L('fiestas');
-  if (visitas.length || fechas.length || fiestas.length) l.append(el('div', { cls:'bloque' }, el('h3', {}, 'Con fecha fija'), el('span', { cls:'c' }, visitas.length + fechas.length + fiestas.length)));
-  visitas.forEach(v => l.append(tarjetaEnvio(Object.assign({}, v, { resumen:'' }), v.texto, tx => api('api_accion', v.id, 'AVISO', v.clave, tx))));
-  fechas.forEach(x => l.append(filaEnvio(x)));
-  fiestas.forEach(x => l.append(filaEnvio(x)));
-  if ((r.fiestasPendientes || 0) > fiestas.length && fiestas.length) l.append(el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Hasta 20 saludos por día. El resto aparece mañana.'));
-
-  const sec = (k, titulo, ayuda, vacio, pintar) => {
-    const xs = k === 'revivir' ? revivir : L(k);
-    l.append(el('div', { cls:'bloque', id:'sec-' + k }, el('h3', {}, titulo), xs.length ? el('span', { cls:'c' }, xs.length) : '', ayuda ? el('small', {}, ayuda) : ''));
-    if (!xs.length) l.append(el('div', { cls:'vacio' }, vacio)); else xs.forEach(pintar);
+  // Cada bloque es un desplegable cerrado: título, cuántos hay y en rojo si hay algo urgente. Abierto, muestra de a PASO con "+N más".
+  const sec = (k, titulo, ayuda, vacio, xs, pintar, pie) => {
+    const paso = PASO[k], ver = paso ? (estado.ver[k] || paso) : Infinity;
+    const cuerpo = el('div');
+    const d = el('details', { cls:'blk' + (xs.length ? '' : ' vacio'), id:'sec-' + k, open: estado.abiertos[k] ? '' : undefined },
+      el('summary', {}, el('div', { cls:'bloque' }, el('h3', { cls: xs.some(urgente) ? 'rojo' : '' }, titulo), xs.length ? el('span', { cls:'c' }, xs.length) : '', ayuda ? el('small', {}, ayuda) : '')),
+      cuerpo);
+    d.addEventListener('toggle', () => { estado.abiertos[k] = d.open; guardarEstado(); });
+    if (!xs.length) cuerpo.append(el('div', { cls:'vacio' }, vacio));
+    xs.slice(0, ver).forEach(x => cuerpo.append(pintar(x)));
+    if (xs.length > ver) cuerpo.append(el('button', { cls:'btn sec ancho', style:'margin:2px 0 8px', onclick: () => {
+      estado.ver[k] = ver + paso; guardarEstado(); pintarHoy(r, false);
+    }}, '+' + Math.min(paso, xs.length - ver) + ' más (quedan ' + (xs.length - ver) + ')'));
+    if (pie) cuerpo.append(pie);
+    l.append(d);
   };
   const ETQ_V = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Con otra inmo', 'EN VENTA':'En venta' };
   const esComprador = x => !x.etapa && x.estado !== 'NUEVO';
-  // 2. Lo que pusiste vos: el texto, cuándo lo pusiste y el botón del medio que elegiste
-  sec('proximos', 'Tus próximos pasos', 'los que pusiste vos', 'No pusiste nada para hoy.', x => {
+
+  // 1. Con fecha fija: visitas a confirmar, cumpleaños (el día después) y fiestas
+  const fijas = L('visitas').map(v => Object.assign({ _visita:true }, v, { resumen:'' })).concat(L('fechas'), L('fiestas'));
+  sec('fijas', 'Con fecha fija', 'visitas, cumpleaños', 'Nada con fecha fija hoy.', fijas,
+    x => x._visita ? tarjetaEnvio(x, x.texto, tx => api('api_accion', x.id, 'AVISO', x.clave, tx)) : filaEnvio(x),
+    (r.fiestasPendientes || 0) > L('fiestas').length && L('fiestas').length ? el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Hasta 20 saludos por día. El resto aparece mañana.') : '');
+  // 2. Lo que pusiste vos (hoy y atrasados): el texto, cuándo lo pusiste y el botón del medio que elegiste
+  sec('proximos', 'Tus próximos pasos', 'hoy y atrasados', 'No pusiste nada para hoy.', L('proximos'), x => {
     const canal = String(x.canal || '');
     const boton = canal === 'Llamada' ? bLlamar(x) : canal === 'WhatsApp' ? bWhatsApp(x) : canal ? el('button', { cls:'btn sec', onclick: () => abrir(x.id, 'agenda') }, 'Agendar ' + canal.toLowerCase()) : bWhatsApp(x);
     const cuando = [x.definidoHace !== null && x.definidoHace !== undefined ? 'Lo pusiste ' + (x.definidoHace === 0 ? 'hoy' : 'hace ' + x.definidoHace + (x.definidoHace === 1 ? ' día' : ' días')) : '',
       canal ? 'por ' + canal : ''].filter(Boolean).join(' · ');
-    l.append(item(Object.assign({}, x, { porque: x.porque, jugada: '' }), '', {
+    return item(Object.assign({}, x, { porque: x.porque, jugada: '' }), '', {
       extra: el('div', { cls:'dato' }, cuando, x.atrasado > 0 ? el('span', { cls:'rojo' }, ' · atrasado ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días')) : ''),
-      temp: esComprador(x), botones: [boton, bAbrir(x, 'Lo hice')] }));
+      temp: esComprador(x), botones: [boton, bAbrir(x, 'Lo hice')] });
   });
   // 3. Calientes y tibios que ya sabés qué buscan y no les mandaste nada
-  sec('opciones', 'Mandale opciones', 'calientes y tibios', 'Nadie esperando opciones.', x => l.append(item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] })));
-  // 4. Leads: las 3 llamadas
-  sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', x => l.append(item(x, '', { botones:[bLlamarLead(x), bNoContesto(x)] })));
-  // 5. Mensajes de la cadencia: se mandan desde acá
-  sec('mensajes', 'Mensajes', 'cadencia', 'No hay mensajes para hoy.', x => l.append(filaEnvio(x)));
+  sec('opciones', 'Mandale opciones', 'calientes y tibios', 'Nadie esperando opciones.', L('opciones'), x => item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
+  // 4. Leads: las 3 llamadas (de a 5)
+  sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', L('llamar'), x => item(x, '', { botones:[bLlamarLead(x), bNoContesto(x)] }));
+  // 5. Mensajes de la cadencia (de a 5)
+  sec('mensajes', 'Mensajes', 'cadencia', 'No hay mensajes para hoy.', L('mensajes'), x => filaEnvio(x));
   // 6. Lo que sugiere el CRM
-  sec('atento', 'Estate atento', 'sugerencias', 'Nada más para hoy.', x => l.append(item(x, x.tipo === 'calificar' ? 'Por calificar' : ETQ_V[x.etapa] || '', {
-    temp: esComprador(x), botones: x.deuda ? [bAbrir(x, 'Elegir opciones', true)] : [bLlamar(x), bWhatsApp(x)] })));
-  sec('relacion', 'Relación', 'solo saludar', 'Nadie de relación para hoy.', x => l.append(filaEnvio(x)));
-  sec('revivir', 'Revivir', 'del más viejo al más nuevo', (r.revividosHoy || 0) >= tope ? 'Listo por hoy.' : 'Nadie para revivir.', x => l.append(filaEnvio(x)));
-  const quedan = Math.min(L('revivir').length, (r.revivirPendientes || 0)) - revivir.length;
-  if (quedan > 0) l.append(el('button', { cls:'btn sec ancho', style:'margin:6px 0', onclick: () => {
-    localStorage.setItem('crm_revivir', JSON.stringify({ dia: hoyISO, n: Math.max(tope, r.revividosHoy || 0) + 5 })); verHoy();
-  }}, '+5 más (quedan ' + quedan + ' hoy)'));
+  sec('atento', 'Estate atento', 'sugerencias', 'Nada más para hoy.', L('atento'), x => item(x, x.tipo === 'calificar' ? 'Por calificar' : ETQ_V[x.etapa] || '', {
+    temp: esComprador(x), botones: x.deuda ? [bAbrir(x, 'Elegir opciones', true)] : [bLlamar(x), bWhatsApp(x)] }));
+  sec('relacion', 'Relación', 'solo saludar', 'Nadie de relación para hoy.', L('relacion'), x => filaEnvio(x));
+  // 7. Revivir (de a 3), del más viejo al más nuevo. El servidor ya corta en el tope de seguridad de WhatsApp.
+  sec('revivir', 'Revivir', 'del más viejo al más nuevo', 'Nadie para revivir.', L('revivir'), x => filaEnvio(x));
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
@@ -1075,9 +1100,11 @@ async function abrir(id, seg) {
     const fecha = el('input', { type:'date' });
     let crmDecide = false;
     // Hasta las 4 de la mañana cuenta como el día anterior: "Mañana" a las 00:40 del viernes es el viernes
-    const cae = el('div', { cls:'actual', style:'margin:6px 2px 0' });
+    const cae = el('div', { cls:'ver vacia' }, 'Elegir otra fecha');
     const mostrarCae = () => { const x = new Date(fecha.value + 'T12:00');
-      cae.textContent = fecha.value ? '→ ' + x.toLocaleDateString('es-AR', { weekday:'long' }) + ' ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0') : ''; };
+      const dia = x.toLocaleDateString('es-AR', { weekday:'long' });
+      cae.textContent = fecha.value ? dia.charAt(0).toUpperCase() + dia.slice(1) + ' ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0') + '/' + String(x.getFullYear()).slice(2) : 'Elegir otra fecha';
+      cae.classList.toggle('vacia', !fecha.value); };
     const cuando = elegible([['0','Hoy'],['1','Mañana'],['2','+2'],['3','+3'],['5','+5'],['7','+7'],['15','+15'],['CRM','Lo decide\nel CRM']], v => {
       crmDecide = v === 'CRM';
       if (v && !crmDecide) { const x = new Date(); if (x.getHours() < 4) x.setDate(x.getDate() - 1); x.setDate(x.getDate() + parseInt(v)); fecha.value = isoLocal(x); } else fecha.value = '';
@@ -1140,7 +1167,7 @@ async function abrir(id, seg) {
       el('div', { cls:'card' }, el('h3', {}, 'Qué tengo que hacer'),
         el('div', { cls:'actual', style:'margin-bottom:8px' }, agendado),
         proxTxt,
-        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { style:'margin-top:8px' }, fecha), cae,
+        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { cls:'fecha-linda', style:'margin-top:8px' }, cae, fecha),
         el('label', { style:'margin-top:10px' }, 'Cómo'), como,
         r.jugada ? el('div', { cls:'sugerencia' }, el('b', {}, 'Sugerencia del CRM: '), r.jugada.porque, el('div', { style:'margin-top:4px' }, '→ ' + r.jugada.jugada),
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
