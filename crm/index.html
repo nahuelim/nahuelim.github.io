@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '31';
-const COMPILACION = '31';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '31.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -407,10 +407,18 @@ function multi(opciones, valorStr, buscador) {
     arriba.replaceChildren(...elegidos.map(o => el('button', { cls:'chip on', type:'button', onclick: () => { elegidos.splice(elegidos.indexOf(o), 1); pintar(); } }, o)));
     const q = filtro ? norm(filtro.value.trim()) : '';
     const libres = todas.filter(o => !elegidos.includes(o) && (!buscador || (q && norm(o).includes(q))));
-    abajo.replaceChildren(...libres.slice(0, 15).map(o => el('button', { cls:'chip', type:'button', onclick: () => { elegidos.push(o); if (filtro) filtro.value = ''; pintar(); } }, o)));
+    // pointerdown sin default: el campo de búsqueda no pierde el foco (en el iPhone no se cierra el teclado)
+    abajo.replaceChildren(...libres.slice(0, 15).map(o => el('button', { cls:'chip', type:'button', onpointerdown: e => { if (filtro) e.preventDefault(); },
+      onclick: () => elegir(o) }, o)));
+    primero = libres[0];
     if (buscador && !q) abajo.replaceChildren(el('span', { cls:'vacio' }, elegidos.length ? '' : 'Escribí para buscar barrios.'));
   };
-  if (filtro) filtro.addEventListener('input', pintar);
+  let primero = null;
+  const elegir = o => { elegidos.push(o); if (filtro) { filtro.value = ''; filtro.focus(); } pintar(); };
+  if (filtro) {
+    filtro.addEventListener('input', pintar);
+    filtro.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (filtro.value.trim() && primero) elegir(primero); } });   // Enter elige el primero
+  }
   nodo.append(arriba, filtro || '', abajo); pintar();
   nodo.valor = () => elegidos.join(', ');
   return nodo;
@@ -1174,7 +1182,7 @@ async function abrir(id, seg) {
       el('div', { cls:'card' }, el('h3', {}, 'Qué tengo que hacer'),
         el('div', { cls:'actual', style:'margin-bottom:8px' }, agendado),
         proxTxt,
-        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { cls:'fecha-linda', style:'margin-top:8px' }, cae, fecha),
+        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { cls:'fecha-linda', style:'margin-top:8px', onclick: () => { try { fecha.showPicker(); } catch (e) { fecha.focus(); } } }, cae, fecha),
         el('label', { style:'margin-top:10px' }, 'Cómo'), como,
         r.jugada ? el('div', { cls:'sugerencia' }, el('b', {}, 'Sugerencia del CRM: '), r.jugada.porque, el('div', { style:'margin-top:4px' }, '→ ' + r.jugada.jugada),
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
