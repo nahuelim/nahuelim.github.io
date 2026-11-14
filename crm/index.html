@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '30';
-const COMPILACION = '30';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '30.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -879,13 +879,12 @@ function verCerrarSesion() {
 function verNuevo() {
   tabs('tNuevo');
   const l = document.getElementById('lista');
-  const f = { NOMBRE: el('input', { autocomplete:'off' }), TELEFONO: el('input', { inputmode:'tel', placeholder:'11xxxxxxxx' }),
-    FUENTE: select(FUENTES, 'Instagram'), ROL: select(['','COMPRADOR','VENDEDOR','AMBOS'], ''),
-    'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi' }),
-    'ETAPA VENTA': select(['','CAPTAR','CON OTRA INMO'], '', ['—','Captar (todavía no lo publicó)','Ya lo publicó con otra inmobiliaria']) };
+  // Solo lo básico: si compra o vende se completa después en Búsqueda o Venta
+  const f = { NOMBRE: el('input', { autocomplete:'off', autocapitalize:'words' }), TELEFONO: el('input', { inputmode:'tel', placeholder:'11xxxxxxxx' }),
+    FUENTE: select(FUENTES, 'Instagram'), 'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi', autocapitalize:'sentences' }) };
   const ayuda = el('div', { cls:'actual', style:'margin-top:8px' });
   const explicar = () => { ayuda.textContent = ['Conocido','Referido','Colega'].includes(f.FUENTE.value)
-    ? 'Conocido, referido o colega: entra como ACTIVO, sin llamadas en cadencia.'
+    ? 'Conocido, referido o colega: entra EN CONTACTO, sin llamadas en cadencia.'
     : 'Entra en cadencia hoy (primera llamada).'; };
   f.FUENTE.addEventListener('change', explicar); explicar();
   const resultado = el('div');
@@ -894,13 +893,15 @@ function verNuevo() {
       ayuda,
       el('div', { style:'margin-top:14px' }, el('button', { cls:'btn pri ancho', onclick: async () => {
         if (!f.NOMBRE.value.trim()) return toast('Falta el nombre', true);
-        const d = {}; Object.entries(f).forEach(([k, i]) => d[k] = i.value.trim());
+        const d = { ROL:'' }; Object.entries(f).forEach(([k, i]) => d[k] = i.value.trim());
         const r = await api('api_nuevo', d);
         if (r.duplicado) { toast('Ese teléfono ya existe: ' + r.nombre); return abrir(r.id, 'contacto'); }
         resultado.replaceChildren(el('div', { cls:'card' }, el('h3', {}, 'Cargado'),
           el('div', {}, ayuda.textContent),
           el('div', { style:'margin-top:6px' }, 'Contactos de Google: ' + (r.google || '—')),
-          el('div', { style:'margin-top:12px' }, el('button', { cls:'btn sec ancho', onclick: () => abrir(r.id, 'contacto') }, 'Abrir ficha'))));
+          el('div', { cls:'grid2', style:'margin-top:12px' },
+            /^\d+$/.test(String(r.id)) ? el('button', { cls:'btn pri', icon:'wa', onclick: () => abrirExterno(waUrl(r.id)) }, 'WhatsApp') : '',
+            el('button', { cls:'btn sec', onclick: () => abrir(r.id, 'contacto') }, 'Abrir ficha'))));
         Object.values(f).forEach(i => { if (i.tagName === 'INPUT') i.value = ''; });
       }}, 'Guardar contacto'))),
     resultado);
