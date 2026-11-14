@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '31';
-const COMPILACION = '31.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '31.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -301,6 +301,7 @@ const ICON = {
 };
 
 const ESTADOS = ['NUEVO','EN CONTACTO','CLIENTE','EN PAUSA','DESCARTADO'];
+const ESTADOS_CADENCIA_APP = ['NUEVO','EN CADENCIA'];
 const ETAPA_COMPRA = ['','OPCIONES','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
 const DONDE_BUSCAR = [['Zonaprop','https://www.zonaprop.com.ar'],['Argenprop','https://www.argenprop.com'],['Mercado Libre','https://inmuebles.mercadolibre.com.ar'],
   ['RE/MAX','https://www.remax.com.ar'],['Century 21','https://www.century21.com.ar'],['Coldwell Banker','https://www.coldwellbanker.com.ar'],['Redsuma',''],['Pallarols Santander',''],['Roilands','']];
@@ -1116,12 +1117,19 @@ async function abrir(id, seg) {
     let crmDecide = false;
     // Hasta las 4 de la mañana cuenta como el día anterior: "Mañana" a las 00:40 del viernes es el viernes
     const cae = el('div', { cls:'ver vacia' }, 'Elegir otra fecha');
+    // "Lo decide el CRM": no queda un paso tuyo; Hoy lo vuelve a mostrar solo, según su ritmo
+    const ritmoTxt = { CALIENTE:'cada 1 a 2 días', TIBIO:'cada 4 a 5 días', FRIO:'cada 10 a 12 días' }[String(d.TEMPERATURA || '').toUpperCase()];
+    const explicaCRM = el('div', { cls:'pregunta', style:'display:none;margin-top:8px' },
+      ESTADOS_CADENCIA_APP.includes(d.ESTADO) ? 'No queda un paso tuyo: sigue la cadencia de llamadas y mensajes de los leads.'
+      : d['ETAPA VENTA'] && !d['BUSCA TIPO'] ? 'No queda un paso tuyo: Hoy te lo vuelve a mostrar según la etapa de venta.'
+      : 'No queda un paso tuyo: Hoy te lo vuelve a mostrar en "Estate atento" ' + (ritmoTxt ? ritmoTxt + ' (es ' + d.TEMPERATURA.toLowerCase() + ')' : 'cada 4 a 5 días (no tiene temperatura)') + ', o antes si le debés opciones.');
     const mostrarCae = () => { const x = new Date(fecha.value + 'T12:00');
       const dia = x.toLocaleDateString('es-AR', { weekday:'long' });
       cae.textContent = fecha.value ? dia.charAt(0).toUpperCase() + dia.slice(1) + ' ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0') + '/' + String(x.getFullYear()).slice(2) : 'Elegir otra fecha';
       cae.classList.toggle('vacia', !fecha.value); };
     const cuando = elegible([['0','Hoy'],['1','Mañana'],['2','+2'],['3','+3'],['5','+5'],['7','+7'],['15','+15'],['CRM','Lo decide\nel CRM']], v => {
       crmDecide = v === 'CRM';
+      explicaCRM.style.display = crmDecide ? '' : 'none';
       if (v && !crmDecide) { const x = new Date(); if (x.getHours() < 4) x.setDate(x.getDate() - 1); x.setDate(x.getDate() + parseInt(v)); fecha.value = isoLocal(x); } else fecha.value = '';
       mostrarCae();
     }, '', 'g4');
@@ -1182,7 +1190,7 @@ async function abrir(id, seg) {
       el('div', { cls:'card' }, el('h3', {}, 'Qué tengo que hacer'),
         el('div', { cls:'actual', style:'margin-bottom:8px' }, agendado),
         proxTxt,
-        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, el('div', { cls:'fecha-linda', style:'margin-top:8px', onclick: () => { try { fecha.showPicker(); } catch (e) { fecha.focus(); } } }, cae, fecha),
+        el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, explicaCRM, el('div', { cls:'fecha-linda', style:'margin-top:8px', onclick: () => { try { fecha.showPicker(); } catch (e) { fecha.focus(); } } }, cae, fecha),
         el('label', { style:'margin-top:10px' }, 'Cómo'), como,
         r.jugada ? el('div', { cls:'sugerencia' }, el('b', {}, 'Sugerencia del CRM: '), r.jugada.porque, el('div', { style:'margin-top:4px' }, '→ ' + r.jugada.jugada),
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
@@ -1347,9 +1355,18 @@ async function abrir(id, seg) {
     ];
   };
 
+  // Historial en palabras (en el Sheet queda el código: CONTACTO, PROXIMO, LLAMADA_NO...)
+  const TIPO_TXT = { CONTACTO:'Qué pasó', PROXIMO:'Próximo paso', LLAMADA_NO:'No contestó', LLAMADA_SI:'Contestó la llamada', RESPONDIO:'Contestó', MENSAJE:'Mensaje',
+    OPCIONES:'Le mandaste opciones', NO_GUSTO:'No le gustó', REVISION:'Revisaste si publicó', NOTA:'Nota', ALTA:'Alta', DESCARTAR:'Archivado', AVISO:'Confirmación enviada', EVENTO:'Evento', 'EVENTO CORREGIDO':'Evento corregido' };
+  const detalleTxt = x => {
+    if (x.tipo !== 'PROXIMO') return x.detalle;
+    const [f, canal] = String(x.detalle || '').split('|');
+    if (!f) return 'lo decide el CRM';
+    const [y, m, d] = f.split('-'); return [d + '/' + m, canal ? 'por ' + canal : ''].filter(Boolean).join(' · ');
+  };
   const segHistorial = () => [el('div', { cls:'card' }, el('h3', {}, 'Historial'),
     r.hist.length ? r.hist.map(x => el('div', { cls:'hist' }, el('span', { cls:'cuando' }, x.fecha),
-      el('b', {}, x.tipo), x.detalle ? ' · ' + x.detalle : '', x.texto ? '\n' + x.texto : '', editar(x))) : el('div', { cls:'vacio' }, 'Sin historial todavía.'))];
+      el('b', {}, TIPO_TXT[x.tipo] || x.tipo), detalleTxt(x) ? ' · ' + detalleTxt(x) : '', x.texto ? '\n' + x.texto : '', editar(x))) : el('div', { cls:'vacio' }, 'Sin historial todavía.'))];
 
   const SEGMENTOS = [['contacto','Contacto',segContacto,0], ['perfil','Perfil',segPerfil,0], ['busqueda','Búsqueda',segBusqueda,mCompra.length],
     ['venta','Venta',segVenta,mVenta.length], ['agenda','Agenda',segAgenda,0], ['historial','Historial',segHistorial,0]];
