@@ -281,8 +281,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '32';
-const COMPILACION = '32.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '33';
+const COMPILACION = '33';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -597,7 +597,7 @@ const ordenar = xs => xs.slice().sort((a, b) =>
 // Llamar abre el chat de WhatsApp (no la línea): la llamada se hace desde ahí con el ícono del teléfono.
 // ponytail: WhatsApp no tiene un enlace público para iniciar la llamada directo; si lo saca, va acá.
 const bLlamar = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(x.wa)) }, 'Llamar') : '';
-const bWhatsApp = x => x.wa ? el('button', { cls:'btn sec', icon:'wa', onclick: () => abrirExterno(waUrl(x.wa)) }, 'WhatsApp') : '';
+const bWhatsApp = x => x.wa ? el('button', { cls:'btn sec', icon:'wa', onclick: () => abrirExterno(waUrl(x.wa, ((x.opciones || [])[0] || {}).texto)) }, 'WhatsApp') : '';   // si trae mensaje sugerido (ej. NOAT), lo abre escrito
 const bNoContesto = x => el('button', { cls:'btn', onclick: async e => {
   e.currentTarget.closest('.t').style.opacity = .4;
   await api('api_accion', x.id, 'LLAMADA_NO'); toast('Registrado: no contestó'); verHoy();
