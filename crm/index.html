@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '32';
-const COMPILACION = '32.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '32.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -831,7 +831,6 @@ function armarMenu() {
     link('Generador de fichas', 'http://127.0.0.1:5050', 'solo Mac, con genfichas abierto'),
     link('Mi web', 'https://nahuelim.com.ar'),
     op('Estadísticas', verEstadisticas),
-    op('Cómo escribir mensajes', () => { location.href = 'mensajes.html'; }),
     el('div', { cls:'abajo' }, op('Ajustes', verAjustes), op('Cerrar sesión', verCerrarSesion, 'salir')));
 }
 
@@ -1091,9 +1090,7 @@ async function abrir(id, seg) {
         abrirExterno(waUrl(r.wa, texto.value));
         accion('MENSAJE', situacion.value + '-' + (variante + 1), texto.value);
       }}, 'Enviar por WhatsApp'),
-      el('div', { cls:'grid2', style:'margin-top:8px' },
-        el('button', { cls:'btn', onclick: () => navigator.clipboard.writeText(texto.value).then(() => toast('Mensaje copiado')) }, 'Copiar'),
-        el('a', { cls:'btn', href:'mensajes.html' }, 'Cómo escribirlos'))) : '';
+      el('button', { cls:'btn ancho', style:'margin-top:8px', onclick: () => navigator.clipboard.writeText(texto.value).then(() => toast('Mensaje copiado')) }, 'Copiar')) : '';
 
     // ── Temperatura arriba de todo
     let tempElegida = '';
