@@ -282,7 +282,7 @@
 
 <script>
 const VERSION = '32';
-const COMPILACION = '32';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '32.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -831,6 +831,7 @@ function armarMenu() {
     link('Generador de fichas', 'http://127.0.0.1:5050', 'solo Mac, con genfichas abierto'),
     link('Mi web', 'https://nahuelim.com.ar'),
     op('Estadísticas', verEstadisticas),
+    op('Cómo escribir mensajes', () => { location.href = 'mensajes.html'; }),
     el('div', { cls:'abajo' }, op('Ajustes', verAjustes), op('Cerrar sesión', verCerrarSesion, 'salir')));
 }
 
@@ -897,7 +898,7 @@ function verNuevo() {
     FUENTE: select(FUENTES, 'Instagram'), 'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi', autocapitalize:'sentences' }) };
   const ayuda = el('div', { cls:'actual', style:'margin-top:8px' });
   const explicar = () => { ayuda.textContent = ['Conocido','Referido','Colega'].includes(f.FUENTE.value)
-    ? 'Conocido, referido o colega: entra EN CONTACTO, sin llamadas en cadencia.'
+    ? 'Entra EN CONTACTO, sin llamadas en cadencia (es conocido, referido o colega).'
     : 'Entra en cadencia hoy (primera llamada).'; };
   f.FUENTE.addEventListener('change', explicar); explicar();
   const resultado = el('div');
@@ -910,7 +911,7 @@ function verNuevo() {
         const r = await api('api_nuevo', d);
         if (r.duplicado) { toast('Ese teléfono ya existe: ' + r.nombre); return abrir(r.id, 'contacto'); }
         resultado.replaceChildren(el('div', { cls:'card' }, el('h3', {}, 'Cargado'),
-          el('div', {}, ayuda.textContent),
+          el('div', {}, el('b', {}, d.NOMBRE), ' ' + ayuda.textContent.charAt(0).toLowerCase() + ayuda.textContent.slice(1)),
           el('div', { style:'margin-top:6px' }, 'Contactos de Google: ' + (r.google || '—')),
           el('div', { cls:'grid2', style:'margin-top:12px' },
             /^\d+$/.test(String(r.id)) ? el('button', { cls:'btn pri', icon:'wa', onclick: () => abrirExterno(waUrl(r.id)) }, 'WhatsApp') : '',
@@ -1081,14 +1082,18 @@ async function abrir(id, seg) {
     };
     const elegir = () => { const m = msjs.find(x => x.codigo === situacion.value); variante = m ? m.toca : 0; texto.value = m ? m.variantes[variante] : ''; pintar(); };
     situacion.addEventListener('change', elegir); elegir();
-    const tarjetaMensaje = () => msjs.length ? el('div', { style:'margin-top:12px' }, el('label', {}, 'Mensaje sugerido'), situacion, el('div', { style:'margin-top:10px' }, opciones),
+    // Mensajes: su propio desplegable (no dentro de "Hacerlo ahora"), para tenerlos a mano también para copiar
+    const tarjetaMensaje = () => msjs.length ? el('div', { style:'margin-top:4px' }, el('label', {}, 'Elegí el mensaje (arriba, el sugerido)'), situacion, el('div', { style:'margin-top:10px' }, opciones),
       el('label', {}, 'Texto a enviar (lo podés editar)'), texto,
       el('button', { cls:'btn pri ancho', icon:'wa', style:'margin-top:10px', onclick: () => {
         if (!r.wa) return toast('Falta un teléfono válido', true);
         if (/\{\w+\}/.test(texto.value)) return toast('Completá los campos entre llaves', true);
         abrirExterno(waUrl(r.wa, texto.value));
         accion('MENSAJE', situacion.value + '-' + (variante + 1), texto.value);
-      }}, 'Enviar por WhatsApp')) : '';
+      }}, 'Enviar por WhatsApp'),
+      el('div', { cls:'grid2', style:'margin-top:8px' },
+        el('button', { cls:'btn', onclick: () => navigator.clipboard.writeText(texto.value).then(() => toast('Mensaje copiado')) }, 'Copiar'),
+        el('a', { cls:'btn', href:'mensajes.html' }, 'Cómo escribirlos'))) : '';
 
     // ── Temperatura arriba de todo
     let tempElegida = '';
@@ -1169,7 +1174,6 @@ async function abrir(id, seg) {
         r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(r.wa)) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
         el('button', { cls:'btn', onclick: () => accion('LLAMADA_NO') }, 'Llamé y no contestó'),
         el('button', { cls:'btn sec ancho2', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp')),
-      tarjetaMensaje(),
       compra ? el('details', { style:'margin-top:12px' }, el('summary', { style:'font-weight:600;cursor:pointer' }, 'Mandar opciones (' + mCompra.length + ' sin mandar)'), tarjetaOpciones(true)) : '',
       vendedorNoCaptado ? el('div', { style:'margin-top:12px' },
         dir ? el('button', { cls:'btn ancho', onclick: () => abrirExterno('https://www.google.com/search?q=' + encodeURIComponent(q)) }, 'Buscar en portales: ' + dir)
@@ -1195,7 +1199,8 @@ async function abrir(id, seg) {
         r.jugada ? el('div', { cls:'sugerencia' }, el('b', {}, 'Sugerencia del CRM: '), r.jugada.porque, el('div', { style:'margin-top:4px' }, '→ ' + r.jugada.jugada),
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
         el('div', { cls:'pregunta', style:'margin-top:6px' }, 'Si registrás algo en Qué pasó, el próximo paso es obligatorio (o "Lo decide el CRM").'),
-        herramientas)
+        herramientas),
+      msjs.length ? el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline' }, 'Mensajes')), tarjetaMensaje()) : ''
     ];
   };
 

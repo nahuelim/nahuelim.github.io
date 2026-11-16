@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Cómo escribir mensajes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --crema:#F7F4EC; --blanco:#FFFFFF; --verde-claro:#E3EEE9; --linea:#DDD6C6; --tinta:#14231D; --tinta-suave:#434C47;
+    --verde:#006A4E; --verde-profundo:#005941; --dorado:#BEAF87; --dorado-oscuro:#5B4700; --alerta:#7A1F14; --alerta-fondo:#F6E3E0; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--crema); color:var(--tinta); font:16px/1.5 Inter, -apple-system, system-ui, sans-serif; }
+  header { background:var(--tinta); color:var(--crema); padding:calc(18px + env(safe-area-inset-top)) 18px 18px; }
+  header a { color:var(--dorado); text-decoration:none; font-size:14px; font-weight:600; }
+  header h1 { margin:10px 0 4px; font-size:24px; letter-spacing:-.02em; }
+  header p { margin:0; opacity:.85; font-size:15px; }
+  main { max-width:640px; margin:0 auto; padding:14px 14px 60px; }
+  h2 { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-suave); margin:26px 4px 8px; }
+  .card { background:var(--blanco); border:1px solid var(--linea); border-radius:16px; padding:16px; margin-bottom:10px; }
+  .card h3 { margin:0 0 6px; font-size:18px; letter-spacing:-.01em; }
+  .card p { margin:6px 0; }
+  .dia { border:2px solid var(--verde-profundo); }
+  .dia .et { font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--verde-profundo); }
+  .mal, .bien { border-radius:10px; padding:10px 12px; margin:8px 0; font-size:15px; }
+  .mal { background:var(--alerta-fondo); color:var(--alerta); }
+  .bien { background:var(--verde-claro); color:var(--verde-profundo); }
+  .mal::before { content:'Antes: '; font-weight:700; } .bien::before { content:'Mejor: '; font-weight:700; }
+  .por { font-size:14px; color:var(--tinta-suave); }
+  ol, ul { padding-left:20px; margin:6px 0; } li { margin:4px 0; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  td { padding:9px 6px; border-top:1px solid var(--linea); vertical-align:top; width:50%; }
+  tr:first-child td { border-top:0; }
+  td:first-child { color:var(--alerta); } td:last-child { color:var(--verde-profundo); font-weight:500; }
+  details { background:var(--blanco); border:1px solid var(--linea); border-radius:14px; margin-bottom:8px; }
+  summary { padding:14px 16px; cursor:pointer; list-style:none; font-weight:500; }
+  summary::-webkit-details-marker { display:none; }
+  summary::after { content:'Ver respuesta'; display:block; margin-top:6px; font-size:13px; font-weight:600; color:var(--verde-profundo); }
+  details[open] summary::after { content:'Ocultar'; }
+  details .r { padding:0 16px 14px; }
+  .nota { font-size:14px; color:var(--tinta-suave); margin:0 4px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="./">‹ CRM</a>
+  <h1>Cómo escribir mensajes</h1>
+  <p>Para leer de a poco. Una técnica por día, y un ejercicio cuando tengas 2 minutos.</p>
+</header>
+<main>
+  <div id="hoy"></div>
+
+  <h2>La idea de fondo</h2>
+  <div class="card">
+    <p><b>El seguimiento no es para conseguir una respuesta: es para facilitarle al cliente el próximo paso de su decisión.</b></p>
+    <p class="por">Si la pregunta te sirve solo a vos ("¿la viste?"), la gente no contesta. Si le sirve a él ("¿te cierra la distribución?"), tiene un motivo para contestar.</p>
+  </div>
+
+  <h2>Antes de mandar: 4 preguntas</h2>
+  <div class="card">
+    <ol>
+      <li>¿Le sirve a él, o solo a mí?</li>
+      <li>¿Entiende por qué le pregunto?</li>
+      <li>¿Me puede contestar en 5 segundos?</li>
+      <li>¿Pregunto <b>una</b> sola cosa?</li>
+    </ol>
+    <p class="por">Si alguna da "no", reescribilo. Con eso alcanza: no hace falta memorizar más reglas.</p>
+  </div>
+
+  <h2>Las 6 técnicas</h2>
+  <div id="tecnicas"></div>
+
+  <h2>Evitá → Preferí</h2>
+  <div class="card"><table>
+    <tr><td>¿Seguís interesado?</td><td>¿Esta propiedad sigue dentro de tus opciones?</td></tr>
+    <tr><td>¿Pudiste ver las opciones?</td><td>¿Hubo alguna que se acercara a lo que tenías en mente?</td></tr>
+    <tr><td>¿Qué te pareció?</td><td>¿Qué fue lo que más y lo que menos te convenció?</td></tr>
+    <tr><td>¿Querés coordinar una visita?</td><td>¿Te serviría verla en persona para ver si funciona?</td></tr>
+    <tr><td>¿Tenés alguna novedad?</td><td>¿Cómo viene la búsqueda?</td></tr>
+    <tr><td>Espero tu respuesta.</td><td>Si te sirve, avanzamos con…</td></tr>
+    <tr><td>Necesito que me confirmes.</td><td>Para organizarlo, ¿qué te queda más cómodo?</td></tr>
+  </table></div>
+
+  <h2>Practicá: ¿cómo lo reescribirías?</h2>
+  <p class="nota">Pensá tu versión antes de abrir la respuesta. Es lo que hace que quede.</p>
+  <div id="practica"></div>
+
+  <h2>Ojo</h2>
+  <div class="card">
+    <p><b>Directo no es invasivo.</b> Preguntar presupuesto, forma de pago, plazos o quién decide es tu trabajo. Lo invasivo es preguntarlo sin contexto, sin escuchar la respuesta o insistiendo después de que te dijo que no.</p>
+    <p><b>Una vez que contesta, se terminan las fórmulas.</b> Desde ahí el seguimiento es una charla con esa persona.</p>
+  </div>
+</main>
+<script>
+const TECNICAS = [
+  { t:'Preguntá desde su decisión, no desde tu necesidad',
+    d:'Cambiá el marco: en vez de preguntar si hizo lo que le mandaste, preguntá algo que lo ayude a decidir.',
+    mal:'¿Pudiste ver la ficha?', bien:'¿Cómo viste la distribución? ¿Te resulta cómoda para lo que buscás?' },
+  { t:'Que responder sea fácil',
+    d:'Dale un punto de partida. Elegir entre dos cosas cuesta menos que inventar una respuesta.',
+    mal:'¿Qué características estás buscando exactamente?', bien:'¿Priorizás luz o metros y distribución?' },
+  { t:'Pasos chicos',
+    d:'No saltes de mandar una ficha a pedir una visita. Primero qué le llamó la atención, después si encaja, después verla.',
+    mal:'¿Cuándo la querés visitar?', bien:'De esta, ¿qué te importa más: la ubicación o la distribución?' },
+  { t:'Contexto antes de preguntar',
+    d:'Decí en media línea para qué preguntás. Deja de sonar a interrogatorio.',
+    mal:'¿Tenés crédito?', bien:'Te pregunto para no mostrarte cosas que después no te sirvan: ¿comprás con crédito o con fondos propios?' },
+  { t:'Ofrecé un camino, no pidas una devolución',
+    d:'Si no contesta después de una ficha, dale una salida que siga la charla.',
+    mal:'¿Qué te pareció? Espero tu respuesta.', bien:'Si te gustó la zona pero no tanto el depto, te busco otras por ahí. ¿Hay algo puntual que no te cerró?' },
+  { t:'Dale permiso para decir que no',
+    d:'Mucha gente no contesta porque no sabe cómo decir que ya resolvió o que cambió de idea. Sacale la incomodidad.',
+    mal:'¿Seguís buscando?', bien:'Si ya resolviste o cambiaste de idea, no hay problema. Me sirve saberlo para no mandarte cosas que no necesitás.' }
+];
+const PRACTICA = [
+  { p:'Le mandaste 3 opciones hace 2 días y no contestó.', r:'"¿Alguna de las tres se acercó a lo que tenías en mente? Si ninguna, decime qué no te cerró y ajusto la búsqueda." → Le preguntás algo de su decisión y le das un camino si la respuesta es no.' },
+  { p:'Querés saber cuándo se quiere mudar.', r:'"Para no mostrarte cosas que después no te sirvan: ¿pensás mudarte pronto o estás mirando sin apuro?" → Contexto + dos opciones fáciles.' },
+  { p:'Un comprador que vio una visita y desapareció.', r:'"¿Qué fue lo que más y lo que menos te convenció de la visita? Con eso afino lo próximo que te mando." → Pregunta concreta y le explicás para qué.' },
+  { p:'Un lead que dejó de contestar hace 3 semanas.', r:'"Hola! Estuve viendo opciones por la zona que buscabas. ¿Seguís con la búsqueda o ya lo resolviste? Cualquiera de las dos me sirve saberla." → Aporta algo y le da permiso para decir que no.' },
+  { p:'Un vendedor que tiene la casa publicada con otra inmobiliaria.', r:'"¿Cómo viene la venta? Si en algún momento querés una segunda mirada sobre el precio o la estrategia, avisame." → No lo presionás: le dejás una puerta abierta.' },
+  { p:'Necesitás saber la forma de pago de alguien que recién contestó.', r:'"Para mostrarte lo que realmente te sirve: ¿la idea es vender algo para comprar, comprar con ahorros o con crédito?" → Contexto + opciones cerradas.' }
+];
+const el = (h) => { const d = document.createElement('div'); d.innerHTML = h; return d.firstElementChild; };
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const card = (x, extra) => el(`<div class="card ${extra || ''}">${extra ? '<div class="et">Técnica de hoy</div>' : ''}<h3>${esc(x.t)}</h3><p>${esc(x.d)}</p>
+  <div class="mal">${esc(x.mal)}</div><div class="bien">${esc(x.bien)}</div></div>`);
+// Una técnica por día: rota sola con la fecha
+const n = Math.floor(Date.now() / 864e5) % TECNICAS.length;
+document.getElementById('hoy').append(card(TECNICAS[n], 'dia'));
+TECNICAS.forEach(x => document.getElementById('tecnicas').append(card(x)));
+PRACTICA.forEach(x => document.getElementById('practica').append(el(`<details><summary>${esc(x.p)}</summary><div class="r">${esc(x.r)}</div></details>`)));
+</script>
+</body>
+</html>
