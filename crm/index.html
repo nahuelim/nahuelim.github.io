@@ -281,8 +281,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '35';
-const COMPILACION = '35';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '36';
+const COMPILACION = '36';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -579,6 +579,7 @@ function item(x, tag, o) {
   return el('div', { cls:'t' + (urgente(x) ? ' urge' : ''), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), dias ? el('span', { cls:'dias' + (tope && x.diasSin > tope ? ' rojo' : '') }, dias) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : (x.fuente ? el('div', { cls:'busca' }, 'Lead de ' + x.fuente + (x.alta ? ' · entró el ' + x.alta.slice(0, 5) : '')) : ''),
+    x.consulto ? el('div', { cls:'busca' }, 'Consultó por: ' + x.consulto) : '',
     linea.length ? el('div', { cls:'dato' }, ...linea) : '',
     o.extra || '',
     x.porque ? el('div', { cls:'porque' }, x.porque) : (x.accion ? el('div', { cls:'porque' }, [x.accion, x.prox].filter(Boolean).join(' · ')) : ''),
@@ -617,6 +618,7 @@ function tarjetaEnvio(x, texto0, enviar, chips) {
   const t = el('div', { cls:'t', onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), x.cuando ? el('span', { cls:'dias' }, x.cuando) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : '',
+    x.consulto && !x.resumen ? el('div', { cls:'busca' }, 'Consultó por: ' + x.consulto) : '',
     x.evento ? el('div', { cls:'busca' }, x.evento) : '',
     el('div', { cls:'porque' }, x.porque || x.accion || ''),
     x.ultimo ? el('div', { cls:'dato' }, 'Último: ' + x.ultimo) : '',
@@ -1201,7 +1203,7 @@ async function abrir(id, seg) {
         el('div', { cls:'actual', style:'margin-bottom:8px' }, agendado),
         proxTxt,
         el('label', { style:'margin-top:10px' }, 'Cuándo'), cuando, explicaCRM, el('div', { cls:'fecha-linda', style:'margin-top:8px', onclick: () => { try { fecha.showPicker(); } catch (e) { fecha.focus(); } } }, cae, fecha),
-        el('label', { style:'margin-top:10px' }, 'Hora (opcional: te llega un aviso del calendario a esa hora)'), hora,
+        el('label', { style:'margin-top:10px' }, 'Hora (opcional: aviso en el calendario C21 a esa hora)'), hora,
         el('label', { style:'margin-top:10px' }, 'Cómo'), como,
         r.jugada ? el('div', { cls:'sugerencia' }, el('b', {}, 'Sugerencia del CRM: '), r.jugada.porque, el('div', { style:'margin-top:4px' }, '→ ' + r.jugada.jugada),
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
