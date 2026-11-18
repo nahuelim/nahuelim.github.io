@@ -283,8 +283,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '39';
-const COMPILACION = '39.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '40';
+const COMPILACION = '40';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -969,10 +969,12 @@ let segmentoActual = 'contacto';
 let fichaSucia = () => false;
 function cerrar() {
   if (fichaSucia() && !confirm('Tenés cambios sin guardar. ¿Cerrar igual?')) return;
-  fichaSucia = () => false; document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista'); }
+  fichaSucia = () => false; document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista');
+  if (hoyPendiente) refrescar(); }
 
-async function abrir(id, seg) {
-  const r = await api('api_ficha', id);
+// ya: la ficha que devolvió el Guardar (así no se pide de nuevo al servidor)
+async function abrir(id, seg, ya) {
+  const r = ya || await api('api_ficha', id);
   if (seg) { segmentoActual = seg; sessionStorage.setItem('crm_seg', seg); }
   sessionStorage.setItem('crm_vista', id);                // al recargar vuelve a esta ficha
   const d = r.datos, p = document.getElementById('ficha'), listas = r.listas || {};
@@ -981,13 +983,13 @@ async function abrir(id, seg) {
   // Si tenías escrito "Qué pasó" sin guardar, no se pierde: queda en pantalla para que lo guardes vos.
   const accion = async (tipo, detalle, texto) => {
     const x = (pend && pend()) || {};
-    await api('api_lote', id, x.campos || {}, x.nota || '', x.error ? null : (x.proximo || null), [tipo, detalle || '', texto || '']);
+    const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.error ? null : (x.proximo || null), [tipo, detalle || '', texto || '']);
     refrescar();
     if (x.accion) return toast('Registrado. Falta guardar lo que pasó');
-    pend = null; toast('Guardado'); reabrir();
+    pend = null; toast('Guardado'); reabrir(nueva);
   };
   // Después de guardar se vuelve a dibujar la ficha, pero solo si seguís en ella (si la cerraste, no se reabre)
-  const reabrir = () => { if (document.getElementById('ficha').classList.contains('abierta') && sessionStorage.getItem('crm_vista') === String(id)) abrir(id); };
+  const reabrir = ya => { if (document.getElementById('ficha').classList.contains('abierta') && sessionStorage.getItem('crm_vista') === String(id)) abrir(id, undefined, ya && ya.datos ? ya : undefined); };
   // Un solo Guardar por solapa: cada solapa declara qué tiene pendiente; se manda todo junto en un viaje.
   let pend = null;
   const vacio = x => !x || (!Object.keys(x.campos || {}).length && !x.nota && !x.proximo && !x.accion && !x.error);
@@ -997,8 +999,8 @@ async function abrir(id, seg) {
     if (vacio(x)) return toast('No hay cambios');
     if (x.error) return toast(x.error, true);
     if (x.aviso && !confirm(x.aviso)) return;   // Cancelar = volver a cambiarlo; Aceptar = guardar igual
-    await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null);
-    pend = null; toast('Guardado'); reabrir(); refrescar();
+    const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null);
+    pend = null; toast('Guardado'); reabrir(nueva); refrescar();
   };
   const filaMatch = m => el('div', { cls:'match' + (m.enviada ? ' gris' : '') }, el('div', { style:'flex:1' }, m.texto),
     m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Ver ficha') : m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
@@ -1457,7 +1459,14 @@ function dondeEsta(d, id) {
   return el('div', { cls:'donde' }, 'Hoy: ', el('b', {}, enHoy), ' · Contactos: ', el('b', {}, cartera));
 }
 
-function refrescar() { if (cfg().key && document.getElementById('tHoy').classList.contains('on')) verHoy(); }
+// Con la ficha abierta en el celular, Hoy no se recalcula en cada Guardar (es el pedido más pesado y competía con el guardado):
+// queda pendiente y se actualiza al cerrar la ficha. En la compu, donde Hoy se ve al lado, se actualiza en el momento.
+let hoyPendiente = false;
+function refrescar() {
+  if (!cfg().key || !document.getElementById('tHoy').classList.contains('on')) return;
+  if (document.getElementById('ficha').classList.contains('abierta') && !esEscritorio()) { hoyPendiente = true; return; }
+  hoyPendiente = false; verHoy();
+}
 
 // Al recargar: vuelve a la ficha abierta (y su solapa). sessionStorage dura mientras la pestaña o la app esté abierta.
 let desbloqueado = false;
