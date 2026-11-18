@@ -294,6 +294,10 @@ HTML = r"""<!DOCTYPE html>
     .card { padding: 18px; }
     .btn { padding: 9px 16px; font-size: 13px; }
   }
+  /* iPhone: Safari hace zoom al tocar campos con letra < 16px y la página queda bailando de costado */
+  @media (max-width: 700px) {
+    input, select, textarea { font-size: 16px !important; }
+  }
 </style>
 </head>
 <body>
@@ -312,14 +316,13 @@ HTML = r"""<!DOCTYPE html>
     <button class="btn btn-outline btn-sm" onclick="resetTodo()">↺ Nueva ficha</button>
   </div>
   <p class="subtitle">Pegá una URL o completá los datos manualmente para publicar una ficha en nahuelim.com.ar</p>
+  <p class="field-hint" style="margin-top:-6px">Aviso al celular cuando la ficha está online: en la app <strong>ntfy</strong>, suscribite al tema <code>{{ ntfy }}</code></p>
 
   <!-- PASO 1: URL o modo manual -->
   <div class="card">
-    <div class="section-title">Portal</div>
+    <div class="section-title">Origen</div>
     <div class="portal-pills">
-      <div class="pill active" onclick="setPortal('zonaprop')">ZonaProp</div>
-      <div class="pill" onclick="setPortal('ml')">MercadoLibre</div>
-      <div class="pill" onclick="setPortal('c21')">Century 21</div>
+      <div class="pill active" onclick="setPortal('auto')">Desde un link</div>
       <div class="pill" onclick="setPortal('manual')">Manual</div>
     </div>
 
@@ -332,7 +335,7 @@ HTML = r"""<!DOCTYPE html>
           <span id="btn-extraer-loader" class="loader" style="display:none"></span>
         </button>
       </div>
-      <p class="field-hint" id="url-hint">ZonaProp: extracción automática completa. ML: pegá la URL (o guardá con Cmd+S y pegá el path si la bloquea). C21: guardá con Cmd+S y pegá el path.</p>
+      <p class="field-hint" id="url-hint">Pegá el link de ZonaProp, MercadoLibre, Century 21, Propio o Roomix: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.</p>
     </div>
   </div>
 
@@ -449,7 +452,15 @@ HTML = r"""<!DOCTYPE html>
 
       <div class="full">
         <label>Descripción</label>
-        <textarea id="f-descripcion" placeholder="Descripción del inmueble..."></textarea>
+        <textarea id="f-descripcion" placeholder="Descripción del inmueble..." onfocus="ajustarDesc()" oninput="ajustarDesc()"></textarea>
+        <div id="limpieza-box" style="display:none;margin-top:8px;padding:10px 12px;background:#FFF6D6;border:1px solid #E8D48A;border-radius:8px;font-size:12.5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+            <strong>Se sacó de la descripción (datos de la inmobiliaria, disclaimers, contacto):</strong>
+            <button type="button" class="btn btn-outline btn-sm" onclick="deshacerLimpieza()">Deshacer limpieza</button>
+          </div>
+          <div id="limpieza-lista"></div>
+          <small style="color:var(--tinta-suave)">"Restaurar" agrega la frase al final de la descripción; movela a mano si va en otro lado.</small>
+        </div>
       </div>
     </div>
 
@@ -487,10 +498,11 @@ HTML = r"""<!DOCTYPE html>
     <div id="mapa-confirm" style="display:none;margin-top:12px"></div>
 
     <div class="result-box" id="result-box">
-      <div class="lbl">Ficha publicada en</div>
+      <div class="lbl" id="result-lbl">Ficha publicada en</div>
       <div class="result-link" id="result-link"></div>
       <div class="result-actions">
         <button class="btn btn-sm btn-outline" style="background:transparent;color:var(--crema);border-color:rgba(247,244,236,.35)" onclick="copiarLink()">Copiar link</button>
+        <button id="result-share" class="btn btn-sm btn-outline" style="display:none;background:transparent;color:var(--crema);border-color:rgba(247,244,236,.35)" onclick="compartirLink()">Compartir</button>
         <a id="result-open" href="#" target="_blank" class="btn btn-sm" style="background:var(--crema);color:var(--tinta);text-decoration:none">Abrir ficha →</a>
       </div>
     </div>
@@ -498,7 +510,7 @@ HTML = r"""<!DOCTYPE html>
 </main>
 
 <script>
-let portalActual = 'zonaprop';
+let portalActual = 'auto';
 let fotosZP = [];
 
 function setPortal(p) {
@@ -514,9 +526,6 @@ function setPortal(p) {
     mostrarFormulario({});
   } else {
     urlSection.style.display = 'block';
-    if (p === 'zonaprop') hint.textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
-    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL del aviso. Si ML la bloquea, guardá la página con Cmd+S («solo HTML») y pegá el path del archivo.';
-    else if (p === 'c21') hint.textContent = 'Century 21: guardá la página con Cmd+S y pegá el path al archivo. El precio completalo manualmente.';
   }
 }
 
@@ -531,11 +540,13 @@ async function extraerDatos() {
     const resp = await fetch('/extraer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ url, portal: portalActual })
+      body: JSON.stringify({ url, portal: 'auto' })
     });
     const data = await resp.json();
     if (data.error) { showStatus(data.error, 'error'); return; }
-    showStatus('✓ Datos extraídos. Revisá y completá lo que falte.', 'success');
+    portalActual = data.portal;  // lo detecta el servidor
+    const NOMBRES = { zonaprop: 'ZonaProp', ml: 'MercadoLibre', c21: 'Century 21', propio: 'Propio', roomix: 'Roomix' };
+    showStatus('✓ Datos extraídos de ' + (NOMBRES[data.portal] || data.portal) + '. Revisá y completá lo que falte.', 'success');
     mostrarFormulario(data);
   } catch(e) {
     showStatus('Error al conectar con el servidor.', 'error');
@@ -564,6 +575,8 @@ function mostrarFormulario(d) {
   if (d.disposicion) setSelect('f-disposicion', d.disposicion);
   if (d.orientacion) setSelect('f-orientacion', d.orientacion);
   if (d.descripcion) document.getElementById('f-descripcion').value = d.descripcion;
+  mostrarLimpieza(d.desc_sacado || [], d.desc_original || '');
+  if (d.video) document.getElementById('f-video').value = d.video;
   window.scrapedInmo = d.inmobiliaria || '';
   window.scrapedWa = d.whatsapp_publicador || '';
 
@@ -577,7 +590,7 @@ function mostrarFormulario(d) {
   const zpSec = document.getElementById('fotos-zp-section');
   const manSec = document.getElementById('fotos-manual-section');
 
-  if ((portalActual === 'zonaprop' || portalActual === 'ml') && d.fotos && d.fotos.length) {
+  if (portalActual !== 'manual' && d.fotos && d.fotos.length) {
     zpSec.style.display = 'block';
     manSec.style.display = 'none';
     document.getElementById('f-fotos').value = d.fotos.join('\n');
@@ -593,6 +606,50 @@ function mostrarFormulario(d) {
     const slug = slugify((d.barrio || '') + '-' + (d.direccion || ''));
     document.getElementById('fotos-carpeta-path').textContent = 'assets/fotos/' + slug + '/';
   }
+}
+
+// Celular: al tocar la descripción, la caja crece hasta mostrar todo el texto (en la Mac no cambia)
+function ajustarDesc() {
+  const ta = document.getElementById('f-descripcion');
+  if (!window.matchMedia('(max-width: 700px)').matches) return;
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
+let descOriginal = '';
+function mostrarLimpieza(sacado, original) {
+  descOriginal = original;
+  const box = document.getElementById('limpieza-box');
+  const lista = document.getElementById('limpieza-lista');
+  lista.innerHTML = '';
+  sacado.forEach(frase => {
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:3px 0;border-top:1px dashed #E8D48A';
+    const txt = document.createElement('span');
+    txt.style.flex = '1';
+    txt.textContent = '✂ ' + frase;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline btn-sm';
+    btn.style.cssText = 'padding:2px 10px;font-size:12px';
+    btn.textContent = 'Restaurar';
+    btn.onclick = () => {
+      const ta = document.getElementById('f-descripcion');
+      ta.value = ta.value.trimEnd() + '\n' + frase;
+      if (ta.style.height) ajustarDesc();
+      fila.remove();
+      if (!lista.children.length) box.style.display = 'none';
+    };
+    fila.append(txt, btn);
+    lista.appendChild(fila);
+  });
+  box.style.display = sacado.length ? 'block' : 'none';
+}
+function deshacerLimpieza() {
+  if (!confirm('¿Volver a la descripción original del portal? Se pierden los cambios que hayas hecho a mano en la descripción.')) return;
+  document.getElementById('f-descripcion').value = descOriginal;
+  if (document.getElementById('f-descripcion').style.height) ajustarDesc();
+  document.getElementById('limpieza-box').style.display = 'none';
 }
 
 function setSelect(id, val) {
@@ -621,7 +678,7 @@ async function generarFicha(modo = 'auto') {
 
   // Recopilar fotos
   let fotos = [];
-  if (portalActual === 'zonaprop' || portalActual === 'manual') {
+  if (document.getElementById('fotos-zp-section').style.display !== 'none') {
     const txt = document.getElementById('f-fotos').value.trim();
     fotos = txt ? txt.split('\n').map(l => l.trim()).filter(l => l.startsWith('http')) : [];
   } else {
@@ -692,17 +749,44 @@ async function generarFicha(modo = 'auto') {
 
     if (data.push_error) showStatus('✗ La ficha se generó en tu Mac pero NO se subió a GitHub (el link no va a andar): ' + data.push_error, 'error');
     else if (data.aviso) showStatus('⚠ Ficha publicada, pero revisá el mapa: ' + data.aviso, 'error');
-    else showStatus('✓ Ficha publicada. GitHub Pages tarda ~30 segundos en actualizarse.', 'success');
+    else showStatus('✓ Ficha subida. Esperando que esté online (suele tardar entre 30 segundos y 2 minutos)…', 'info');
     const box = document.getElementById('result-box');
     box.style.display = 'block';
     document.getElementById('result-link').textContent = data.url;
     document.getElementById('result-open').href = data.url;
+    document.getElementById('result-share').style.display = navigator.share ? 'inline-flex' : 'none';
     box.scrollIntoView({ behavior: 'smooth' });
+    if (!data.push_error) esperarOnline(data.archivo);
   } catch(e) {
     showStatus('Error al generar la ficha.', 'error');
   } finally {
     setBtnLoading('btn-generar', false);
   }
+}
+
+let esperaTimer = null;
+function esperarOnline(archivo) {
+  const lbl = document.getElementById('result-lbl');
+  lbl.textContent = '⏳ Publicando… todavía no la mandes';
+  clearInterval(esperaTimer);
+  esperaTimer = setInterval(async () => {
+    try {
+      const r = await (await fetch('/estado/' + encodeURIComponent(archivo))).json();
+      if (r.estado === 'online') {
+        clearInterval(esperaTimer);
+        lbl.textContent = '✓ Ya está online — lista para mandar';
+        showStatus('✓ La ficha ya está online. Copiala o compartila.', 'success');
+      } else if (r.estado === 'demorado') {
+        clearInterval(esperaTimer);
+        lbl.textContent = '⚠ Tarda más de lo normal — abrila para revisar';
+      }
+    } catch (e) { /* el servidor no respondió; reintenta en el próximo ciclo */ }
+  }, 5000);
+}
+
+function compartirLink() {
+  const link = document.getElementById('result-link').textContent;
+  navigator.share({ url: link }).catch(() => {});
 }
 
 function copiarLink() {
@@ -726,17 +810,20 @@ function setBtnLoading(btnId, loading) {
 
 function resetTodo() {
   // Reset portal
-  portalActual = 'zonaprop';
+  portalActual = 'auto';
   fotosZP = [];
   document.querySelectorAll('.pill').forEach(el => el.classList.remove('active'));
   document.querySelector('.pill').classList.add('active');
   document.getElementById('url-section').style.display = 'block';
-  document.getElementById('url-hint').textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
+  document.getElementById('url-hint').textContent = 'Pegá el link de ZonaProp, MercadoLibre, Century 21, Propio o Roomix: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.';
 
   // Limpiar URL
   document.getElementById('url-input').value = '';
 
   // Ocultar formulario y resultados
+  document.getElementById('limpieza-box').style.display = 'none';
+  document.getElementById('f-descripcion').style.height = '';
+  clearInterval(esperaTimer);
   document.getElementById('form-card').style.display = 'none';
   document.getElementById('result-box').style.display = 'none';
   document.getElementById('status-msg').style.display = 'none';
@@ -818,13 +905,7 @@ def detectar_badges(datos: dict) -> list:
 
 # ─── EXTRACCIÓN ZONAPROP ────────────────────────────────────────────────────────
 def extraer_zonaprop(url: str) -> dict:
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'es-AR,es;q=0.9',
-    }
-    r = requests.get(url, headers=headers, timeout=20)
-    r.raise_for_status()
-    html = r.text
+    html = _leer_html(url)  # link o archivo guardado con Cmd+S
 
     # Extraer JSON avisoInfo embebido
     m = re.search(r'const avisoInfo\s*=\s*(\{.*?\})\s*\n\s*const dataLayerInfo', html, re.DOTALL)
@@ -953,6 +1034,11 @@ def extraer_zonaprop(url: str) -> dict:
     fp_m = re.search(r"'publicationDateFormatted'\s*:\s*'([^']+)'", raw)
     datos['fecha_publicacion'] = fp_m.group(1).strip() if fp_m else ''
 
+    # video del aviso: bloque ld+json VideoObject; si no hay, un link de YouTube en la descripción
+    vm = (re.search(r'"@type"\s*:\s*"VideoObject".{0,300}?"contentUrl"\s*:\s*"([^"]+)"', html, re.S)
+          or re.search(r'(https?://(?:www\.)?(?:youtube\.com/(?:shorts/|watch\?v=)|youtu\.be/)[\w-]{11})', datos.get('descripcion', '')))
+    datos['video'] = vm.group(1) if vm else ''
+
     datos['badges'] = detectar_badges(datos)
     return datos
 def _parse_ml_html(html: str) -> dict:
@@ -1044,6 +1130,9 @@ def extraer_c21(html_path_or_url: str) -> dict:
         r.raise_for_status()
         html = r.text
 
+    if 'c21arg.urbanube.com' in html:
+        return _c21_nuevo(html)
+
     soup = BeautifulSoup(html, 'html.parser')
     datos = {'operacion': 'Venta', 'fotos': []}
 
@@ -1115,6 +1204,322 @@ def extraer_c21(html_path_or_url: str) -> dict:
 
     datos['badges'] = detectar_badges(datos)
     return datos
+
+# ─── LIMPIEZA DE DESCRIPCIÓN (datos de otras inmobiliarias, disclaimers, CTAs) ───
+# Siempre se conserva (datos de la operación, no del colega)
+CONSERVAR = re.compile(r'apto\s+cr[eé]dito|2371|permuta|accesib|discapacidad', re.I)
+# Señal fuerte: se borra en cualquier parte del texto
+FUERTE = re.compile('|'.join([
+    r'(?:\+?54\s*9?\s*)?\(?\b(?:11|15)\)?[\s.-]*\d{4}[\s.-]*\d{4}\b',          # teléfono
+    r'\S+@\S+\.\w+', r'https?://|www\.',                                        # email, link
+    r'\b(?:C\.?U\.?C\.?I\.?C\.?B\.?A|CPI|CSI|CMCPSI|C\.?M\.?C\.?P\.?D\.?J\.?L\.?M|CPMCAL|C\.?U\.?I\.?T)\b',
+    r'\bmatr[ií]cula|\bcolegiad[oa]s?\b|\bmartilleros?\b',
+    r'corredor(?:a|es)?\s+(?:responsable|p[uú]blico|inmobiliario|colegiado)',
+    r'^\s*-?\s*contacto\s*:', r'corretaje|intermediaci[oó]n',
+    r'©|derechos reservados|marcas? de servicio',
+    r'RAU S\.?R\.?L|RE/?MAX|Coldwell|Mudafy|KiteProp|Tokko|Lendar|\bKP - T -',
+    r'\baproximad[oa]s\b|orientativ|contractual|sujet[oa]s? a verificaci|t[ií]tulo de propiedad',
+    r'\bcomisi[oó]n|oficinas? (?:inmobiliaria|adherida|de la red)|red de servicios|\bley (?:nacional )?\d',
+]), re.I | re.M)
+# Señal débil: solo se borra al principio o al final del texto
+DEBIL = re.compile(r'consult[aá](?:nos|me)|contact[aá](?:me|nos)|escrib[ií](?:me|nos)|llam[aá](?:me|nos)'
+                   r'|coordin\w* (?:una|tu|la) visita|agend[aá]|ven[ií]? a conocer|no te pierdas'
+                   r'|si ten[eé]s que vender|vend[eé]s para comprar|te asesoramos|operaci[oó]n simult[aá]nea|m[aá]s info', re.I)
+BASURA = re.compile(r'^[\W_]*$')  # líneas sin letras ni números ("--", "-", "̳")
+
+
+def _frases(linea):
+    return [f for f in re.split(r'(?<=[.!?])\s+(?=[¿¡A-ZÁÉÍÓÚÑ])', linea.strip()) if f]
+
+
+def limpiar_descripcion(texto, inmobiliaria=''):
+    """Devuelve (texto_limpio, lo_que_se_sacó). Borra datos de inmobiliarias/agentes, disclaimers y CTAs.
+    Bordes (principio/final): se borra con señal fuerte o débil. Medio: solo con señal fuerte.
+    ponytail: reglas armadas con 9 avisos reales de ZonaProp; si se escapa algo, sumar el patrón a FUERTE/DEBIL."""
+    marcas = FUERTE
+    palabra = (inmobiliaria or '').split()[:1]
+    if palabra and len(palabra[0]) >= 5:   # "Pallarols", "ROILANDS", "TIZADO"; no "RED"
+        marcas = re.compile(FUERTE.pattern + '|' + r'\b' + re.escape(palabra[0]) + r'\b', re.I | re.M)
+    lineas, sacado = texto.split('\n'), []
+
+    def tiene_marca(l, debil):
+        return bool(marcas.search(l) or (debil and DEBIL.search(l)))
+
+    def recortar_borde(idx):
+        # recorre desde el borde hacia adentro; frena en la primera línea "de la propiedad".
+        # Pasar por una línea que se conserva ("Apto crédito") apaga las señales débiles hasta
+        # volver a entrar en un bloque legal (señal fuerte).
+        debil = True
+        for i in idx:
+            l = lineas[i]
+            if BASURA.match(l):
+                lineas[i] = None
+                continue
+            if not tiene_marca(l, debil):
+                if CONSERVAR.search(l):
+                    debil = False
+                    continue
+                return
+            if marcas.search(l):
+                debil = True
+            rescatar = [f for f in _frases(l) if CONSERVAR.search(f)]
+            sacado.extend(f for f in _frases(l) if f not in rescatar)
+            lineas[i] = ' '.join(rescatar) if rescatar else None
+
+    recortar_borde(range(len(lineas) - 1, -1, -1))   # desde abajo
+    recortar_borde(range(len(lineas)))               # desde arriba
+    for i, l in enumerate(lineas):                   # en el medio: solo señales fuertes, frase por frase
+        if l is None:
+            continue
+        if BASURA.match(l) and l.strip():
+            lineas[i] = None
+            continue
+        quedan = []
+        for f in _frases(l):
+            if marcas.search(f) and not CONSERVAR.search(f):
+                sacado.append(f)
+            else:
+                quedan.append(f)
+        lineas[i] = ' '.join(quedan) if (quedan or not l.strip()) else None
+    limpio = '\n'.join(l for l in lineas if l is not None)
+    sacado.sort(key=texto.find)  # en el orden en que aparecían
+    return re.sub(r'\n{3,}', '\n\n', limpio).strip(), sacado
+
+
+def normalizar_texto(t: str) -> str:
+    """Entidades HTML (&#x1d400;, &#xa9;) → caracteres, y letras 'decoradas' (negritas/itálicas
+    Unicode tipo 𝐀𝐔𝐑𝐀) → letras comunes. Solo toca ese bloque Unicode: m², 7º, ½ quedan igual."""
+    import unicodedata
+    t = _html_esc.unescape(t or '')
+    t = ''.join(unicodedata.normalize('NFKC', c) if 0x1D400 <= ord(c) <= 0x1D7FF else c for c in t)
+    return unicodedata.normalize('NFC', t)  # junta la tilde suelta con su letra: 'A' + '́' → 'Á'
+
+
+# dominio → portal. Orden importa: una ficha de Propio puede nombrar a "Century 21" en el texto.
+_PORTALES = [('propio.com.ar', 'propio'), ('tokkobroker', 'propio'), ('roomix', 'roomix'), ('zonaprop', 'zonaprop'),
+             ('mercadolibre', 'ml'), ('century21', 'c21'), ('21online', 'c21'), ('c21arg', 'c21')]
+
+
+def detectar_portal(url_o_path: str) -> str:
+    """Link → por el dominio. Archivo guardado con Cmd+S → por su URL canónica (o el contenido)."""
+    from urllib.parse import urlparse
+    p = Path(url_o_path).expanduser()
+    if p.exists():
+        html = p.read_text(encoding='utf-8', errors='ignore')
+        m = re.search(r'<(?:link[^>]+rel="canonical"[^>]+href|meta[^>]+property="og:url"[^>]+content)="([^"]+)"', html)
+        texto = (m.group(1) if m else '') or html
+    else:
+        texto = urlparse(url_o_path if '://' in url_o_path else 'https://' + url_o_path).netloc.lower()
+    for clave, portal in _PORTALES:
+        if clave in texto.lower():
+            return portal
+    raise ValueError('No reconozco el portal de este link. Funciona con ZonaProp, MercadoLibre, Century 21, Propio y Roomix; '
+                     'para otro, usá "Manual".')
+
+
+_UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+       'Accept-Language': 'es-AR,es;q=0.9'}
+_TIPOS = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa', 'local': 'Local',
+          'oficina': 'Oficina', 'terreno': 'Terreno', 'duplex': 'Duplex', 'dúplex': 'Duplex', 'loft': 'Loft'}
+
+
+def _leer_html(url_o_path: str) -> str:
+    p = Path(url_o_path).expanduser()
+    if p.exists():
+        return p.read_text(encoding='utf-8', errors='ignore')
+    r = requests.get(url_o_path, headers=_UA, timeout=20)
+    r.raise_for_status()
+    return r.text
+
+
+def _texto(soup) -> str:
+    for t in soup(['script', 'style', 'svg']):
+        t.decompose()
+    return soup.get_text('\n', strip=True)
+
+
+def _specs(txt: str, datos: dict):
+    """Bloque '3 / ambientes / 2 / dormitorios / 1 / baño / 145 m² totales / 74 m² cubiertos'
+    (mismo formato en Propio y en C21 nuevo). Toma la primera aparición = la propiedad, no las similares."""
+    def n(pat):
+        m = re.search(pat, txt, re.I)
+        return m.group(1) if m else ''
+    datos['ambientes']    = n(r'(\d+)\s+ambientes?\b')
+    datos['dormitorios']  = n(r'(\d+)\s+dormitorios?\b')
+    datos['banos']        = n(r'(\d+)\s+baños?\b')
+    datos['sup_total']    = n(r'(\d+)\s*m²\s+totales')
+    datos['sup_cubierta'] = n(r'(\d+)\s*m²\s+cubiertos')
+    datos['disposicion']  = n(r'\nDisposición\n([^\n]+)')
+
+
+def _tipo_operacion(titulo: str, datos: dict):
+    t = titulo.lower()
+    datos['tipo'] = next((v for k, v in _TIPOS.items() if re.search(rf'\b{k}\b', t)), 'Departamento')
+    datos['operacion'] = 'Alquiler' if 'alquiler' in t else 'Venta'
+
+
+def _precio(txt: str) -> str:
+    m = re.search(r'(USD|US\$|U\$S|\$)\s*\n?\s*([\d.]+)', txt)
+    if not m:
+        return ''
+    return ('$' if m.group(1) == '$' else 'USD') + ' ' + m.group(2)
+
+
+def _c21_nuevo(html: str) -> dict:
+    """century21.com.ar/propiedades/ID — server-rendered: ld+json (fotos, descripción) + texto visible."""
+    import json as _json
+    ld = {}
+    for m in re.findall(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', html, re.S):
+        try:
+            j = _json.loads(m)
+        except ValueError:
+            continue
+        if j.get('@type') == 'Product':
+            ld = j
+            break
+    soup = BeautifulSoup(html, 'html.parser')
+    og_desc = (soup.find('meta', property='og:description') or {}).get('content', '')
+    txt = _texto(soup)
+    datos = {}
+    titulo = ld.get('name', '')
+    _tipo_operacion(titulo, datos)
+    # og:description = "Floresta, Buenos Aires, CABA · *US$ 109.000* · *Inmobiliaria*"
+    partes = [x.strip(' *') for x in og_desc.split('·')]
+    datos['barrio'] = partes[0].split(',')[0].strip() if partes else ''
+    datos['inmobiliaria'] = partes[2] if len(partes) > 2 else ''
+    # dirección: la línea "Avenida Rivadavia 8338, 7°57, Floresta, ..."
+    dm = re.search(r'\n([^\n,]+\d[^\n,]*),[^\n]*' + re.escape(datos['barrio']) + ',', txt) if datos['barrio'] else None
+    datos['direccion'] = dm.group(1).strip() if dm else ''
+    datos['precio'] = _precio(txt)
+    _specs(txt, datos)
+    em = re.search(r'\nExpensas\n([\d.]+)', txt)
+    datos['expensas'] = f'$ {em.group(1)}' if em else ''
+    am = re.search(r'Año de Construcción\n([\d.]+)', txt)
+    anio = int(am.group(1).replace('.', '')) if am else 0
+    datos['antiguedad'] = str(time.localtime().tm_year - anio) if 1800 < anio <= time.localtime().tm_year else ''
+    om = re.search(r'\nOrientaci[oó]n[^\n]*\n(Norte|Sur|Este|Oeste|Noreste|Noroeste|Sudeste|Sudoeste)\b', txt)
+    datos['orientacion'] = om.group(1) if om else ''
+    datos['toilette'] = '1' if '\nToilette\n' in txt else ''
+    # el ld+json corta la descripción a ~500 caracteres: el texto visible la tiene completa
+    dm = re.search(r'\nDescripción\n(.*?)\nVer más\n', txt, re.S)
+    datos['descripcion'] = (dm.group(1) if dm else ld.get('description') or '').strip()
+    imgs = ld.get('image') or []
+    datos['fotos'] = list(dict.fromkeys(imgs if isinstance(imgs, list) else [imgs]))
+    # el video viene en su propio campo del payload (escapado); si no, buscarlo en la descripción
+    yid = re.search(r'youtubeVideoId\\?":\\?"([\w-]{11})', html)
+    vm = re.search(r'https?://(?:www\.)?(?:youtube\.com/(?:shorts/|watch\?v=)|youtu\.be/)[\w-]{11}', datos['descripcion'])
+    datos['video'] = f'https://www.youtube.com/watch?v={yid.group(1)}' if yid else (vm.group(0) if vm else '')
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
+    datos['badges'] = detectar_badges(datos)
+    return datos
+
+
+def extraer_roomix(url_o_path: str) -> dict:
+    """roomix.ai/propiedad/... — agregador. ld+json RealEstateListing + texto visible."""
+    import json as _json
+    html = _leer_html(url_o_path)
+    ld = {}
+    for m in re.findall(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', html, re.S):
+        try:
+            j = _json.loads(m)
+        except ValueError:
+            continue
+        if isinstance(j, dict) and j.get('@type') == 'RealEstateListing':
+            ld = j
+            break
+    me, of = ld.get('mainEntity') or {}, ld.get('offers') or {}
+    dire = me.get('address') or {}
+    soup = BeautifulSoup(html, 'html.parser')
+    titulo = (soup.find('meta', property='og:title') or {}).get('content', '') or ld.get('name', '')
+    txt = _texto(soup)
+    datos = {}
+    _tipo_operacion(titulo, datos)
+    calle = (dire.get('streetAddress') or '').split(',')[0]
+    datos['direccion'] = calle.split(' - ')[0].strip()          # "Calasanz 400 - P3" → "Calasanz 400"
+    datos['barrio'] = dire.get('addressLocality', '')
+    precio = of.get('price')
+    datos['precio'] = (('$' if of.get('priceCurrency') == 'ARS' else 'USD') + ' ' + f'{int(precio):,}'.replace(',', '.')) if precio else _precio(txt)
+    _specs(txt, datos)
+    for k, campo in (('ambientes', 'numberOfRooms'), ('dormitorios', 'numberOfBedrooms'), ('banos', 'numberOfBathroomsTotal')):
+        if me.get(campo):
+            datos[k] = str(me[campo])
+    if (me.get('floorSize') or {}).get('value'):
+        datos['sup_total'] = str(me['floorSize']['value'])
+    dm = re.search(r'\n(Al frente|Contrafrente|Lateral|Interno)\n', txt)
+    datos['disposicion'] = {'Al frente': 'Frente'}.get(dm.group(1), dm.group(1)) if dm else ''
+    om = re.search(r'\nOrientación\n(norte|sur|este|oeste|noreste|noroeste|sudeste|sudoeste)\n', txt, re.I)
+    datos['orientacion'] = om.group(1).capitalize() if om else ''
+    am = re.search(r'\nAntigüedad\n(\d+)', txt)
+    datos['antiguedad'] = am.group(1) if am else ''
+    em = re.search(r'\nExpensas\n\$\s*([\d.]+)', txt)
+    datos['expensas'] = f'$ {em.group(1)}' if em else ''
+    datos['toilette'] = ''
+    # descripción: Roomix la aplana en un solo párrafo → se separa en frases y viñetas para que se lea
+    # (y para que la limpieza trabaje frase por frase en lugar de borrar el párrafo entero)
+    dm = re.search(r'\nDescripción\n(.*?)\n(?:Título original del aviso:|Hacé click para interactuar)', txt, re.S)
+    desc = (dm.group(1) if dm else ld.get('description', '')).strip()
+    desc = re.sub(r'\s*•\s*', '\n• ', desc)
+    # corta en fin de frase, salvo después de abreviaturas cortas ("Av.", "J. B.", "Dr.")
+    desc = re.sub(r'(?<=[.!?])\s+(?=[¿¡A-ZÁÉÍÓÚÑ"“])',
+                  lambda m: ' ' if re.search(r'(?:^|[\s(])(?:[A-ZÁÉÍÓÚÑ]|Av|Avda|Dr|Dra|Sr|Sra|Ing|Arq|Lic|Gral|Pte|Pje|Nro|N[º°]|Ej|aprox)\.$',
+                                             desc[:m.start()]) else '\n', desc)
+    datos['descripcion'] = desc.strip()
+    # fotos: solo las de esta propiedad (la página también muestra similares), en tamaño completo
+    imgs = ld.get('image') or []
+    base = re.match(r'(https://cdn\.roomix\.ai/\d+/\d+/\d+/)', imgs[0]) if imgs else None
+    if base:
+        ids = re.findall(re.escape(base.group(1)) + r'(\d+)(?:_\w+)?\.(?:jpe?g|webp|png)', html)
+        datos['fotos'] = [f'{base.group(1)}{i}.jpg' for i in dict.fromkeys(ids)]
+    else:
+        datos['fotos'] = imgs
+    vm = re.search(r'videosIds\\?":\[\\?"([\w-]{11})', html)
+    datos['video'] = f'https://www.youtube.com/watch?v={vm.group(1)}' if vm else ''
+    pm = re.search(r'\nPublicado por\n([^\n]+)', txt)  # sección "Publicado por"
+    datos['inmobiliaria'] = pm.group(1).strip() if pm else ''
+    datos['whatsapp_publicador'] = ''  # Roomix no lo pone en la página: lo pide al tocar "Contactar"
+    datos['fecha_publicacion'] = ''
+    datos['badges'] = detectar_badges(datos)
+    return datos
+
+
+def extraer_propio(url_o_path: str) -> dict:
+    """ficha.propio.com.ar/XXXX — Next.js server-rendered, fotos de Tokko."""
+    html = _leer_html(url_o_path)
+    soup = BeautifulSoup(html, 'html.parser')
+    h1 = soup.find('h1')
+    titulo = h1.get_text(' ', strip=True) if h1 else ''   # "PH 3 ambientes en Venta, Villa Devoto"
+    p = h1.find_next('p') if h1 else None
+    ubic = p.get_text('', strip=True) if p else ''        # 'Joaquin V. Gonzalez 4861 "1", Villa Devoto'
+    header = soup.find('header')
+    inmo = header.find('span') if header else None
+    # fotos y video viven en el payload del script, no en el texto visible
+    fotos = list(dict.fromkeys(re.findall(r'https://static\.tokkobroker\.com/pictures/[^"\\\s]+?\.(?:jpe?g|png|webp)', html)))
+    vm = re.search(r'video\\?":\\?"(https://www\.youtube\.com/embed/[\w-]{11})', html)  # viene escapado en el payload
+    txt = _texto(soup)
+    datos = {}
+    _tipo_operacion(titulo, datos)
+    dir_, _, barrio = ubic.rpartition(',')
+    datos['direccion'] = re.sub(r'\s*"[^"]*"', '', dir_).strip() if dir_ else ubic
+    datos['barrio'] = barrio.strip() or (titulo.rpartition(',')[2].strip())
+    datos['precio'] = _precio(txt)
+    _specs(txt, datos)
+    am = re.search(r'\nAntigüedad\n(\d+)', txt)
+    datos['antiguedad'] = am.group(1) if am else ''
+    dm = re.search(r'\nDescripción\n(.*?)\n(?:Características destacadas|Información adicional|Contacto)\n', txt, re.S)
+    datos['descripcion'] = dm.group(1).strip() if dm else ''
+    em = re.search(r'Expensas\s*:?\s*\$\s*([\d.]+)', datos['descripcion'], re.I)
+    datos['expensas'] = f'$ {em.group(1)}' if em and em.group(1).strip('0.') else ''
+    datos['orientacion'] = ''
+    datos['toilette'] = ''
+    datos['fotos'] = fotos
+    datos['video'] = vm.group(1).replace('/embed/', '/watch?v=') if vm else ''
+    datos['inmobiliaria'] = inmo.get_text(strip=True) if inmo else ''
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
+    datos['badges'] = detectar_badges(datos)
+    return datos
+
 CDN = "https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1"
 ICONOS = {
     "ambientes":    f"{CDN}/ambientes.9e33dd.svg",
@@ -1161,6 +1566,61 @@ def nombre_unico(directorio: Path, nombre_base: str) -> Path:
         return path
     h = hashlib.md5(str(time.time()).encode()).hexdigest()[:4]
     return directorio / f"{nombre_base}-{h}.html"
+
+
+# ─── AVISO "YA ESTÁ ONLINE" (pantalla + notificación ntfy al celular) ─────────────
+# El tema vive FUERA del repo (el repo es público y git_push hace `git add .`).
+NTFY_FILE = REPO_PATH.parent / '.ntfy_topic'
+ESTADO_PUBLICACION = {}  # archivo -> 'publicando' | 'online' | 'demorado'
+
+
+def ntfy_topic() -> str:
+    if NTFY_FILE.exists():
+        return NTFY_FILE.read_text().strip()
+    import secrets
+    t = 'fichas-nahuel-' + secrets.token_hex(4)
+    try:
+        NTFY_FILE.write_text(t)
+    except OSError:
+        pass
+    return t
+
+
+def avisar_celular(titulo: str, mensaje: str, link: str):
+    try:
+        requests.post('https://ntfy.sh/', json={'topic': ntfy_topic(), 'title': titulo, 'message': mensaje,
+                                                'click': link, 'tags': ['house']}, timeout=10)
+    except Exception as e:
+        print(f'[ntfy] no se pudo avisar: {e}', flush=True)
+
+
+def vigilar_publicacion(archivo: str, url: str, descripcion: str, max_seg: int = 600):
+    """Revisa la URL pública cada 10 s hasta que GitHub Pages la sirva; entonces avisa.
+    ponytail: un hilo por ficha, sin cola; alcanza para un solo usuario."""
+    import threading
+
+    def loop():
+        inicio = time.time()
+        while time.time() - inicio < max_seg:
+            try:
+                # el ?v= evita la caché del CDN, que puede guardar el 404 de antes de publicar
+                if requests.get(f'{url}?v={int(time.time())}', headers=_UA, timeout=15).status_code == 200:
+                    ESTADO_PUBLICACION[archivo] = 'online'
+                    avisar_celular('✓ Ficha online', f'{descripcion}\n{url}', url)
+                    return
+            except Exception:
+                pass
+            time.sleep(10)
+        ESTADO_PUBLICACION[archivo] = 'demorado'
+        avisar_celular('⚠ La ficha todavía no aparece', f'{descripcion}: pasaron {max_seg // 60} min. Revisala.', url)
+
+    ESTADO_PUBLICACION[archivo] = 'publicando'
+    threading.Thread(target=loop, daemon=True).start()
+
+
+@app.route('/estado/<archivo>')
+def estado_publicacion(archivo):
+    return jsonify({'estado': ESTADO_PUBLICACION.get(archivo, 'desconocido')})
 
 
 def git_push(repo: Path, mensaje: str):
@@ -1291,7 +1751,7 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
 # ─── ROUTES ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
-    return render_template_string(HTML)
+    return render_template_string(HTML, ntfy=ntfy_topic())
 
 
 @app.route('/assets/<path:fname>')
@@ -1304,17 +1764,28 @@ def brand_assets(fname):
 def extraer():
     body = request.get_json()
     url = body.get('url', '').strip()
-    portal = body.get('portal', 'zonaprop')
+    portal = body.get('portal', 'auto')
 
     try:
+        if portal == 'auto':
+            portal = detectar_portal(url)
         if portal == 'zonaprop':
             datos = extraer_zonaprop(url)
         elif portal == 'ml':
             datos = extraer_ml(url)
         elif portal == 'c21':
             datos = extraer_c21(url)
+        elif portal == 'propio':
+            datos = extraer_propio(url)
+        elif portal == 'roomix':
+            datos = extraer_roomix(url)
         else:
             datos = {}
+        if datos.get('descripcion'):
+            original = normalizar_texto(datos['descripcion'])
+            datos['descripcion'], datos['desc_sacado'] = limpiar_descripcion(original, datos.get('inmobiliaria', ''))
+            datos['desc_original'] = original
+        datos['portal'] = portal
         return jsonify(datos)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
@@ -1394,7 +1865,10 @@ def generar():
     _, aviso = geocodificar(dir_q, bar_q)  # cacheado: sin 2ª llamada
     if modo_mapa != 'auto':
         aviso = ''  # el usuario ya decidió con el preview a la vista
-    return jsonify({'url': url_publica, 'archivo': out_path.name, 'aviso': aviso, 'push_error': push_error})
+    if not push_error:
+        tipo_dir = ' · '.join(x for x in (d.get('tipo', ''), d.get('direccion', ''), d.get('barrio', '')) if x)
+        vigilar_publicacion(out_path.name, url_sheets, tipo_dir)
+    return jsonify({'url': url_sheets, 'archivo': out_path.name, 'aviso': aviso, 'push_error': push_error})
 
 
 def _video_embed_src(url: str):
