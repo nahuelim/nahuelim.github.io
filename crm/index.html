@@ -284,7 +284,7 @@
 
 <script>
 const VERSION = '39';
-const COMPILACION = '39';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '39.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -705,6 +705,24 @@ function pintarHoy(r, viejo) {
 
   // ponytail: sin contadores arriba: los títulos de los bloques ya dicen cuántos hay y se ponen rojos si hay algo urgente
   l.append(semana());
+  // Leads nuevos de C21 desde la última vez que los viste: tocar la línea abre Llamar; × la cierra. Los dos los marcan como vistos.
+  {
+    const c21 = L('llamar').filter(x => x.fuente === 'C21').map(x => String(x.id));
+    let vistos = null;
+    try { vistos = JSON.parse(localStorage.getItem('crm_c21_vistos') || 'null'); } catch (e) {}
+    const guardar = () => localStorage.setItem('crm_c21_vistos', JSON.stringify(c21));
+    if (!vistos && !viejo) guardar();                                  // la primera vez arranca de cero (sin aviso por los de antes)
+    const nuevos = vistos ? c21.filter(id => !vistos.includes(id)).length : 0;
+    if (nuevos) {
+      const linea = el('div', { cls:'actual', style:'display:flex;align-items:center;gap:8px;margin:2px 4px 6px' },
+        el('a', { href:'#', style:'color:var(--verde-profundo);font-weight:600', onclick: e => { e.preventDefault(); guardar(); linea.remove();
+          const d = document.getElementById('sec-llamar'); d.open = true; d.scrollIntoView({ behavior:'smooth', block:'start' }); } },
+          (nuevos === 1 ? 'Entró 1 lead nuevo' : 'Entraron ' + nuevos + ' leads nuevos') + ' de C21 → Llamar ›'),
+        el('button', { 'aria-label':'Ya los vi', style:'margin-left:auto;border:0;background:none;font-size:18px;color:var(--tinta-suave);cursor:pointer',
+          onclick: () => { guardar(); linea.remove(); } }, '×'));
+      l.append(linea);
+    }
+  }
   // Para completar: una línea discreta, con × para no verla más en el día (vuelve mañana si sigue faltando)
   if (r.incompletos && localStorage.getItem('crm_sin_completar') !== hoyISO) {
     const linea = el('div', { cls:'actual', style:'display:flex;align-items:center;gap:8px;margin:2px 4px 6px' },
