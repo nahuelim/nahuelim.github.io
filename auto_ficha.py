@@ -1217,7 +1217,7 @@ FUERTE = re.compile('|'.join([
     r'corredor(?:a|es)?\s+(?:responsable|p[uú]blico|inmobiliario|colegiado)',
     r'^\s*-?\s*contacto\s*:', r'corretaje|intermediaci[oó]n',
     r'©|derechos reservados|marcas? de servicio',
-    r'RAU S\.?R\.?L|RE/?MAX|Coldwell|Mudafy|KiteProp|Tokko|Lendar|\bKP - T -',
+    r'RAU S\.?R\.?L|RE/?MAX|Coldwell|Mudafy|KiteProp|Tokko|Lendar|\bKP - T -|century\s*21|\bc21\b',
     r'\baproximad[oa]s\b|orientativ|contractual|sujet[oa]s? a verificaci|t[ií]tulo de propiedad',
     r'\bcomisi[oó]n|oficinas? (?:inmobiliaria|adherida|de la red)|red de servicios|\bley (?:nacional )?\d',
 ]), re.I | re.M)
@@ -1225,7 +1225,10 @@ FUERTE = re.compile('|'.join([
 DEBIL = re.compile(r'consult[aá](?:nos|me)|contact[aá](?:me|nos)|escrib[ií](?:me|nos)|llam[aá](?:me|nos)'
                    r'|coordin\w* (?:una|tu|la) visita|agend[aá]|ven[ií]? a conocer|no te pierdas'
                    r'|si ten[eé]s que vender|vend[eé]s para comprar|te asesoramos|operaci[oó]n simult[aá]nea|m[aá]s info', re.I)
-BASURA = re.compile(r'^[\W_]*$')  # líneas sin letras ni números ("--", "-", "̳")
+BASURA = re.compile(r'^[\W_]*$')
+# "El equipo de Century21 vende DEPARTAMENTO 3 AMBIENTES." → se saca solo el comienzo, queda la propiedad
+PREFIJO = re.compile(r'^\s*(?:(?:el|nuestro)\s+equipo\s+de\s+[^.\n]{1,40}?|(?:inmobiliaria\s+)?(?:century\s*21|c21|re/?max|coldwell banker)[^.\n]{0,25}?)'
+                     r'\s+(?:vende|ofrece|presenta|comercializa|te\s+ofrece)\s+', re.I)  # líneas sin letras ni números ("--", "-", "̳")
 
 
 def _frases(linea):
@@ -1241,6 +1244,14 @@ def limpiar_descripcion(texto, inmobiliaria=''):
     if palabra and len(palabra[0]) >= 5:   # "Pallarols", "ROILANDS", "TIZADO"; no "RED"
         marcas = re.compile(FUERTE.pattern + '|' + r'\b' + re.escape(palabra[0]) + r'\b', re.I | re.M)
     lineas, sacado = texto.split('\n'), []
+    for i, l in enumerate(lineas):                   # primera línea con texto: sacar "El equipo de X vende"
+        if l.strip():
+            m = PREFIJO.match(l)
+            if m:
+                sacado.append(m.group(0).strip())
+                resto = l[m.end():]
+                lineas[i] = resto[:1].upper() + resto[1:]
+            break
 
     def tiene_marca(l, debil):
         return bool(marcas.search(l) or (debil and DEBIL.search(l)))
