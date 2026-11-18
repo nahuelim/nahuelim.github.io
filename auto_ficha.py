@@ -993,6 +993,11 @@ def extraer_zonaprop(url: str) -> dict:
     fp_m = re.search(r"'publicationDateFormatted'\s*:\s*'([^']+)'", raw)
     datos['fecha_publicacion'] = fp_m.group(1).strip() if fp_m else ''
 
+    # video del aviso: bloque ld+json VideoObject; si no hay, un link de YouTube en la descripción
+    vm = (re.search(r'"@type"\s*:\s*"VideoObject".{0,300}?"contentUrl"\s*:\s*"([^"]+)"', html, re.S)
+          or re.search(r'(https?://(?:www\.)?(?:youtube\.com/(?:shorts/|watch\?v=)|youtu\.be/)[\w-]{11})', datos.get('descripcion', '')))
+    datos['video'] = vm.group(1) if vm else ''
+
     datos['badges'] = detectar_badges(datos)
     return datos
 def _parse_ml_html(html: str) -> dict:
