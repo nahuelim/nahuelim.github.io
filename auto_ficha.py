@@ -1117,6 +1117,15 @@ def extraer_c21(html_path_or_url: str) -> dict:
     datos['badges'] = detectar_badges(datos)
     return datos
 
+def normalizar_texto(t: str) -> str:
+    """Entidades HTML (&#x1d400;, &#xa9;) → caracteres, y letras 'decoradas' (negritas/itálicas
+    Unicode tipo 𝐀𝐔𝐑𝐀) → letras comunes. Solo toca ese bloque Unicode: m², 7º, ½ quedan igual."""
+    import unicodedata
+    t = _html_esc.unescape(t or '')
+    t = ''.join(unicodedata.normalize('NFKC', c) if 0x1D400 <= ord(c) <= 0x1D7FF else c for c in t)
+    return unicodedata.normalize('NFC', t)  # junta la tilde suelta con su letra: 'A' + '́' → 'Á'
+
+
 # dominio → portal. Orden importa: una ficha de Propio puede nombrar a "Century 21" en el texto.
 _PORTALES = [('propio.com.ar', 'propio'), ('tokkobroker', 'propio'), ('zonaprop', 'zonaprop'),
              ('mercadolibre', 'ml'), ('century21', 'c21'), ('21online', 'c21'), ('c21arg', 'c21')]
@@ -1475,6 +1484,8 @@ def extraer():
             datos = extraer_propio(url)
         else:
             datos = {}
+        if datos.get('descripcion'):
+            datos['descripcion'] = normalizar_texto(datos['descripcion'])
         datos['portal'] = portal
         return jsonify(datos)
     except Exception as e:
