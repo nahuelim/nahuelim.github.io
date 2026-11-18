@@ -452,7 +452,7 @@ HTML = r"""<!DOCTYPE html>
 
       <div class="full">
         <label>Descripción</label>
-        <textarea id="f-descripcion" placeholder="Descripción del inmueble..."></textarea>
+        <textarea id="f-descripcion" placeholder="Descripción del inmueble..." onfocus="ajustarDesc()" oninput="ajustarDesc()"></textarea>
         <div id="limpieza-box" style="display:none;margin-top:8px;padding:10px 12px;background:#FFF6D6;border:1px solid #E8D48A;border-radius:8px;font-size:12.5px">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
             <strong>Se sacó de la descripción (datos de la inmobiliaria, disclaimers, contacto):</strong>
@@ -608,6 +608,14 @@ function mostrarFormulario(d) {
   }
 }
 
+// Celular: al tocar la descripción, la caja crece hasta mostrar todo el texto (en la Mac no cambia)
+function ajustarDesc() {
+  const ta = document.getElementById('f-descripcion');
+  if (!window.matchMedia('(max-width: 700px)').matches) return;
+  ta.style.height = 'auto';
+  ta.style.height = ta.scrollHeight + 'px';
+}
+
 let descOriginal = '';
 function mostrarLimpieza(sacado, original) {
   descOriginal = original;
@@ -628,6 +636,7 @@ function mostrarLimpieza(sacado, original) {
     btn.onclick = () => {
       const ta = document.getElementById('f-descripcion');
       ta.value = ta.value.trimEnd() + '\n' + frase;
+      if (ta.style.height) ajustarDesc();
       fila.remove();
       if (!lista.children.length) box.style.display = 'none';
     };
@@ -639,6 +648,7 @@ function mostrarLimpieza(sacado, original) {
 function deshacerLimpieza() {
   if (!confirm('¿Volver a la descripción original del portal? Se pierden los cambios que hayas hecho a mano en la descripción.')) return;
   document.getElementById('f-descripcion').value = descOriginal;
+  if (document.getElementById('f-descripcion').style.height) ajustarDesc();
   document.getElementById('limpieza-box').style.display = 'none';
 }
 
@@ -812,6 +822,7 @@ function resetTodo() {
 
   // Ocultar formulario y resultados
   document.getElementById('limpieza-box').style.display = 'none';
+  document.getElementById('f-descripcion').style.height = '';
   clearInterval(esperaTimer);
   document.getElementById('form-card').style.display = 'none';
   document.getElementById('result-box').style.display = 'none';
