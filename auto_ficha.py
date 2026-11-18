@@ -320,6 +320,7 @@ HTML = r"""<!DOCTYPE html>
       <div class="pill active" onclick="setPortal('zonaprop')">ZonaProp</div>
       <div class="pill" onclick="setPortal('ml')">MercadoLibre</div>
       <div class="pill" onclick="setPortal('c21')">Century 21</div>
+      <div class="pill" onclick="setPortal('propio')">Propio</div>
       <div class="pill" onclick="setPortal('manual')">Manual</div>
     </div>
 
@@ -516,7 +517,8 @@ function setPortal(p) {
     urlSection.style.display = 'block';
     if (p === 'zonaprop') hint.textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
     else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL del aviso. Si ML la bloquea, guardá la página con Cmd+S («solo HTML») y pegá el path del archivo.';
-    else if (p === 'c21') hint.textContent = 'Century 21: guardá la página con Cmd+S y pegá el path al archivo. El precio completalo manualmente.';
+    else if (p === 'c21') hint.textContent = 'Century 21: pegá el link (century21.com.ar/propiedades/...). Si falla, guardá la página con Cmd+S y pegá el path del archivo.';
+    else if (p === 'propio') hint.textContent = 'Propio: pegá el link de la ficha (ficha.propio.com.ar/...).';
   }
 }
 
@@ -564,6 +566,7 @@ function mostrarFormulario(d) {
   if (d.disposicion) setSelect('f-disposicion', d.disposicion);
   if (d.orientacion) setSelect('f-orientacion', d.orientacion);
   if (d.descripcion) document.getElementById('f-descripcion').value = d.descripcion;
+  if (d.video) document.getElementById('f-video').value = d.video;
   window.scrapedInmo = d.inmobiliaria || '';
   window.scrapedWa = d.whatsapp_publicador || '';
 
@@ -577,7 +580,7 @@ function mostrarFormulario(d) {
   const zpSec = document.getElementById('fotos-zp-section');
   const manSec = document.getElementById('fotos-manual-section');
 
-  if ((portalActual === 'zonaprop' || portalActual === 'ml') && d.fotos && d.fotos.length) {
+  if (portalActual !== 'manual' && d.fotos && d.fotos.length) {
     zpSec.style.display = 'block';
     manSec.style.display = 'none';
     document.getElementById('f-fotos').value = d.fotos.join('\n');
@@ -621,7 +624,7 @@ async function generarFicha(modo = 'auto') {
 
   // Recopilar fotos
   let fotos = [];
-  if (portalActual === 'zonaprop' || portalActual === 'manual') {
+  if (document.getElementById('fotos-zp-section').style.display !== 'none') {
     const txt = document.getElementById('f-fotos').value.trim();
     fotos = txt ? txt.split('\n').map(l => l.trim()).filter(l => l.startsWith('http')) : [];
   } else {
@@ -1044,6 +1047,9 @@ def extraer_c21(html_path_or_url: str) -> dict:
         r.raise_for_status()
         html = r.text
 
+    if 'c21arg.urbanube.com' in html:
+        return _c21_nuevo(html)
+
     soup = BeautifulSoup(html, 'html.parser')
     datos = {'operacion': 'Venta', 'fotos': []}
 
@@ -1115,6 +1121,139 @@ def extraer_c21(html_path_or_url: str) -> dict:
 
     datos['badges'] = detectar_badges(datos)
     return datos
+
+_UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+_TIPOS = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa', 'local': 'Local',
+          'oficina': 'Oficina', 'terreno': 'Terreno', 'duplex': 'Duplex', 'dúplex': 'Duplex', 'loft': 'Loft'}
+
+
+def _leer_html(url_o_path: str) -> str:
+    p = Path(url_o_path).expanduser()
+    if p.exists():
+        return p.read_text(encoding='utf-8', errors='ignore')
+    r = requests.get(url_o_path, headers=_UA, timeout=20)
+    r.raise_for_status()
+    return r.text
+
+
+def _texto(soup) -> str:
+    for t in soup(['script', 'style', 'svg']):
+        t.decompose()
+    return soup.get_text('\n', strip=True)
+
+
+def _specs(txt: str, datos: dict):
+    """Bloque '3 / ambientes / 2 / dormitorios / 1 / baño / 145 m² totales / 74 m² cubiertos'
+    (mismo formato en Propio y en C21 nuevo). Toma la primera aparición = la propiedad, no las similares."""
+    def n(pat):
+        m = re.search(pat, txt, re.I)
+        return m.group(1) if m else ''
+    datos['ambientes']    = n(r'(\d+)\s+ambientes?\b')
+    datos['dormitorios']  = n(r'(\d+)\s+dormitorios?\b')
+    datos['banos']        = n(r'(\d+)\s+baños?\b')
+    datos['sup_total']    = n(r'(\d+)\s*m²\s+totales')
+    datos['sup_cubierta'] = n(r'(\d+)\s*m²\s+cubiertos')
+    datos['disposicion']  = n(r'\nDisposición\n([^\n]+)')
+
+
+def _tipo_operacion(titulo: str, datos: dict):
+    t = titulo.lower()
+    datos['tipo'] = next((v for k, v in _TIPOS.items() if re.search(rf'\b{k}\b', t)), 'Departamento')
+    datos['operacion'] = 'Alquiler' if 'alquiler' in t else 'Venta'
+
+
+def _precio(txt: str) -> str:
+    m = re.search(r'(USD|US\$|U\$S|\$)\s*\n?\s*([\d.]+)', txt)
+    if not m:
+        return ''
+    return ('$' if m.group(1) == '$' else 'USD') + ' ' + m.group(2)
+
+
+def _c21_nuevo(html: str) -> dict:
+    """century21.com.ar/propiedades/ID — server-rendered: ld+json (fotos, descripción) + texto visible."""
+    import json as _json
+    ld = {}
+    for m in re.findall(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', html, re.S):
+        try:
+            j = _json.loads(m)
+        except ValueError:
+            continue
+        if j.get('@type') == 'Product':
+            ld = j
+            break
+    soup = BeautifulSoup(html, 'html.parser')
+    og_desc = (soup.find('meta', property='og:description') or {}).get('content', '')
+    txt = _texto(soup)
+    datos = {}
+    titulo = ld.get('name', '')
+    _tipo_operacion(titulo, datos)
+    # og:description = "Floresta, Buenos Aires, CABA · *US$ 109.000* · *Inmobiliaria*"
+    partes = [x.strip(' *') for x in og_desc.split('·')]
+    datos['barrio'] = partes[0].split(',')[0].strip() if partes else ''
+    datos['inmobiliaria'] = partes[2] if len(partes) > 2 else ''
+    # dirección: la línea "Avenida Rivadavia 8338, 7°57, Floresta, ..."
+    dm = re.search(r'\n([^\n,]+\d[^\n,]*),[^\n]*' + re.escape(datos['barrio']) + ',', txt) if datos['barrio'] else None
+    datos['direccion'] = dm.group(1).strip() if dm else ''
+    datos['precio'] = _precio(txt)
+    _specs(txt, datos)
+    em = re.search(r'\nExpensas\n([\d.]+)', txt)
+    datos['expensas'] = f'$ {em.group(1)}' if em else ''
+    am = re.search(r'Año de Construcción\n([\d.]+)', txt)
+    anio = int(am.group(1).replace('.', '')) if am else 0
+    datos['antiguedad'] = str(time.localtime().tm_year - anio) if 1800 < anio <= time.localtime().tm_year else ''
+    om = re.search(r'\nOrientaci[oó]n[^\n]*\n(Norte|Sur|Este|Oeste|Noreste|Noroeste|Sudeste|Sudoeste)\b', txt)
+    datos['orientacion'] = om.group(1) if om else ''
+    datos['toilette'] = '1' if '\nToilette\n' in txt else ''
+    # el ld+json corta la descripción a ~500 caracteres: el texto visible la tiene completa
+    dm = re.search(r'\nDescripción\n(.*?)\nVer más\n', txt, re.S)
+    datos['descripcion'] = (dm.group(1) if dm else ld.get('description') or '').strip()
+    imgs = ld.get('image') or []
+    datos['fotos'] = list(dict.fromkeys(imgs if isinstance(imgs, list) else [imgs]))
+    vm = re.search(r'https?://(?:www\.)?(?:youtube\.com/(?:shorts/|watch\?v=)|youtu\.be/)[\w-]{11}', datos['descripcion'])
+    datos['video'] = vm.group(0) if vm else ''
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
+    datos['badges'] = detectar_badges(datos)
+    return datos
+
+
+def extraer_propio(url_o_path: str) -> dict:
+    """ficha.propio.com.ar/XXXX — Next.js server-rendered, fotos de Tokko."""
+    html = _leer_html(url_o_path)
+    soup = BeautifulSoup(html, 'html.parser')
+    h1 = soup.find('h1')
+    titulo = h1.get_text(' ', strip=True) if h1 else ''   # "PH 3 ambientes en Venta, Villa Devoto"
+    p = h1.find_next('p') if h1 else None
+    ubic = p.get_text('', strip=True) if p else ''        # 'Joaquin V. Gonzalez 4861 "1", Villa Devoto'
+    header = soup.find('header')
+    inmo = header.find('span') if header else None
+    # fotos y video viven en el payload del script, no en el texto visible
+    fotos = list(dict.fromkeys(re.findall(r'https://static\.tokkobroker\.com/pictures/[^"\\\s]+?\.(?:jpe?g|png|webp)', html)))
+    vm = re.search(r'video\\?":\\?"(https://www\.youtube\.com/embed/[\w-]{11})', html)  # viene escapado en el payload
+    txt = _texto(soup)
+    datos = {}
+    _tipo_operacion(titulo, datos)
+    dir_, _, barrio = ubic.rpartition(',')
+    datos['direccion'] = re.sub(r'\s*"[^"]*"', '', dir_).strip() if dir_ else ubic
+    datos['barrio'] = barrio.strip() or (titulo.rpartition(',')[2].strip())
+    datos['precio'] = _precio(txt)
+    _specs(txt, datos)
+    am = re.search(r'\nAntigüedad\n(\d+)', txt)
+    datos['antiguedad'] = am.group(1) if am else ''
+    dm = re.search(r'\nDescripción\n(.*?)\n(?:Características destacadas|Información adicional|Contacto)\n', txt, re.S)
+    datos['descripcion'] = dm.group(1).strip() if dm else ''
+    em = re.search(r'Expensas\s*:?\s*\$\s*([\d.]+)', datos['descripcion'], re.I)
+    datos['expensas'] = f'$ {em.group(1)}' if em and em.group(1).strip('0.') else ''
+    datos['orientacion'] = ''
+    datos['toilette'] = ''
+    datos['fotos'] = fotos
+    datos['video'] = vm.group(1).replace('/embed/', '/watch?v=') if vm else ''
+    datos['inmobiliaria'] = inmo.get_text(strip=True) if inmo else ''
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
+    datos['badges'] = detectar_badges(datos)
+    return datos
+
 CDN = "https://img10.naventcdn.com/ficha/RPFICv5.401.1-RC1"
 ICONOS = {
     "ambientes":    f"{CDN}/ambientes.9e33dd.svg",
@@ -1313,6 +1452,8 @@ def extraer():
             datos = extraer_ml(url)
         elif portal == 'c21':
             datos = extraer_c21(url)
+        elif portal == 'propio':
+            datos = extraer_propio(url)
         else:
             datos = {}
         return jsonify(datos)
