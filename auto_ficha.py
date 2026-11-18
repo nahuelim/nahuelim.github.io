@@ -294,6 +294,10 @@ HTML = r"""<!DOCTYPE html>
     .card { padding: 18px; }
     .btn { padding: 9px 16px; font-size: 13px; }
   }
+  /* iPhone: Safari hace zoom al tocar campos con letra < 16px y la página queda bailando de costado */
+  @media (max-width: 700px) {
+    input, select, textarea { font-size: 16px !important; }
+  }
 </style>
 </head>
 <body>
@@ -1355,8 +1359,10 @@ def _c21_nuevo(html: str) -> dict:
     datos['descripcion'] = (dm.group(1) if dm else ld.get('description') or '').strip()
     imgs = ld.get('image') or []
     datos['fotos'] = list(dict.fromkeys(imgs if isinstance(imgs, list) else [imgs]))
+    # el video viene en su propio campo del payload (escapado); si no, buscarlo en la descripción
+    yid = re.search(r'youtubeVideoId\\?":\\?"([\w-]{11})', html)
     vm = re.search(r'https?://(?:www\.)?(?:youtube\.com/(?:shorts/|watch\?v=)|youtu\.be/)[\w-]{11}', datos['descripcion'])
-    datos['video'] = vm.group(0) if vm else ''
+    datos['video'] = f'https://www.youtube.com/watch?v={yid.group(1)}' if yid else (vm.group(0) if vm else '')
     datos['whatsapp_publicador'] = ''
     datos['fecha_publicacion'] = ''
     datos['badges'] = detectar_badges(datos)
