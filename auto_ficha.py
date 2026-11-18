@@ -316,6 +316,7 @@ HTML = r"""<!DOCTYPE html>
     <button class="btn btn-outline btn-sm" onclick="resetTodo()">↺ Nueva ficha</button>
   </div>
   <p class="subtitle">Pegá una URL o completá los datos manualmente para publicar una ficha en nahuelim.com.ar</p>
+  <p class="field-hint" style="margin-top:-6px">Aviso al celular cuando la ficha está online: en la app <strong>ntfy</strong>, suscribite al tema <code>{{ ntfy }}</code></p>
 
   <!-- PASO 1: URL o modo manual -->
   <div class="card">
@@ -497,10 +498,11 @@ HTML = r"""<!DOCTYPE html>
     <div id="mapa-confirm" style="display:none;margin-top:12px"></div>
 
     <div class="result-box" id="result-box">
-      <div class="lbl">Ficha publicada en</div>
+      <div class="lbl" id="result-lbl">Ficha publicada en</div>
       <div class="result-link" id="result-link"></div>
       <div class="result-actions">
         <button class="btn btn-sm btn-outline" style="background:transparent;color:var(--crema);border-color:rgba(247,244,236,.35)" onclick="copiarLink()">Copiar link</button>
+        <button id="result-share" class="btn btn-sm btn-outline" style="display:none;background:transparent;color:var(--crema);border-color:rgba(247,244,236,.35)" onclick="compartirLink()">Compartir</button>
         <a id="result-open" href="#" target="_blank" class="btn btn-sm" style="background:var(--crema);color:var(--tinta);text-decoration:none">Abrir ficha →</a>
       </div>
     </div>
@@ -737,17 +739,44 @@ async function generarFicha(modo = 'auto') {
 
     if (data.push_error) showStatus('✗ La ficha se generó en tu Mac pero NO se subió a GitHub (el link no va a andar): ' + data.push_error, 'error');
     else if (data.aviso) showStatus('⚠ Ficha publicada, pero revisá el mapa: ' + data.aviso, 'error');
-    else showStatus('✓ Ficha publicada. GitHub Pages tarda ~30 segundos en actualizarse.', 'success');
+    else showStatus('✓ Ficha subida. Esperando que esté online (suele tardar entre 30 segundos y 2 minutos)…', 'info');
     const box = document.getElementById('result-box');
     box.style.display = 'block';
     document.getElementById('result-link').textContent = data.url;
     document.getElementById('result-open').href = data.url;
+    document.getElementById('result-share').style.display = navigator.share ? 'inline-flex' : 'none';
     box.scrollIntoView({ behavior: 'smooth' });
+    if (!data.push_error) esperarOnline(data.archivo);
   } catch(e) {
     showStatus('Error al generar la ficha.', 'error');
   } finally {
     setBtnLoading('btn-generar', false);
   }
+}
+
+let esperaTimer = null;
+function esperarOnline(archivo) {
+  const lbl = document.getElementById('result-lbl');
+  lbl.textContent = '⏳ Publicando… todavía no la mandes';
+  clearInterval(esperaTimer);
+  esperaTimer = setInterval(async () => {
+    try {
+      const r = await (await fetch('/estado/' + encodeURIComponent(archivo))).json();
+      if (r.estado === 'online') {
+        clearInterval(esperaTimer);
+        lbl.textContent = '✓ Ya está online — lista para mandar';
+        showStatus('✓ La ficha ya está online. Copiala o compartila.', 'success');
+      } else if (r.estado === 'demorado') {
+        clearInterval(esperaTimer);
+        lbl.textContent = '⚠ Tarda más de lo normal — abrila para revisar';
+      }
+    } catch (e) { /* el servidor no respondió; reintenta en el próximo ciclo */ }
+  }, 5000);
+}
+
+function compartirLink() {
+  const link = document.getElementById('result-link').textContent;
+  navigator.share({ url: link }).catch(() => {});
 }
 
 function copiarLink() {
@@ -783,6 +812,7 @@ function resetTodo() {
 
   // Ocultar formulario y resultados
   document.getElementById('limpieza-box').style.display = 'none';
+  clearInterval(esperaTimer);
   document.getElementById('form-card').style.display = 'none';
   document.getElementById('result-box').style.display = 'none';
   document.getElementById('status-msg').style.display = 'none';
@@ -1459,6 +1489,61 @@ def nombre_unico(directorio: Path, nombre_base: str) -> Path:
     return directorio / f"{nombre_base}-{h}.html"
 
 
+# ─── AVISO "YA ESTÁ ONLINE" (pantalla + notificación ntfy al celular) ─────────────
+# El tema vive FUERA del repo (el repo es público y git_push hace `git add .`).
+NTFY_FILE = REPO_PATH.parent / '.ntfy_topic'
+ESTADO_PUBLICACION = {}  # archivo -> 'publicando' | 'online' | 'demorado'
+
+
+def ntfy_topic() -> str:
+    if NTFY_FILE.exists():
+        return NTFY_FILE.read_text().strip()
+    import secrets
+    t = 'fichas-nahuel-' + secrets.token_hex(4)
+    try:
+        NTFY_FILE.write_text(t)
+    except OSError:
+        pass
+    return t
+
+
+def avisar_celular(titulo: str, mensaje: str, link: str):
+    try:
+        requests.post('https://ntfy.sh/', json={'topic': ntfy_topic(), 'title': titulo, 'message': mensaje,
+                                                'click': link, 'tags': ['house']}, timeout=10)
+    except Exception as e:
+        print(f'[ntfy] no se pudo avisar: {e}', flush=True)
+
+
+def vigilar_publicacion(archivo: str, url: str, descripcion: str, max_seg: int = 600):
+    """Revisa la URL pública cada 10 s hasta que GitHub Pages la sirva; entonces avisa.
+    ponytail: un hilo por ficha, sin cola; alcanza para un solo usuario."""
+    import threading
+
+    def loop():
+        inicio = time.time()
+        while time.time() - inicio < max_seg:
+            try:
+                # el ?v= evita la caché del CDN, que puede guardar el 404 de antes de publicar
+                if requests.get(f'{url}?v={int(time.time())}', headers=_UA, timeout=15).status_code == 200:
+                    ESTADO_PUBLICACION[archivo] = 'online'
+                    avisar_celular('✓ Ficha online', f'{descripcion}\n{url}', url)
+                    return
+            except Exception:
+                pass
+            time.sleep(10)
+        ESTADO_PUBLICACION[archivo] = 'demorado'
+        avisar_celular('⚠ La ficha todavía no aparece', f'{descripcion}: pasaron {max_seg // 60} min. Revisala.', url)
+
+    ESTADO_PUBLICACION[archivo] = 'publicando'
+    threading.Thread(target=loop, daemon=True).start()
+
+
+@app.route('/estado/<archivo>')
+def estado_publicacion(archivo):
+    return jsonify({'estado': ESTADO_PUBLICACION.get(archivo, 'desconocido')})
+
+
 def git_push(repo: Path, mensaje: str):
     # ponytail: limpia un index.lock viejo antes de operar (single-user, no hay git concurrente)
     lock = repo / '.git' / 'index.lock'
@@ -1587,7 +1672,7 @@ def agregar_ficha_a_sheets(d: dict, link_nl: str, link_og: str, ficha_id: str):
 # ─── ROUTES ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
-    return render_template_string(HTML)
+    return render_template_string(HTML, ntfy=ntfy_topic())
 
 
 @app.route('/assets/<path:fname>')
@@ -1699,7 +1784,10 @@ def generar():
     _, aviso = geocodificar(dir_q, bar_q)  # cacheado: sin 2ª llamada
     if modo_mapa != 'auto':
         aviso = ''  # el usuario ya decidió con el preview a la vista
-    return jsonify({'url': url_publica, 'archivo': out_path.name, 'aviso': aviso, 'push_error': push_error})
+    if not push_error:
+        tipo_dir = ' · '.join(x for x in (d.get('tipo', ''), d.get('direccion', ''), d.get('barrio', '')) if x)
+        vigilar_publicacion(out_path.name, url_sheets, tipo_dir)
+    return jsonify({'url': url_sheets, 'archivo': out_path.name, 'aviso': aviso, 'push_error': push_error})
 
 
 def _video_embed_src(url: str):
