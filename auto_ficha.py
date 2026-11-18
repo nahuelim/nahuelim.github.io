@@ -448,6 +448,14 @@ HTML = r"""<!DOCTYPE html>
       <div class="full">
         <label>Descripción</label>
         <textarea id="f-descripcion" placeholder="Descripción del inmueble..."></textarea>
+        <div id="limpieza-box" style="display:none;margin-top:8px;padding:10px 12px;background:#FFF6D6;border:1px solid #E8D48A;border-radius:8px;font-size:12.5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+            <strong>Se sacó de la descripción (datos de la inmobiliaria, disclaimers, contacto):</strong>
+            <button type="button" class="btn btn-outline btn-sm" onclick="deshacerLimpieza()">Deshacer limpieza</button>
+          </div>
+          <div id="limpieza-lista"></div>
+          <small style="color:var(--tinta-suave)">"Restaurar" agrega la frase al final de la descripción; movela a mano si va en otro lado.</small>
+        </div>
       </div>
     </div>
 
@@ -561,6 +569,7 @@ function mostrarFormulario(d) {
   if (d.disposicion) setSelect('f-disposicion', d.disposicion);
   if (d.orientacion) setSelect('f-orientacion', d.orientacion);
   if (d.descripcion) document.getElementById('f-descripcion').value = d.descripcion;
+  mostrarLimpieza(d.desc_sacado || [], d.desc_original || '');
   if (d.video) document.getElementById('f-video').value = d.video;
   window.scrapedInmo = d.inmobiliaria || '';
   window.scrapedWa = d.whatsapp_publicador || '';
@@ -591,6 +600,40 @@ function mostrarFormulario(d) {
     const slug = slugify((d.barrio || '') + '-' + (d.direccion || ''));
     document.getElementById('fotos-carpeta-path').textContent = 'assets/fotos/' + slug + '/';
   }
+}
+
+let descOriginal = '';
+function mostrarLimpieza(sacado, original) {
+  descOriginal = original;
+  const box = document.getElementById('limpieza-box');
+  const lista = document.getElementById('limpieza-lista');
+  lista.innerHTML = '';
+  sacado.forEach(frase => {
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display:flex;gap:8px;align-items:flex-start;padding:3px 0;border-top:1px dashed #E8D48A';
+    const txt = document.createElement('span');
+    txt.style.flex = '1';
+    txt.textContent = '✂ ' + frase;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline btn-sm';
+    btn.style.cssText = 'padding:2px 10px;font-size:12px';
+    btn.textContent = 'Restaurar';
+    btn.onclick = () => {
+      const ta = document.getElementById('f-descripcion');
+      ta.value = ta.value.trimEnd() + '\n' + frase;
+      fila.remove();
+      if (!lista.children.length) box.style.display = 'none';
+    };
+    fila.append(txt, btn);
+    lista.appendChild(fila);
+  });
+  box.style.display = sacado.length ? 'block' : 'none';
+}
+function deshacerLimpieza() {
+  if (!confirm('¿Volver a la descripción original del portal? Se pierden los cambios que hayas hecho a mano en la descripción.')) return;
+  document.getElementById('f-descripcion').value = descOriginal;
+  document.getElementById('limpieza-box').style.display = 'none';
 }
 
 function setSelect(id, val) {
@@ -735,6 +778,7 @@ function resetTodo() {
   document.getElementById('url-input').value = '';
 
   // Ocultar formulario y resultados
+  document.getElementById('limpieza-box').style.display = 'none';
   document.getElementById('form-card').style.display = 'none';
   document.getElementById('result-box').style.display = 'none';
   document.getElementById('status-msg').style.display = 'none';
@@ -816,13 +860,7 @@ def detectar_badges(datos: dict) -> list:
 
 # ─── EXTRACCIÓN ZONAPROP ────────────────────────────────────────────────────────
 def extraer_zonaprop(url: str) -> dict:
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept-Language': 'es-AR,es;q=0.9',
-    }
-    r = requests.get(url, headers=headers, timeout=20)
-    r.raise_for_status()
-    html = r.text
+    html = _leer_html(url)  # link o archivo guardado con Cmd+S
 
     # Extraer JSON avisoInfo embebido
     m = re.search(r'const avisoInfo\s*=\s*(\{.*?\})\s*\n\s*const dataLayerInfo', html, re.DOTALL)
@@ -1117,6 +1155,87 @@ def extraer_c21(html_path_or_url: str) -> dict:
     datos['badges'] = detectar_badges(datos)
     return datos
 
+# ─── LIMPIEZA DE DESCRIPCIÓN (datos de otras inmobiliarias, disclaimers, CTAs) ───
+# Siempre se conserva (datos de la operación, no del colega)
+CONSERVAR = re.compile(r'apto\s+cr[eé]dito|2371|permuta|accesib|discapacidad', re.I)
+# Señal fuerte: se borra en cualquier parte del texto
+FUERTE = re.compile('|'.join([
+    r'(?:\+?54\s*9?\s*)?\(?\b(?:11|15)\)?[\s.-]*\d{4}[\s.-]*\d{4}\b',          # teléfono
+    r'\S+@\S+\.\w+', r'https?://|www\.',                                        # email, link
+    r'\b(?:C\.?U\.?C\.?I\.?C\.?B\.?A|CPI|CSI|CMCPSI|C\.?M\.?C\.?P\.?D\.?J\.?L\.?M|CPMCAL|C\.?U\.?I\.?T)\b',
+    r'\bmatr[ií]cula|\bcolegiad[oa]s?\b|\bmartilleros?\b',
+    r'corredor(?:a|es)?\s+(?:responsable|p[uú]blico|inmobiliario|colegiado)',
+    r'^\s*-?\s*contacto\s*:', r'corretaje|intermediaci[oó]n',
+    r'©|derechos reservados|marcas? de servicio',
+    r'RAU S\.?R\.?L|RE/?MAX|Coldwell|Mudafy|KiteProp|Tokko|Lendar|\bKP - T -',
+    r'\baproximad[oa]s\b|orientativ|contractual|sujet[oa]s? a verificaci|t[ií]tulo de propiedad',
+    r'\bcomisi[oó]n|oficinas? (?:inmobiliaria|adherida|de la red)|red de servicios|\bley (?:nacional )?\d',
+]), re.I | re.M)
+# Señal débil: solo se borra al principio o al final del texto
+DEBIL = re.compile(r'consult[aá](?:nos|me)|contact[aá](?:me|nos)|escrib[ií](?:me|nos)|llam[aá](?:me|nos)'
+                   r'|coordin(?:ar|[aá]) (?:una|tu|la) visita|agend[aá]|ven[ií]? a conocer|no te pierdas'
+                   r'|si ten[eé]s que vender|m[aá]s info', re.I)
+BASURA = re.compile(r'^[\W_]*$')  # líneas sin letras ni números ("--", "-", "̳")
+
+
+def _frases(linea):
+    return [f for f in re.split(r'(?<=[.!?])\s+(?=[¿¡A-ZÁÉÍÓÚÑ])', linea.strip()) if f]
+
+
+def limpiar_descripcion(texto, inmobiliaria=''):
+    """Devuelve (texto_limpio, lo_que_se_sacó). Borra datos de inmobiliarias/agentes, disclaimers y CTAs.
+    Bordes (principio/final): se borra con señal fuerte o débil. Medio: solo con señal fuerte.
+    ponytail: reglas armadas con 9 avisos reales de ZonaProp; si se escapa algo, sumar el patrón a FUERTE/DEBIL."""
+    marcas = FUERTE
+    palabra = (inmobiliaria or '').split()[:1]
+    if palabra and len(palabra[0]) >= 5:   # "Pallarols", "ROILANDS", "TIZADO"; no "RED"
+        marcas = re.compile(FUERTE.pattern + '|' + r'\b' + re.escape(palabra[0]) + r'\b', re.I | re.M)
+    lineas, sacado = texto.split('\n'), []
+
+    def tiene_marca(l, debil):
+        return bool(marcas.search(l) or (debil and DEBIL.search(l)))
+
+    def recortar_borde(idx):
+        # recorre desde el borde hacia adentro; frena en la primera línea "de la propiedad".
+        # Pasar por una línea que se conserva ("Apto crédito") apaga las señales débiles hasta
+        # volver a entrar en un bloque legal (señal fuerte).
+        debil = True
+        for i in idx:
+            l = lineas[i]
+            if BASURA.match(l):
+                lineas[i] = None
+                continue
+            if not tiene_marca(l, debil):
+                if CONSERVAR.search(l):
+                    debil = False
+                    continue
+                return
+            if marcas.search(l):
+                debil = True
+            rescatar = [f for f in _frases(l) if CONSERVAR.search(f)]
+            sacado.extend(f for f in _frases(l) if f not in rescatar)
+            lineas[i] = ' '.join(rescatar) if rescatar else None
+
+    recortar_borde(range(len(lineas) - 1, -1, -1))   # desde abajo
+    recortar_borde(range(len(lineas)))               # desde arriba
+    for i, l in enumerate(lineas):                   # en el medio: solo señales fuertes, frase por frase
+        if l is None:
+            continue
+        if BASURA.match(l) and l.strip():
+            lineas[i] = None
+            continue
+        quedan = []
+        for f in _frases(l):
+            if marcas.search(f) and not CONSERVAR.search(f):
+                sacado.append(f)
+            else:
+                quedan.append(f)
+        lineas[i] = ' '.join(quedan) if (quedan or not l.strip()) else None
+    limpio = '\n'.join(l for l in lineas if l is not None)
+    sacado.sort(key=texto.find)  # en el orden en que aparecían
+    return re.sub(r'\n{3,}', '\n\n', limpio).strip(), sacado
+
+
 def normalizar_texto(t: str) -> str:
     """Entidades HTML (&#x1d400;, &#xa9;) → caracteres, y letras 'decoradas' (negritas/itálicas
     Unicode tipo 𝐀𝐔𝐑𝐀) → letras comunes. Solo toca ese bloque Unicode: m², 7º, ½ quedan igual."""
@@ -1148,7 +1267,8 @@ def detectar_portal(url_o_path: str) -> str:
                      'para otro, usá "Manual".')
 
 
-_UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+_UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+       'Accept-Language': 'es-AR,es;q=0.9'}
 _TIPOS = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa', 'local': 'Local',
           'oficina': 'Oficina', 'terreno': 'Terreno', 'duplex': 'Duplex', 'dúplex': 'Duplex', 'loft': 'Loft'}
 
@@ -1485,7 +1605,9 @@ def extraer():
         else:
             datos = {}
         if datos.get('descripcion'):
-            datos['descripcion'] = normalizar_texto(datos['descripcion'])
+            original = normalizar_texto(datos['descripcion'])
+            datos['descripcion'], datos['desc_sacado'] = limpiar_descripcion(original, datos.get('inmobiliaria', ''))
+            datos['desc_original'] = original
         datos['portal'] = portal
         return jsonify(datos)
     except Exception as e:
