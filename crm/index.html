@@ -224,6 +224,8 @@
   .etiqueta button { background:rgba(247,244,236,.12); border:0; color:var(--dorado); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:600; white-space:nowrap; }
   .estado-linea { display:flex; flex-wrap:wrap; gap:6px; margin:10px 4px 0; }
   .estado-linea .pill { background:rgba(247,244,236,.12); color:var(--crema); }
+  .donde { margin:8px 4px 0; font-size:13px; color:var(--crema); opacity:.85; }
+  .donde b { color:var(--dorado); font-weight:600; }
   .segmentos { display:flex; gap:4px; overflow-x:auto; margin:12px -12px 0; padding:0 12px; scrollbar-width:none; }
   .segmentos::-webkit-scrollbar { display:none; }
   .segmentos button { background:none; border:0; color:var(--crema); opacity:.75; padding:10px 12px 12px; font-size:15px; font-weight:600; white-space:nowrap; border-bottom:3px solid transparent; }
@@ -282,7 +284,7 @@
 
 <script>
 const VERSION = '36';
-const COMPILACION = '36';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '36.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1407,10 +1409,33 @@ async function abrir(id, seg) {
       el('div', { cls:'estado-linea' }, el('span', { cls:'pill' }, d.ESTADO || 'Sin estado'),
         d['ETAPA COMPRA'] ? el('span', { cls:'pill' }, 'Compra: ' + d['ETAPA COMPRA']) : '',
         d['ETAPA VENTA'] ? el('span', { cls:'pill' }, 'Venta: ' + d['ETAPA VENTA']) : ''),
+      dondeEsta(d, id),
       barra),
     cuerpo);
   mostrar(segmentoActual);
   if (!p.classList.contains('abierta')) { p.classList.add('abierta'); if (!esEscritorio()) document.body.style.overflow = 'hidden'; }
+}
+
+// Dónde está en la app: en qué bloque de Hoy (sale del Hoy guardado en el dispositivo) y en qué grupo de la cartera de Contactos
+const BLOQUE_TXT = { visitas:'Con fecha fija', fechas:'Con fecha fija', fiestas:'Con fecha fija', proximos:'Tus próximos pasos', opciones:'Mandale opciones',
+  llamar:'Llamar', mensajes:'Mensajes', atento:'Estate atento', relacion:'Relación', revivir:'Revivir' };
+const ETAPA_V_TXT = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Otra inmo', 'EN PUBLICACION':'Publicando', 'EN VENTA':'En venta', RESERVA:'Reserva' };
+function dondeEsta(d, id) {
+  let hoy = null;
+  try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv')) hoy = c.r; } catch (e) {}
+  const bloques = hoy ? Object.keys(BLOQUE_TXT).filter(k => (hoy[k] || []).some(x => String(x.id) === String(id))).map(k => BLOQUE_TXT[k]) : null;
+  const prox = d['PROX CONTACTO'];
+  const enHoy = bloques === null ? 'abrí Hoy para saberlo'
+    : bloques.length ? [...new Set(bloques)].join(' y ')
+    : d.ESTADO === 'DESCARTADO' ? 'no (archivado)'
+    : prox && aISO(prox) > isoLocal(new Date()) ? 'no, vuelve el ' + prox.slice(0, 5) + (d['PROX DEFINIDO'] ? ' (paso tuyo)' : '')
+    : 'no le toca hoy';
+  const t = String(d.TEMPERATURA || '').toUpperCase(), etapaV = ETAPA_V_TXT[d['ETAPA VENTA']];
+  const cartera = [d.ESTADO === 'NUEVO' ? 'Leads nuevos' : '', d.ESTADO === 'CLIENTE' ? 'Clientes' : '',
+    d.ESTADO === 'EN CONTACTO' && (d['BUSCA TIPO'] || !d['ETAPA VENTA']) ? 'Compradores ' + ({ CALIENTE:'calientes', TIBIO:'tibios', FRIO:'fríos' }[t] || 'sin temp.') : '',
+    ['NUEVO','DESCARTADO','EN PAUSA'].includes(d.ESTADO) || !etapaV ? '' : 'Vendedores · ' + etapaV].filter(Boolean).join(' y ')
+    || ({ 'EN PAUSA':'no (en pausa)', DESCARTADO:'no (archivado)' }[d.ESTADO] || '—');
+  return el('div', { cls:'donde' }, 'Hoy: ', el('b', {}, enHoy), ' · Contactos: ', el('b', {}, cartera));
 }
 
 function refrescar() { if (cfg().key && document.getElementById('tHoy').classList.contains('on')) verHoy(); }
