@@ -315,12 +315,9 @@ HTML = r"""<!DOCTYPE html>
 
   <!-- PASO 1: URL o modo manual -->
   <div class="card">
-    <div class="section-title">Portal</div>
+    <div class="section-title">Origen</div>
     <div class="portal-pills">
-      <div class="pill active" onclick="setPortal('zonaprop')">ZonaProp</div>
-      <div class="pill" onclick="setPortal('ml')">MercadoLibre</div>
-      <div class="pill" onclick="setPortal('c21')">Century 21</div>
-      <div class="pill" onclick="setPortal('propio')">Propio</div>
+      <div class="pill active" onclick="setPortal('auto')">Desde un link</div>
       <div class="pill" onclick="setPortal('manual')">Manual</div>
     </div>
 
@@ -333,7 +330,7 @@ HTML = r"""<!DOCTYPE html>
           <span id="btn-extraer-loader" class="loader" style="display:none"></span>
         </button>
       </div>
-      <p class="field-hint" id="url-hint">ZonaProp: extracción automática completa. ML: pegá la URL (o guardá con Cmd+S y pegá el path si la bloquea). C21: guardá con Cmd+S y pegá el path.</p>
+      <p class="field-hint" id="url-hint">Pegá el link de ZonaProp, MercadoLibre, Century 21 o Propio: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.</p>
     </div>
   </div>
 
@@ -499,7 +496,7 @@ HTML = r"""<!DOCTYPE html>
 </main>
 
 <script>
-let portalActual = 'zonaprop';
+let portalActual = 'auto';
 let fotosZP = [];
 
 function setPortal(p) {
@@ -515,10 +512,6 @@ function setPortal(p) {
     mostrarFormulario({});
   } else {
     urlSection.style.display = 'block';
-    if (p === 'zonaprop') hint.textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
-    else if (p === 'ml') hint.textContent = 'MercadoLibre: pegá la URL del aviso. Si ML la bloquea, guardá la página con Cmd+S («solo HTML») y pegá el path del archivo.';
-    else if (p === 'c21') hint.textContent = 'Century 21: pegá el link (century21.com.ar/propiedades/...). Si falla, guardá la página con Cmd+S y pegá el path del archivo.';
-    else if (p === 'propio') hint.textContent = 'Propio: pegá el link de la ficha (ficha.propio.com.ar/...).';
   }
 }
 
@@ -533,11 +526,13 @@ async function extraerDatos() {
     const resp = await fetch('/extraer', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ url, portal: portalActual })
+      body: JSON.stringify({ url, portal: 'auto' })
     });
     const data = await resp.json();
     if (data.error) { showStatus(data.error, 'error'); return; }
-    showStatus('✓ Datos extraídos. Revisá y completá lo que falte.', 'success');
+    portalActual = data.portal;  // lo detecta el servidor
+    const NOMBRES = { zonaprop: 'ZonaProp', ml: 'MercadoLibre', c21: 'Century 21', propio: 'Propio' };
+    showStatus('✓ Datos extraídos de ' + (NOMBRES[data.portal] || data.portal) + '. Revisá y completá lo que falte.', 'success');
     mostrarFormulario(data);
   } catch(e) {
     showStatus('Error al conectar con el servidor.', 'error');
@@ -729,12 +724,12 @@ function setBtnLoading(btnId, loading) {
 
 function resetTodo() {
   // Reset portal
-  portalActual = 'zonaprop';
+  portalActual = 'auto';
   fotosZP = [];
   document.querySelectorAll('.pill').forEach(el => el.classList.remove('active'));
   document.querySelector('.pill').classList.add('active');
   document.getElementById('url-section').style.display = 'block';
-  document.getElementById('url-hint').textContent = 'ZonaProp: extracción automática completa de datos y fotos.';
+  document.getElementById('url-hint').textContent = 'Pegá el link de ZonaProp, MercadoLibre, Century 21 o Propio: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.';
 
   // Limpiar URL
   document.getElementById('url-input').value = '';
@@ -1122,6 +1117,28 @@ def extraer_c21(html_path_or_url: str) -> dict:
     datos['badges'] = detectar_badges(datos)
     return datos
 
+# dominio → portal. Orden importa: una ficha de Propio puede nombrar a "Century 21" en el texto.
+_PORTALES = [('propio.com.ar', 'propio'), ('tokkobroker', 'propio'), ('zonaprop', 'zonaprop'),
+             ('mercadolibre', 'ml'), ('century21', 'c21'), ('21online', 'c21'), ('c21arg', 'c21')]
+
+
+def detectar_portal(url_o_path: str) -> str:
+    """Link → por el dominio. Archivo guardado con Cmd+S → por su URL canónica (o el contenido)."""
+    from urllib.parse import urlparse
+    p = Path(url_o_path).expanduser()
+    if p.exists():
+        html = p.read_text(encoding='utf-8', errors='ignore')
+        m = re.search(r'<(?:link[^>]+rel="canonical"[^>]+href|meta[^>]+property="og:url"[^>]+content)="([^"]+)"', html)
+        texto = (m.group(1) if m else '') or html
+    else:
+        texto = urlparse(url_o_path if '://' in url_o_path else 'https://' + url_o_path).netloc.lower()
+    for clave, portal in _PORTALES:
+        if clave in texto.lower():
+            return portal
+    raise ValueError('No reconozco el portal de este link. Funciona con ZonaProp, MercadoLibre, Century 21 y Propio; '
+                     'para otro, usá "Manual".')
+
+
 _UA = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
 _TIPOS = {'ph': 'PH', 'departamento': 'Departamento', 'casa': 'Casa', 'local': 'Local',
           'oficina': 'Oficina', 'terreno': 'Terreno', 'duplex': 'Duplex', 'dúplex': 'Duplex', 'loft': 'Loft'}
@@ -1443,9 +1460,11 @@ def brand_assets(fname):
 def extraer():
     body = request.get_json()
     url = body.get('url', '').strip()
-    portal = body.get('portal', 'zonaprop')
+    portal = body.get('portal', 'auto')
 
     try:
+        if portal == 'auto':
+            portal = detectar_portal(url)
         if portal == 'zonaprop':
             datos = extraer_zonaprop(url)
         elif portal == 'ml':
@@ -1456,6 +1475,7 @@ def extraer():
             datos = extraer_propio(url)
         else:
             datos = {}
+        datos['portal'] = portal
         return jsonify(datos)
     except Exception as e:
         return jsonify({'error': str(e)}), 400
