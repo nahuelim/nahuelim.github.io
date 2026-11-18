@@ -335,7 +335,7 @@ HTML = r"""<!DOCTYPE html>
           <span id="btn-extraer-loader" class="loader" style="display:none"></span>
         </button>
       </div>
-      <p class="field-hint" id="url-hint">Pegá el link de ZonaProp, MercadoLibre, Century 21 o Propio: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.</p>
+      <p class="field-hint" id="url-hint">Pegá el link de ZonaProp, MercadoLibre, Century 21, Propio o Roomix: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.</p>
     </div>
   </div>
 
@@ -545,7 +545,7 @@ async function extraerDatos() {
     const data = await resp.json();
     if (data.error) { showStatus(data.error, 'error'); return; }
     portalActual = data.portal;  // lo detecta el servidor
-    const NOMBRES = { zonaprop: 'ZonaProp', ml: 'MercadoLibre', c21: 'Century 21', propio: 'Propio' };
+    const NOMBRES = { zonaprop: 'ZonaProp', ml: 'MercadoLibre', c21: 'Century 21', propio: 'Propio', roomix: 'Roomix' };
     showStatus('✓ Datos extraídos de ' + (NOMBRES[data.portal] || data.portal) + '. Revisá y completá lo que falte.', 'success');
     mostrarFormulario(data);
   } catch(e) {
@@ -805,7 +805,7 @@ function resetTodo() {
   document.querySelectorAll('.pill').forEach(el => el.classList.remove('active'));
   document.querySelector('.pill').classList.add('active');
   document.getElementById('url-section').style.display = 'block';
-  document.getElementById('url-hint').textContent = 'Pegá el link de ZonaProp, MercadoLibre, Century 21 o Propio: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.';
+  document.getElementById('url-hint').textContent = 'Pegá el link de ZonaProp, MercadoLibre, Century 21, Propio o Roomix: el portal se detecta solo. Si el portal bloquea, guardá la página con Cmd+S y pegá el path del archivo.';
 
   // Limpiar URL
   document.getElementById('url-input').value = '';
@@ -1212,8 +1212,8 @@ FUERTE = re.compile('|'.join([
 ]), re.I | re.M)
 # Señal débil: solo se borra al principio o al final del texto
 DEBIL = re.compile(r'consult[aá](?:nos|me)|contact[aá](?:me|nos)|escrib[ií](?:me|nos)|llam[aá](?:me|nos)'
-                   r'|coordin(?:ar|[aá]) (?:una|tu|la) visita|agend[aá]|ven[ií]? a conocer|no te pierdas'
-                   r'|si ten[eé]s que vender|m[aá]s info', re.I)
+                   r'|coordin\w* (?:una|tu|la) visita|agend[aá]|ven[ií]? a conocer|no te pierdas'
+                   r'|si ten[eé]s que vender|vend[eé]s para comprar|te asesoramos|operaci[oó]n simult[aá]nea|m[aá]s info', re.I)
 BASURA = re.compile(r'^[\W_]*$')  # líneas sin letras ni números ("--", "-", "̳")
 
 
@@ -1285,7 +1285,7 @@ def normalizar_texto(t: str) -> str:
 
 
 # dominio → portal. Orden importa: una ficha de Propio puede nombrar a "Century 21" en el texto.
-_PORTALES = [('propio.com.ar', 'propio'), ('tokkobroker', 'propio'), ('zonaprop', 'zonaprop'),
+_PORTALES = [('propio.com.ar', 'propio'), ('tokkobroker', 'propio'), ('roomix', 'roomix'), ('zonaprop', 'zonaprop'),
              ('mercadolibre', 'ml'), ('century21', 'c21'), ('21online', 'c21'), ('c21arg', 'c21')]
 
 
@@ -1302,7 +1302,7 @@ def detectar_portal(url_o_path: str) -> str:
     for clave, portal in _PORTALES:
         if clave in texto.lower():
             return portal
-    raise ValueError('No reconozco el portal de este link. Funciona con ZonaProp, MercadoLibre, Century 21 y Propio; '
+    raise ValueError('No reconozco el portal de este link. Funciona con ZonaProp, MercadoLibre, Century 21, Propio y Roomix; '
                      'para otro, usá "Manual".')
 
 
@@ -1398,6 +1398,73 @@ def _c21_nuevo(html: str) -> dict:
     yid = re.search(r'youtubeVideoId\\?":\\?"([\w-]{11})', html)
     vm = re.search(r'https?://(?:www\.)?(?:youtube\.com/(?:shorts/|watch\?v=)|youtu\.be/)[\w-]{11}', datos['descripcion'])
     datos['video'] = f'https://www.youtube.com/watch?v={yid.group(1)}' if yid else (vm.group(0) if vm else '')
+    datos['whatsapp_publicador'] = ''
+    datos['fecha_publicacion'] = ''
+    datos['badges'] = detectar_badges(datos)
+    return datos
+
+
+def extraer_roomix(url_o_path: str) -> dict:
+    """roomix.ai/propiedad/... — agregador. ld+json RealEstateListing + texto visible."""
+    import json as _json
+    html = _leer_html(url_o_path)
+    ld = {}
+    for m in re.findall(r'<script type="application/ld\+json"[^>]*>(.*?)</script>', html, re.S):
+        try:
+            j = _json.loads(m)
+        except ValueError:
+            continue
+        if isinstance(j, dict) and j.get('@type') == 'RealEstateListing':
+            ld = j
+            break
+    me, of = ld.get('mainEntity') or {}, ld.get('offers') or {}
+    dire = me.get('address') or {}
+    soup = BeautifulSoup(html, 'html.parser')
+    titulo = (soup.find('meta', property='og:title') or {}).get('content', '') or ld.get('name', '')
+    txt = _texto(soup)
+    datos = {}
+    _tipo_operacion(titulo, datos)
+    calle = (dire.get('streetAddress') or '').split(',')[0]
+    datos['direccion'] = calle.split(' - ')[0].strip()          # "Calasanz 400 - P3" → "Calasanz 400"
+    datos['barrio'] = dire.get('addressLocality', '')
+    precio = of.get('price')
+    datos['precio'] = (('$' if of.get('priceCurrency') == 'ARS' else 'USD') + ' ' + f'{int(precio):,}'.replace(',', '.')) if precio else _precio(txt)
+    _specs(txt, datos)
+    for k, campo in (('ambientes', 'numberOfRooms'), ('dormitorios', 'numberOfBedrooms'), ('banos', 'numberOfBathroomsTotal')):
+        if me.get(campo):
+            datos[k] = str(me[campo])
+    if (me.get('floorSize') or {}).get('value'):
+        datos['sup_total'] = str(me['floorSize']['value'])
+    dm = re.search(r'\n(Al frente|Contrafrente|Lateral|Interno)\n', txt)
+    datos['disposicion'] = {'Al frente': 'Frente'}.get(dm.group(1), dm.group(1)) if dm else ''
+    om = re.search(r'\nOrientación\n(norte|sur|este|oeste|noreste|noroeste|sudeste|sudoeste)\n', txt, re.I)
+    datos['orientacion'] = om.group(1).capitalize() if om else ''
+    am = re.search(r'\nAntigüedad\n(\d+)', txt)
+    datos['antiguedad'] = am.group(1) if am else ''
+    em = re.search(r'\nExpensas\n\$\s*([\d.]+)', txt)
+    datos['expensas'] = f'$ {em.group(1)}' if em else ''
+    datos['toilette'] = ''
+    # descripción: Roomix la aplana en un solo párrafo → se separa en frases y viñetas para que se lea
+    # (y para que la limpieza trabaje frase por frase en lugar de borrar el párrafo entero)
+    dm = re.search(r'\nDescripción\n(.*?)\n(?:Título original del aviso:|Hacé click para interactuar)', txt, re.S)
+    desc = (dm.group(1) if dm else ld.get('description', '')).strip()
+    desc = re.sub(r'\s*•\s*', '\n• ', desc)
+    # corta en fin de frase, salvo después de abreviaturas cortas ("Av.", "J. B.", "Dr.")
+    desc = re.sub(r'(?<=[.!?])\s+(?=[¿¡A-ZÁÉÍÓÚÑ"“])',
+                  lambda m: ' ' if re.search(r'(?:^|[\s(])(?:[A-ZÁÉÍÓÚÑ]|Av|Avda|Dr|Dra|Sr|Sra|Ing|Arq|Lic|Gral|Pte|Pje|Nro|N[º°]|Ej|aprox)\.$',
+                                             desc[:m.start()]) else '\n', desc)
+    datos['descripcion'] = desc.strip()
+    # fotos: solo las de esta propiedad (la página también muestra similares), en tamaño completo
+    imgs = ld.get('image') or []
+    base = re.match(r'(https://cdn\.roomix\.ai/\d+/\d+/\d+/)', imgs[0]) if imgs else None
+    if base:
+        ids = re.findall(re.escape(base.group(1)) + r'(\d+)(?:_\w+)?\.(?:jpe?g|webp|png)', html)
+        datos['fotos'] = [f'{base.group(1)}{i}.jpg' for i in dict.fromkeys(ids)]
+    else:
+        datos['fotos'] = imgs
+    vm = re.search(r'videosIds\\?":\[\\?"([\w-]{11})', html)
+    datos['video'] = f'https://www.youtube.com/watch?v={vm.group(1)}' if vm else ''
+    datos['inmobiliaria'] = ''
     datos['whatsapp_publicador'] = ''
     datos['fecha_publicacion'] = ''
     datos['badges'] = detectar_badges(datos)
@@ -1698,6 +1765,8 @@ def extraer():
             datos = extraer_c21(url)
         elif portal == 'propio':
             datos = extraer_propio(url)
+        elif portal == 'roomix':
+            datos = extraer_roomix(url)
         else:
             datos = {}
         if datos.get('descripcion'):
