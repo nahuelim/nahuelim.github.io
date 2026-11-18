@@ -1464,8 +1464,9 @@ def extraer_roomix(url_o_path: str) -> dict:
         datos['fotos'] = imgs
     vm = re.search(r'videosIds\\?":\[\\?"([\w-]{11})', html)
     datos['video'] = f'https://www.youtube.com/watch?v={vm.group(1)}' if vm else ''
-    datos['inmobiliaria'] = ''
-    datos['whatsapp_publicador'] = ''
+    pm = re.search(r'\nPublicado por\n([^\n]+)', txt)  # sección "Publicado por"
+    datos['inmobiliaria'] = pm.group(1).strip() if pm else ''
+    datos['whatsapp_publicador'] = ''  # Roomix no lo pone en la página: lo pide al tocar "Contactar"
     datos['fecha_publicacion'] = ''
     datos['badges'] = detectar_badges(datos)
     return datos
