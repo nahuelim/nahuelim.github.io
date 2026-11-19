@@ -119,8 +119,26 @@
   .sobre.abierto { display:block; }
   .sugerencia { background:var(--verde-claro); border-radius:12px; padding:10px 12px; margin:12px 0; font-size:14px; }
   /* v29: tarjeta con jerarquía. Rojo = urgente, verde = se toca, gris = dato */
-  .t { background:var(--blanco); border:1px solid var(--linea); border-radius:16px; padding:14px 14px 12px; margin-bottom:10px; cursor:pointer; }
-  .t.urge { border-left:4px solid var(--alerta); }
+  /* v41: banda a la izquierda = temperatura (rojo caliente, amarillo tibio, azul frío, gris sin dato). Lo urgente va en rojo en el texto. */
+  .t { background:var(--blanco); border:1px solid var(--linea); border-radius:14px; padding:12px 14px 11px 18px; margin-bottom:8px; cursor:pointer; position:relative; overflow:hidden; }
+  .t::before { content:''; position:absolute; left:6px; top:10px; bottom:10px; width:5px; border-radius:4px; background:var(--banda, #C9C2B2); }
+  .t.CALIENTE { --banda:#C0392B; } .t.TIBIO { --banda:#C9A227; } .t.FRIO { --banda:#4A7FA7; }
+  .t.urge .porque { color:var(--alerta); }
+  .t .req { font-size:14px; color:var(--tinta); margin-top:2px; } .t .req b { font-weight:600; color:var(--tinta-suave); }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:4px 0 8px; }
+  .grid3 .chip { border-radius:10px; text-align:center; padding:8px 4px; }
+  .grid3.g4 { grid-template-columns:repeat(5,1fr); }
+  .grid3 .chip em { font-style:normal; opacity:.7; margin-left:3px; }
+  .orden { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--tinta-suave); margin:2px 2px 10px; }
+  .orden select { width:auto; padding:6px 10px; font-weight:600; }
+  .orden .btn { margin-left:auto; min-height:36px; padding:6px 10px; font-size:13px; }
+  .t .vuelve { margin-left:auto; font-size:13px; font-weight:600; color:var(--verde-profundo); white-space:nowrap; }
+  .t .vuelve.rojo { color:var(--alerta); }
+  .t .por { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; font-size:12px; }
+  .t .por span { background:var(--verde-claro); color:var(--verde-profundo); border-radius:6px; padding:1px 7px; }
+  .t .por span.ojo { background:#F5EDD3; color:#7A5F0B; } .t .por span.ya { background:var(--crema); color:var(--tinta-suave); }
+  .sep-hoy { display:flex; align-items:center; gap:10px; margin:22px 2px 0; color:var(--tinta-suave); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .sep-hoy::before, .sep-hoy::after { content:''; flex:1; border-top:1px solid var(--linea); }
   .t .f1 { display:flex; align-items:baseline; gap:8px; }
   .t .nom { font-size:17px; font-weight:700; letter-spacing:-.01em; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .t .dias { margin-left:auto; font-size:13px; color:var(--tinta-suave); white-space:nowrap; }
@@ -273,7 +291,7 @@
 <nav class="tabs">
   <button id="tHoy" class="on"><span data-i="hoy"></span>Hoy</button>
   <button id="tNuevo"><span data-i="mas"></span>Nuevo</button>
-  <button id="tBuscar"><span data-i="buscar"></span>Contactos</button>
+  <button id="tBuscar"><span data-i="buscar"></span>Cartera</button>
 </nav>
 <div id="ficha"></div>
 <div id="velo"></div>
@@ -283,8 +301,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '40';
-const COMPILACION = '40';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '41';
+const COMPILACION = '41';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -574,14 +592,15 @@ function item(x, tag, o) {
   const tope = RITMO_MAX[temp];
   const dias = x.diasSin === null || x.diasSin === undefined ? (x.ultimo ? '' : 'sin contactos') : x.diasSin === 0 ? 'hoy' : x.diasSin === 1 ? 'ayer' : x.diasSin + ' días sin hablar';
   const dato = [temp ? el('span', {}, el('span', { cls:'dot ' + temp }), temp.charAt(0) + temp.slice(1).toLowerCase()) : '',
-    x.prio ? 'P' + x.prio : '', tag || '', x.deuda ? el('span', { cls:'rojo' }, 'Mandale opciones') : '', x.urgente ? el('span', { cls:'rojo' }, 'Fecha límite') : '',
+    x.prio ? 'P' + x.prio : '', tag || '', x.deuda ? el('span', { cls:'rojo' }, 'Debe opciones') : '', x.urgente ? el('span', { cls:'rojo' }, 'Fecha límite') : '',
     x.tel ? '' : el('span', { cls:'rojo' }, 'Sin teléfono')].filter(Boolean);
   const linea = []; dato.forEach((d, i) => { if (i) linea.push(' · '); linea.push(d); });
   const pideTemp = o.temp && !temp;
-  return el('div', { cls:'t' + (urgente(x) ? ' urge' : ''), onclick: () => abrir(x.id, 'contacto') },
+  return el('div', { cls:'t' + (urgente(x) ? ' urge' : '') + (temp ? ' ' + temp : ''), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), dias ? el('span', { cls:'dias' + (tope && x.diasSin > tope ? ' rojo' : '') }, dias) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : (x.fuente ? el('div', { cls:'busca' }, 'Lead de ' + x.fuente + (x.alta ? ' · entró el ' + x.alta.slice(0, 5) : '')) : ''),
     x.consulto ? el('div', { cls:'busca' }, 'Consultó por: ' + x.consulto) : '',
+    x.requisitos ? el('div', { cls:'req' }, el('b', {}, 'Requisitos: '), x.requisitos) : '',
     linea.length ? el('div', { cls:'dato' }, ...linea) : '',
     o.extra || '',
     x.porque ? el('div', { cls:'porque' }, x.porque) : (x.accion ? el('div', { cls:'porque' }, [x.accion, x.prox].filter(Boolean).join(' · ')) : ''),
@@ -617,10 +636,11 @@ const bAbrir = (x, t, pri) => el('button', { cls:'btn' + (pri ? ' pri' : ''), on
 // Tarjeta de envío (cumpleaños, fiestas, mensajes, relación, revivir): mismo formato que las demás, con el mensaje listo y Enviar.
 function tarjetaEnvio(x, texto0, enviar, chips) {
   const texto = el('div', { cls:'msg' }, texto0);
-  const t = el('div', { cls:'t', onclick: () => abrir(x.id, 'contacto') },
+  const t = el('div', { cls:'t ' + String(x.temp || '').toUpperCase(), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), x.cuando ? el('span', { cls:'dias' }, x.cuando) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : '',
     x.consulto && !x.resumen ? el('div', { cls:'busca' }, 'Consultó por: ' + x.consulto) : '',
+    x.requisitos ? el('div', { cls:'req' }, el('b', {}, 'Requisitos: '), x.requisitos) : '',
     x.evento ? el('div', { cls:'busca' }, x.evento) : '',
     el('div', { cls:'porque' }, x.porque || x.accion || ''),
     x.ultimo ? el('div', { cls:'dato' }, 'Último: ' + x.ultimo) : '',
@@ -654,7 +674,7 @@ function filaEnvio(x) {
 let semanaAbierta = false, semanaDatos = null, semanaCuerpo = null;
 function pintarSemana(cuerpo, r) {
   cuerpo.replaceChildren(
-    r.atrasados ? el('div', { cls:'dia' }, el('div', { cls:'rojo', style:'font-size:14px' }, r.atrasados + (r.atrasados === 1 ? ' paso atrasado' : ' pasos atrasados') + ': están en Tus próximos pasos.')) : '',
+    r.atrasados ? el('div', { cls:'dia' }, el('div', { cls:'rojo', style:'font-size:14px' }, r.atrasados + (r.atrasados === 1 ? ' paso atrasado' : ' pasos atrasados') + ': están en Hoy sí o sí.')) : '',
     ...r.dias.map((dia, i) => el('div', { cls:'dia' }, el('h4', { cls: i === 0 ? 'hoy' : '' }, dia.titulo, dia.items.length ? el('small', {}, dia.items.length + (dia.items.length === 1 ? ' cosa' : ' cosas')) : ''),
       dia.items.length ? dia.items.map(x => el('div', { cls:'ev' + (x.canal === 'Evento' ? ' evento' : ''), style: x.id ? 'cursor:pointer' : '', onclick: () => x.id && abrir(x.id, 'contacto') },
         x.hora ? el('span', { cls:'h' }, x.hora) : '', el('span', {}, x.nombre ? el('b', {}, x.nombre + ' · ') : '', x.texto), x.canal && x.canal !== 'Evento' ? el('span', { cls:'c' }, x.canal) : ''))
@@ -752,13 +772,10 @@ function pintarHoy(r, viejo) {
   const ETQ_V = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Con otra inmo', 'EN VENTA':'En venta' };
   const esComprador = x => !x.etapa && x.estado !== 'NUEVO';
 
-  // 1. Con fecha fija: visitas a confirmar, cumpleaños (el día después) y fiestas
-  const fijas = L('visitas').map(v => Object.assign({ _visita:true }, v, { resumen:'' })).concat(L('fechas'), L('fiestas'));
-  sec('fijas', 'Con fecha fija', 'visitas, cumpleaños', 'Nada con fecha fija hoy.', fijas,
-    x => x._visita ? tarjetaEnvio(x, x.texto, tx => api('api_accion', x.id, 'AVISO', x.clave, tx)) : filaEnvio(x),
-    (r.fiestasPendientes || 0) > L('fiestas').length && L('fiestas').length ? el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Hasta 20 saludos por día. El resto aparece mañana.') : '');
-  // 2. Lo que pusiste vos (hoy y atrasados): el texto, cuándo lo pusiste y el botón del medio que elegiste
-  sec('proximos', 'Tus próximos pasos', 'hoy y atrasados', 'No pusiste nada para hoy.', L('proximos'), x => {
+  // 1. Hoy sí o sí: confirmar las visitas y lo que agendaste vos (hoy y atrasado)
+  const visitas = L('visitas').map(v => Object.assign({ _visita:true }, v, { resumen:'' }));
+  sec('proximos', 'Hoy sí o sí', 'agendado y visitas', 'Nada agendado para hoy.', visitas.concat(L('proximos')), x => {
+    if (x._visita) return tarjetaEnvio(x, x.texto, tx => api('api_accion', x.id, 'AVISO', x.clave, tx));
     const canal = String(x.canal || '');
     const boton = canal === 'Llamada' ? bLlamar(x) : canal === 'WhatsApp' ? bWhatsApp(x) : canal ? el('button', { cls:'btn sec', onclick: () => abrir(x.id, 'agenda') }, 'Agendar ' + canal.toLowerCase()) : bWhatsApp(x);
     const cuando = [x.hora ? 'a las ' + x.hora : '', x.definidoHace !== null && x.definidoHace !== undefined ? 'Lo pusiste ' + (x.definidoHace === 0 ? 'hoy' : 'hace ' + x.definidoHace + (x.definidoHace === 1 ? ' día' : ' días')) : '',
@@ -767,78 +784,138 @@ function pintarHoy(r, viejo) {
       extra: el('div', { cls:'dato' }, cuando, x.atrasado > 0 ? el('span', { cls:'rojo' }, ' · atrasado ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días')) : ''),
       temp: esComprador(x), botones: [boton, bAbrir(x, 'Lo hice')] });
   });
-  // 3. Calientes y tibios que ya sabés qué buscan y no les mandaste nada
-  sec('opciones', 'Mandale opciones', 'calientes y tibios', 'Nadie esperando opciones.', L('opciones'), x => item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
-  // 4. Leads: las 3 llamadas (de a 5)
-  // Los que ya llamaste hoy (no atendieron) van al final, con el aviso de probar en otro horario
+  // 2. Calientes y tibios que ya sabés qué buscan y no les mandaste nada
+  sec('opciones', 'Mandar opciones', 'calientes y tibios', 'Nadie esperando opciones.', L('opciones'), x => item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
+  // 3. Leads: las 3 llamadas (de a 5). Los que ya llamaste hoy van al final, con el aviso de probar en otro horario
   const yaHoy = x => x.intento > 0 && x.diasSin === 0;
   sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', L('llamar').filter(x => !yaHoy(x)).concat(L('llamar').filter(yaHoy)), x => item(x, '', {
     extra: yaHoy(x) ? el('div', { cls:'dato', style:'color:var(--dorado-oscuro);font-weight:600' }, 'Ya lo llamaste hoy: probá en otro horario') : '',
     botones:[bLlamarLead(x), bNoContesto(x)] }));
-  // 5. Mensajes de la cadencia (de a 5)
+  // 4. Mensajes de la cadencia (de a 5)
   sec('mensajes', 'Mensajes', 'cadencia', 'No hay mensajes para hoy.', L('mensajes'), x => filaEnvio(x));
-  // 6. Lo que sugiere el CRM
-  sec('atento', 'Estate atento', 'sugerencias', 'Nada más para hoy.', L('atento'), x => item(x, x.tipo === 'calificar' ? 'Por calificar' : ETQ_V[x.etapa] || '', {
+  // 5. Seguimiento: a quien le toca según su ritmo (temperatura, etapa del vendedor, fecha límite, por calificar)
+  sec('atento', 'Seguimiento', 'según el ritmo de cada uno', 'Nadie más para hoy.', L('atento'), x => item(x, x.tipo === 'calificar' ? 'Por calificar' : ETQ_V[x.etapa] || '', {
     temp: esComprador(x), botones: x.deuda ? [bAbrir(x, 'Elegir opciones', true)] : [bLlamar(x), bWhatsApp(x)] }));
-  sec('relacion', 'Relación', 'solo saludar', 'Nadie de relación para hoy.', L('relacion'), x => filaEnvio(x));
-  // 7. Revivir (de a 3), del más viejo al más nuevo. El servidor ya corta en el tope de seguridad de WhatsApp.
+  // Cuando tengas tiempo: relación (con cumpleaños, aniversarios y fiestas) y revivir
+  l.append(el('div', { cls:'sep-hoy' }, 'Cuando tengas tiempo'));
+  sec('relacion', 'Relación', 'cumpleaños y saludos', 'Nadie de relación para hoy.', L('fechas').concat(L('fiestas'), L('relacion')), x => filaEnvio(x),
+    (r.fiestasPendientes || 0) > L('fiestas').length && L('fiestas').length ? el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Hasta 20 saludos de fiestas por día. El resto aparece mañana.') : '');
+  // Revivir (de a 3), del más viejo al más nuevo. El servidor ya corta en el tope de seguridad de WhatsApp.
   sec('revivir', 'Revivir', 'del más viejo al más nuevo', 'Nadie para revivir.', L('revivir'), x => filaEnvio(x));
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
+// ─── Cartera: con quién estás trabajando ───
+// Filtro (chips) + orden (desplegable) + buscador, y "¿A quién le sirve?" para cruzar una propiedad con los compradores.
+const FILTROS = [['todos','Todos', () => true], ['cal','Calientes', x => String(x.temp).toUpperCase() === 'CALIENTE'], ['lim','Fecha límite', x => x.limite],
+  ['vend','Vendedores', x => x.vendedor], ['cash','Cash', x => x.cash], ['cli','Clientes', x => x.cliente]];
+const ORDENES = [['contacto','Último contacto'], ['nuevos','Más nuevos'], ['temp','Temperatura']];
+function enHoyIds() {
+  try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv'))
+    return new Set(Object.keys(BLOQUE_TXT).flatMap(k => (c.r[k] || []).map(x => String(x.id)))); } catch (e) {}
+  return new Set();
+}
+// Tarjeta de la Cartera: quién, cuándo vuelve, qué busca, requisitos y una línea chica. Sin botones: tocarla abre la ficha.
+function filaCartera(x, hoyIds, extra) {
+  const t = String(x.temp || '').toUpperCase();
+  const hoyISO = isoLocal(new Date()), vf = aISO(x.vuelveFecha || '');
+  const vuelve = hoyIds && hoyIds.has(String(x.id)) ? 'Hoy' : x.vuelve || '';
+  const dias = x.diasSin === null || x.diasSin === undefined ? 'sin contactos' : x.diasSin === 0 ? 'hablaron hoy' : x.diasSin === 1 ? 'hablaron ayer' : 'hace ' + x.diasSin + ' días';
+  const dato = [t ? t.charAt(0) + t.slice(1).toLowerCase() : '', x.prio ? 'P' + x.prio : '', x.etapa ? (ETAPA_V_TXT[x.etapa] || x.etapa) : '', x.estado === 'NUEVO' ? 'Lead' : '', dias].filter(Boolean).join(' · ');
+  return el('div', { cls:'t ' + t, onclick: () => abrir(x.id, 'contacto') },
+    el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), vuelve ? el('span', { cls:'vuelve' + (vuelve === 'Hoy' || (vf && vf < hoyISO) ? ' rojo' : '') }, vuelve.split(' · ')[0]) : ''),
+    x.resumen ? el('div', { cls:'busca' }, x.resumen) : el('div', { cls:'busca' }, [x.fuente ? 'Lead de ' + x.fuente : '', x.consulto ? 'consultó por ' + x.consulto : ''].filter(Boolean).join(' · ')),
+    x.requisitos ? el('div', { cls:'req' }, el('b', {}, 'Requisitos: '), x.requisitos) : '',
+    el('div', { cls:'dato' }, dato + (x.vuelve && x.vuelve.includes(' · ') ? ' · ' + x.vuelve.split(' · ').slice(1).join(' · ') : '')),
+    extra || '');
+}
 function verBuscar() {
   tabs('tBuscar');
   const l = document.getElementById('lista');
   const res = el('div');
-  let t, ultimo = '', cartera = null;
+  let datos = null, filtro = sessionStorage.getItem('crm_filtro') || 'todos', orden = sessionStorage.getItem('crm_orden') || 'contacto', t, ultimo = '';
+  const hoyIds = enHoyIds();
+  const ordenar_ = xs => xs.slice().sort(orden === 'nuevos' ? (a, b) => (b.altaTs || 0) - (a.altaTs || 0)
+    : orden === 'temp' ? null : (a, b) => (a.diasSin ?? 99999) - (b.diasSin ?? 99999));
+  const pintar = () => {
+    if (!datos) return res.replaceChildren(el('div', { cls:'vacio' }, 'Cargando la cartera…'));
+    const f = FILTROS.find(x => x[0] === filtro)[2];
+    let xs = datos.personas.filter(f);
+    xs = orden === 'temp' ? ordenar(xs) : ordenar_(xs);
+    chips.replaceChildren(...FILTROS.map(([k, txt, fn]) => el('button', { cls:'chip seg' + (k === filtro ? ' on' : ''), type:'button',
+      onclick: () => { filtro = k; sessionStorage.setItem('crm_filtro', k); pintar(); } }, txt, el('em', {}, datos.personas.filter(fn).length))));
+    res.replaceChildren(...(xs.length ? xs.map(x => filaCartera(x, hoyIds)) : [el('div', { cls:'vacio' }, 'Nadie en este filtro.')]));
+  };
+  const chips = el('div', { cls:'grid3' });
+  const sel = el('select', { onchange: () => { orden = sel.value; sessionStorage.setItem('crm_orden', orden); pintar(); } },
+    ...ORDENES.map(([k, txt]) => el('option', { value:k, selected: k === orden ? '' : undefined }, txt)));
   const lista = (titulo, xs) => res.replaceChildren(
-    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:14px 2px 6px' }, el('h2', { style:'margin:0' }, titulo + ' (' + xs.length + ')'),
+    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, titulo + ' (' + xs.length + ')'),
       el('button', { cls:'chip chico', type:'button', onclick: volver }, '‹ Cartera')),
-    ...(xs.length ? ordenar(xs).map(x => item(x)) : [el('div', { cls:'vacio' }, 'Nadie en esta lista.')]));
-  const volver = () => { inp.value = ''; ultimo = ''; sessionStorage.removeItem('crm_lista'); segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); pintarCartera(); };
+    ...(xs.length ? xs.map(x => filaCartera(x, hoyIds)) : [el('div', { cls:'vacio' }, 'Nadie.')]));
+  const volver = () => { inp.value = ''; ultimo = ''; sessionStorage.removeItem('crm_lista'); pintar(); };
   const buscar = async () => {
     const q = inp.value.trim();
     if (q.length < 2) { if (!q) volver(); return; }
-    segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); sessionStorage.removeItem('crm_lista');
     ultimo = q;
     const xs = await api('api_buscar', q);
-    if (q !== ultimo) return;
-    lista('Resultados', xs);
+    if (q === ultimo) lista('Resultados', xs);
   };
   const inp = el('input', { type:'search', placeholder:'Buscar por nombre o teléfono', autocomplete:'off', enterkeyhint:'search',
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
-  // Listas por segmento (la permuta cuenta como vendedor: tiene algo para vender)
-  const SEGS = [['incompletos','Para completar'],['vendedores','Vendedores y permuta'],['cash','Búsquedas cash'],['credito','Búsquedas crédito'],['sinpago','Sin forma de pago']];
-  const segs = el('div', { cls:'deslizable' }, ...SEGS.map(([k, tt]) => el('button', { cls:'chip seg chico', type:'button', onclick: async e => {
-    segs.querySelectorAll('.chip').forEach(b => b.classList.remove('on')); e.currentTarget.classList.add('on');
-    inp.value = ''; ultimo = k; sessionStorage.setItem('crm_lista', k);
-    const xs = await api('api_lista', k);
-    if (ultimo !== k) return;
-    lista(tt, xs);
-  }}, tt)));
-  // Cartera: cuántos tenés en cada lugar del embudo. Tocás un número y ves la lista.
-  const ETQ_VC = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Otra inmo', 'EN PUBLICACION':'Publicando', 'EN VENTA':'En venta', RESERVA:'Reserva' };
-  const tile = (txt, xs, alerta) => el('div', { cls:'tile' + (alerta && xs.length ? ' alerta' : '') + (xs.length ? '' : ' cero'), onclick: () => xs.length && lista(txt, xs) }, el('b', {}, xs.length), el('span', {}, txt));
-  const pintarCartera = () => {
-    if (!cartera) return res.replaceChildren(el('div', { cls:'vacio' }, 'Cargando la cartera…'));
-    const g = cartera, c = g.compradores || {}, v = g.vendedores || {};
-    res.replaceChildren(
-      el('div', { cls:'grupo' }, 'Compradores en contacto'),
-      el('div', { cls:'tiles' }, tile('Calientes', c.CALIENTE || []), tile('Tibios', c.TIBIO || []), tile('Fríos', c.FRIO || []), tile('Sin temp.', c.SIN || [], true)),
-      el('div', { cls:'grupo' }, 'Vendedores'),
-      el('div', { cls:'tiles' }, ...Object.keys(ETQ_VC).filter(k => (v[k] || []).length).map(k => tile(ETQ_VC[k], v[k])),
-        Object.keys(ETQ_VC).some(k => (v[k] || []).length) ? '' : el('div', { cls:'vacio' }, 'Ninguno.')),
-      el('div', { cls:'grupo' }, 'Leads y clientes'),
-      el('div', { cls:'tiles' }, tile('Leads nuevos', g.leads || []), tile('Clientes', g.clientes || [])));
-  };
-  l.replaceChildren(el('h2', {}, 'Contactos'), inp, segs, res);
-  pintarCartera();
-  api('api_cartera').then(g => { cartera = g; if (!ultimo) pintarCartera(); }).catch(() => {});
-  const previa = sessionStorage.getItem('crm_lista');
-  const b = previa && [...segs.children].find((x, i) => SEGS[i][0] === previa);
-  if (b) b.click();
+  l.replaceChildren(el('h2', {}, 'Cartera'), inp, chips,
+    el('div', { cls:'orden' }, 'Ordenar', sel, el('button', { cls:'btn pri', onclick: () => aQuien(datos) }, '¿A quién le sirve?')), res);
+  pintar();
+  api('api_cartera').then(g => { datos = g; if (!ultimo) pintar(); }).catch(() => {});
+  // Desde Hoy: "N contactos sin forma de pago o temperatura" abre esa lista
+  if (sessionStorage.getItem('crm_lista') === 'incompletos') { ultimo = 'incompletos'; api('api_lista', 'incompletos').then(xs => lista('Para completar', xs)).catch(() => {}); }
 }
+
+// ¿A quién le sirve? Cargás la propiedad y el CRM la cruza con los compradores activos.
+// Encaja: todo coincide. También podría: falla una sola cosa (un ambiente, o hasta 15% arriba del tope).
+function aQuien(datos) {
+  const l = document.getElementById('lista');
+  const v = { tipo:'', amb:'' };
+  const unaOpcion = (ops, k) => { const g = el('div', { cls:'grid3' + (ops.length > 3 ? ' g4' : '') }, ...ops.map(o => { const b = el('button', { cls:'chip seg', type:'button', onclick: () => {
+    v[k] = v[k] === o ? '' : o; g.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); if (v[k]) b.classList.add('on'); } }, o); return b; })); return g; };
+  const barrios = multi((datos && datos.barrios) || [], '', true);
+  const usd = el('input', { inputmode:'numeric', placeholder:'Ej.: 135000' });
+  const dir = el('input', { placeholder:'Ej.: Av. La Plata 25' }), link = el('input', { type:'url', placeholder:'https://…' });
+  const res = el('div');
+  const mandar = x => el('button', { cls:'btn sec', style:'min-height:38px;padding:6px 12px;font-size:14px;margin-top:8px', onclick: async e => {
+    e.stopPropagation();
+    if (!x.wa) return toast('Falta un teléfono válido', true);
+    const nombre = primerNombreApp(x.nombre), lk = link.value.trim();
+    abrirExterno(waUrl(x.wa, lk ? 'Hola ' + nombre + '! Te paso esta opción: ' + lk : ''));
+    if (!dir.value.trim()) return toast('Abrí WhatsApp. Sin dirección no queda registrado que se la mandaste');
+    await api('api_opciones', x.id, [{ direccion: dir.value.trim(), link: lk }]);
+    e.target.textContent = 'Mandada ✓'; e.target.disabled = true; toast('Registrado: le mandaste ' + dir.value.trim());
+  }}, 'Mandar');
+  const tarjeta = x => filaCartera(x, null, [el('div', { cls:'por' }, ...x.por.filter(p => p.t).map(p => el('span', { cls: p.ok ? '' : 'ojo' }, p.t)),
+    x.ya ? el('span', { cls:'ya' }, 'ya se la mandaste') : ''), mandar(x)]);
+  const buscar = async () => {
+    if (!v.tipo || !barrios.valor()) return toast('Elegí el tipo y al menos un barrio', true);
+    const r = await api('api_aQuien', { tipo: v.tipo, barrios: barrios.valor().split(',').map(s => s.trim()), amb: v.amb === '5+' ? 5 : v.amb, usd: usd.value.replace(/\D/g, ''),
+      direccion: dir.value.trim(), link: link.value.trim() });
+    const grupo = (titulo, ayuda, xs) => [el('div', { cls:'bloque' }, el('h3', {}, titulo), el('span', { cls:'c' }, xs.length), el('small', {}, ayuda)),
+      ...(xs.length ? xs.map(tarjeta) : [el('div', { cls:'vacio' }, 'Nadie.')])];
+    res.replaceChildren(...grupo('Encaja', 'tipo, barrio, ambientes y precio', r.alto), ...grupo('También podría', 'falla una sola cosa', r.medio));
+  };
+  l.replaceChildren(
+    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, '¿A quién le sirve?'),
+      el('button', { cls:'chip chico', type:'button', onclick: verBuscar }, '‹ Cartera')),
+    el('div', { cls:'card' },
+      el('label', {}, 'Tipo'), unaOpcion(['Depto','PH','Casa'], 'tipo'),
+      el('label', {}, 'Barrios (uno o varios)'), barrios,
+      el('label', {}, 'Ambientes'), unaOpcion(['1','2','3','4','5+'], 'amb'),
+      el('label', {}, 'Precio USD'), usd,
+      el('label', {}, 'Dirección (para que quede registrado a quién se la mandaste)'), dir,
+      el('label', {}, 'Link de la publicación (opcional)'), link,
+      el('button', { cls:'btn pri ancho', style:'margin-top:12px', onclick: buscar }, 'Buscar compradores')),
+    res);
+}
+const primerNombreApp = n => String(n || '').trim().split(/\s+/)[0];
 
 // Menu lateral: links a las otras herramientas, ajustes y, al final, cerrar sesion.
 let LINKS = {};
@@ -853,12 +930,11 @@ function armarMenu() {
   const op = (texto, fn, cls) => el('button', { cls:'op' + (cls ? ' ' + cls : ''), onclick: () => { menu(false); fn(); } }, texto);
   document.getElementById('menu').replaceChildren(
     el('div', { cls:'cab' }, el('img', { src:'../assets/nl-lockup-tinta.svg', alt:'Nahuel Lim' }), el('button', { 'aria-label':'Cerrar menú', icon:'cerrar', onclick: () => menu(false) })),
-    el('div', { cls:'grupo' }, 'Google Sheet LEADS'),
-    link('Contactos', LINKS.contactos), link('Fichas', LINKS.fichas),
     el('div', { cls:'grupo' }, 'Herramientas'),
-    link('Formulario ACM', 'https://nahuelim.com.ar/acm-form.html'),
-    link('Generador de fichas', 'http://127.0.0.1:5050', 'solo Mac, con genfichas abierto'),
-    link('Generador (celu)', 'https://nahuels-macbook-pro.tail2dd14d.ts.net/', 'vía Tailscale; Mac despierta y genfichas abierto'),
+    link('ACM', 'https://nahuelim.com.ar/acm-form.html'),
+    link('Generador de fichas · Mac', 'http://127.0.0.1:5050', 'con genfichas abierto'),
+    link('Generador de fichas · celu', 'https://nahuels-macbook-pro.tail2dd14d.ts.net/', 'vía Tailscale, con la Mac despierta'),
+    link('Fichas', LINKS.fichas, 'la pestaña FICHAS del Sheet'),
     link('Mi web', 'https://nahuelim.com.ar'),
     op('Estadísticas', verEstadisticas),
     el('div', { cls:'abajo' }, op('Ajustes', verAjustes), op('Cerrar sesión', verCerrarSesion, 'salir')));
@@ -1156,7 +1232,7 @@ async function abrir(id, seg, ya) {
     const explicaCRM = el('div', { cls:'pregunta', style:'display:none;margin-top:8px' },
       ESTADOS_CADENCIA_APP.includes(d.ESTADO) ? 'No queda un paso tuyo: sigue la cadencia de llamadas y mensajes de los leads.'
       : d['ETAPA VENTA'] && !d['BUSCA TIPO'] ? 'No queda un paso tuyo: Hoy te lo vuelve a mostrar según la etapa de venta.'
-      : 'No queda un paso tuyo: Hoy te lo vuelve a mostrar en "Estate atento" ' + (ritmoTxt ? ritmoTxt + ' (es ' + d.TEMPERATURA.toLowerCase() + ')' : 'cada 4 a 5 días (no tiene temperatura)') + ', o antes si le debés opciones.');
+      : 'No queda un paso tuyo: Hoy te lo vuelve a mostrar en "Seguimiento" ' + (ritmoTxt ? ritmoTxt + ' (es ' + d.TEMPERATURA.toLowerCase() + ')' : 'cada 4 a 5 días (no tiene temperatura)') + ', o antes si le debés opciones.');
     const mostrarCae = () => { const x = new Date(fecha.value + 'T12:00');
       const dia = x.toLocaleDateString('es-AR', { weekday:'long' });
       cae.textContent = fecha.value ? dia.charAt(0).toUpperCase() + dia.slice(1) + ' ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0') + '/' + String(x.getFullYear()).slice(2) : 'Elegir otra fecha';
@@ -1438,8 +1514,8 @@ async function abrir(id, seg, ya) {
 }
 
 // Dónde está en la app: en qué bloque de Hoy (sale del Hoy guardado en el dispositivo) y en qué grupo de la cartera de Contactos
-const BLOQUE_TXT = { visitas:'Con fecha fija', fechas:'Con fecha fija', fiestas:'Con fecha fija', proximos:'Tus próximos pasos', opciones:'Mandale opciones',
-  llamar:'Llamar', mensajes:'Mensajes', atento:'Estate atento', relacion:'Relación', revivir:'Revivir' };
+const BLOQUE_TXT = { visitas:'Hoy sí o sí', fechas:'Relación', fiestas:'Relación', proximos:'Hoy sí o sí', opciones:'Mandar opciones',
+  llamar:'Llamar', mensajes:'Mensajes', atento:'Seguimiento', relacion:'Relación', revivir:'Revivir' };
 const ETAPA_V_TXT = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Otra inmo', 'EN PUBLICACION':'Publicando', 'EN VENTA':'En venta', RESERVA:'Reserva' };
 function dondeEsta(d, id) {
   let hoy = null;
