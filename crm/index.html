@@ -131,6 +131,8 @@
   .lb { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-bottom:8px; }
   .lb .r { padding:10px 12px; border-top:1px solid var(--linea); cursor:pointer; }
   .lb .r:first-child { border-top:0; }
+  .lb .sub { padding:6px 12px; background:var(--crema); border-top:1px solid var(--linea); font-size:13px; font-weight:700; color:var(--tinta-suave); }
+  .lb .sub:first-child { border-top:0; }
   .lb .l1 { display:flex; align-items:baseline; gap:8px; }
   .lb .n { font-weight:700; } .lb .v { margin-left:auto; font-size:13px; font-weight:600; color:var(--verde-profundo); white-space:nowrap; } .lb .v.rojo { color:var(--alerta); }
   .lb .tope { font-size:15px; font-weight:600; margin-top:1px; }
@@ -317,7 +319,7 @@
 
 <script>
 const VERSION = '42';
-const COMPILACION = '42.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '42.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -887,6 +889,18 @@ function verBuscar() {
   if (sessionStorage.getItem('crm_lista') === 'incompletos') { ultimo = 'incompletos'; api('api_lista', 'incompletos').then(xs => lista('Para completar', xs)).catch(() => {}); }
 }
 
+// Subgrupos por presupuesto: ordenados de mayor a menor, un tope sigue en el mismo subgrupo si está a 30k o menos del anterior.
+const SALTO_PRECIO = 30000;
+function porPrecio(xs) {
+  const k$ = n => Math.round(n / 1000) + 'k', out = [], sin = xs.filter(x => !x.usd);
+  xs.filter(x => x.usd).forEach(x => {
+    const g = out[out.length - 1];
+    if (g && g.min - x.usd <= SALTO_PRECIO) { g.xs.push(x); g.min = x.usd; } else out.push({ max: x.usd, min: x.usd, xs: [x] });
+  });
+  out.forEach(g => { g.titulo = g.max === g.min ? k$(g.max) : k$(g.min) + ' a ' + k$(g.max); });
+  if (sin.length) out.push({ titulo: 'Sin presupuesto', xs: sin });
+  return out;
+}
 // Fila de Búsquedas: nombre y cuándo vuelve; el tope y los ambientes bien visibles; qué compra; requisitos; cuándo hablaron.
 function filaBusqueda(x, hoyIds) {
   const vuelve = hoyIds.has(String(x.id)) ? 'Hoy' : String(x.vuelve || '').split(' · ')[0];
@@ -915,11 +929,11 @@ function verBusquedas(datos) {
       el('button', { cls:'chip chico', type:'button', onclick: verBuscar }, '‹ Cartera')),
     el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Tu demanda por tipo y barrio. Tocá un grupo para ver quiénes son.'),
     ...(lista.length ? lista.map(g => {
-      const xs = g.xs.slice().sort((a, b) => (a.usd || 9e9) - (b.usd || 9e9));
+      const xs = g.xs.slice().sort((a, b) => (b.usd || 0) - (a.usd || 0));   // de mayor a menor presupuesto
       const usds = xs.map(x => x.usd).filter(Boolean), mins = xs.map(x => x.ambMin).filter(Boolean), maxs = xs.map(x => x.ambMax || x.ambMin).filter(Boolean);
       const resumen = [mins.length ? rango(Math.min(...mins), Math.max(...maxs) >= 5 ? '5+' : Math.max(...maxs)) + ' amb' : '', usds.length ? rango(k$(Math.min(...usds)), k$(Math.max(...usds))) : ''].filter(Boolean).join(' · ');
       return el('details', { cls:'grp' }, el('summary', {}, el('span', { cls:'gt' }, g.t + ' · ' + g.b), el('span', { cls:'gc' }, xs.length), resumen ? el('span', { cls:'gs' }, resumen) : ''),
-        el('div', { cls:'lb' }, ...xs.map(x => filaBusqueda(x, hoyIds))));
+        el('div', { cls:'lb' }, ...porPrecio(xs).flatMap(sg => [el('div', { cls:'sub' }, sg.titulo + ' · ' + sg.xs.length), ...sg.xs.map(x => filaBusqueda(x, hoyIds))])));
     }) : [el('div', { cls:'vacio' }, 'Nadie tiene la búsqueda cargada con tipo y barrio.')]));
 }
 
