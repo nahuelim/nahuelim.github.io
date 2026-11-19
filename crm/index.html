@@ -127,6 +127,15 @@
   .grid4 .chip { border-radius:10px; text-align:center; padding:6px 2px; font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .grid4 .chip em { display:block; font-style:normal; font-weight:700; font-size:15px; margin:1px 0 0; }   /* el número abajo: todos del mismo tamaño */
   details.grp { margin-bottom:6px; } details.grp > summary { list-style:none; cursor:pointer; background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 12px; }
+  /* Búsquedas: lista compacta (filas separadas por líneas, sin color): para comparar a varios de un vistazo */
+  .lb { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-bottom:8px; }
+  .lb .r { padding:10px 12px; border-top:1px solid var(--linea); cursor:pointer; }
+  .lb .r:first-child { border-top:0; }
+  .lb .l1 { display:flex; align-items:baseline; gap:8px; }
+  .lb .n { font-weight:700; } .lb .v { margin-left:auto; font-size:13px; font-weight:600; color:var(--verde-profundo); white-space:nowrap; } .lb .v.rojo { color:var(--alerta); }
+  .lb .tope { font-size:15px; font-weight:600; margin-top:1px; }
+  .lb .c2 { font-size:13px; color:var(--tinta-suave); margin-top:1px; }
+  .lb .req { font-size:13px; margin-top:1px; } .lb .req b { color:var(--tinta-suave); font-weight:600; }
   details.grp > summary::-webkit-details-marker { display:none; } details.grp[open] > summary { margin-bottom:6px; }
   details.grp .gt { font-weight:700; } details.grp .gc { font-size:12px; font-weight:700; color:var(--crema); background:var(--tinta); border-radius:999px; padding:1px 7px; margin-left:6px; } details.grp .gs { display:block; font-size:13px; color:var(--tinta-suave); margin-top:2px; }
   .t.urge .porque { color:var(--alerta); }
@@ -308,7 +317,7 @@
 
 <script>
 const VERSION = '42';
-const COMPILACION = '42';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '42.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -878,6 +887,19 @@ function verBuscar() {
   if (sessionStorage.getItem('crm_lista') === 'incompletos') { ultimo = 'incompletos'; api('api_lista', 'incompletos').then(xs => lista('Para completar', xs)).catch(() => {}); }
 }
 
+// Fila de Búsquedas: nombre y cuándo vuelve; el tope y los ambientes bien visibles; qué compra; requisitos; cuándo hablaron.
+function filaBusqueda(x, hoyIds) {
+  const vuelve = hoyIds.has(String(x.id)) ? 'Hoy' : String(x.vuelve || '').split(' · ')[0];
+  const vf = aISO(x.vuelveFecha || ''), atras = vuelve === 'Hoy' || (vf && vf < isoLocal(new Date()));
+  const amb = x.ambMin ? (x.ambMax && x.ambMax !== x.ambMin ? x.ambMin + ' a ' + (x.ambMax >= 5 ? '5+' : x.ambMax) : x.ambMin) + ' amb' : '';
+  const dias = x.diasSin === null || x.diasSin === undefined ? 'sin contactos' : x.diasSin === 0 ? 'hablaron hoy' : x.diasSin === 1 ? 'hablaron ayer' : 'hablaron hace ' + x.diasSin + ' días';
+  return el('div', { cls:'r', onclick: () => abrir(x.id, 'contacto') },
+    el('div', { cls:'l1' }, el('span', { cls:'n' }, String(x.nombre).split(' - ')[0]), vuelve ? el('span', { cls:'v' + (atras ? ' rojo' : '') }, vuelve) : ''),
+    el('div', { cls:'tope' }, [x.usd ? 'Hasta ' + Math.round(x.usd / 1000) + 'k' : 'Sin presupuesto', amb, x.cash ? 'Cash' : ''].filter(Boolean).join(' · ')),
+    x.resumen ? el('div', { cls:'c2' }, x.resumen) : '',
+    x.requisitos ? el('div', { cls:'req' }, el('b', {}, 'Requisitos: '), x.requisitos) : '',
+    el('div', { cls:'c2' }, dias));
+}
 // Búsquedas: la demanda que ya tenés cargada, agrupada por tipo y barrio ("PH · Caballito — 3 personas · 3-4 amb · 110k a 160k").
 // Sirve para buscar una vez para varios y para leer el grupo de colegas sabiendo a quién le sirve cada cosa.
 // Alguien que busca en dos barrios aparece en los dos grupos. Grupos más grandes primero; adentro, por tope de precio.
@@ -897,7 +919,7 @@ function verBusquedas(datos) {
       const usds = xs.map(x => x.usd).filter(Boolean), mins = xs.map(x => x.ambMin).filter(Boolean), maxs = xs.map(x => x.ambMax || x.ambMin).filter(Boolean);
       const resumen = [mins.length ? rango(Math.min(...mins), Math.max(...maxs) >= 5 ? '5+' : Math.max(...maxs)) + ' amb' : '', usds.length ? rango(k$(Math.min(...usds)), k$(Math.max(...usds))) : ''].filter(Boolean).join(' · ');
       return el('details', { cls:'grp' }, el('summary', {}, el('span', { cls:'gt' }, g.t + ' · ' + g.b), el('span', { cls:'gc' }, xs.length), resumen ? el('span', { cls:'gs' }, resumen) : ''),
-        ...xs.map(x => filaCartera(x, hoyIds)));
+        el('div', { cls:'lb' }, ...xs.map(x => filaBusqueda(x, hoyIds))));
     }) : [el('div', { cls:'vacio' }, 'Nadie tiene la búsqueda cargada con tipo y barrio.')]));
 }
 
