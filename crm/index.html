@@ -122,7 +122,13 @@
   /* v41: banda a la izquierda = temperatura (rojo caliente, amarillo tibio, azul frío, gris sin dato). Lo urgente va en rojo en el texto. */
   .t { background:var(--blanco); border:1px solid var(--linea); border-radius:14px; padding:12px 14px 11px 18px; margin-bottom:8px; cursor:pointer; position:relative; overflow:hidden; }
   .t::before { content:''; position:absolute; left:6px; top:10px; bottom:10px; width:5px; border-radius:4px; background:var(--banda, #C9C2B2); }
-  .t.CALIENTE { --banda:#C0392B; } .t.TIBIO { --banda:#C9A227; } .t.FRIO { --banda:#4A7FA7; }
+  .t.CALIENTE { --banda:#C0392B; } .t.TIBIO { --banda:#C9A227; } .t.FRIO { --banda:#4A7FA7; } .t.VEND { --banda:var(--verde-profundo); }   /* vendedor: color propio */
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:4px 0 8px; }
+  .grid4 .chip { border-radius:10px; text-align:center; padding:6px 2px; font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .grid4 .chip em { display:block; font-style:normal; font-weight:700; font-size:15px; margin:1px 0 0; }   /* el número abajo: todos del mismo tamaño */
+  details.grp { margin-bottom:6px; } details.grp > summary { list-style:none; cursor:pointer; background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 12px; }
+  details.grp > summary::-webkit-details-marker { display:none; } details.grp[open] > summary { margin-bottom:6px; }
+  details.grp .gt { font-weight:700; } details.grp .gc { font-size:12px; font-weight:700; color:var(--crema); background:var(--tinta); border-radius:999px; padding:1px 7px; margin-left:6px; } details.grp .gs { display:block; font-size:13px; color:var(--tinta-suave); margin-top:2px; }
   .t.urge .porque { color:var(--alerta); }
   .t .req { font-size:14px; color:var(--tinta); margin-top:2px; } .t .req b { font-weight:600; color:var(--tinta-suave); }
   .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:4px 0 8px; }
@@ -130,7 +136,7 @@
   .grid3.g4 { grid-template-columns:repeat(5,1fr); }
   .grid3 .chip em { font-style:normal; opacity:.7; margin-left:3px; }
   .orden { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--tinta-suave); margin:2px 2px 10px; }
-  .orden select { width:auto; padding:6px 10px; font-weight:600; }
+  .orden select { width:auto; padding:6px 30px 6px 10px; font-weight:600; }
   .orden .btn { margin-left:auto; min-height:36px; padding:6px 10px; font-size:13px; }
   .t .vuelve { margin-left:auto; font-size:13px; font-weight:600; color:var(--verde-profundo); white-space:nowrap; }
   .t .vuelve.rojo { color:var(--alerta); }
@@ -301,8 +307,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '41';
-const COMPILACION = '41';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '42';
+const COMPILACION = '42';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -596,7 +602,7 @@ function item(x, tag, o) {
     x.tel ? '' : el('span', { cls:'rojo' }, 'Sin teléfono')].filter(Boolean);
   const linea = []; dato.forEach((d, i) => { if (i) linea.push(' · '); linea.push(d); });
   const pideTemp = o.temp && !temp;
-  return el('div', { cls:'t' + (urgente(x) ? ' urge' : '') + (temp ? ' ' + temp : ''), onclick: () => abrir(x.id, 'contacto') },
+  return el('div', { cls:'t' + (urgente(x) ? ' urge' : '') + (temp ? ' ' + temp : x.etapa || x.vendedor ? ' VEND' : ''), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), dias ? el('span', { cls:'dias' + (tope && x.diasSin > tope ? ' rojo' : '') }, dias) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : (x.fuente ? el('div', { cls:'busca' }, 'Lead de ' + x.fuente + (x.alta ? ' · entró el ' + x.alta.slice(0, 5) : '')) : ''),
     x.consulto ? el('div', { cls:'busca' }, 'Consultó por: ' + x.consulto) : '',
@@ -636,7 +642,7 @@ const bAbrir = (x, t, pri) => el('button', { cls:'btn' + (pri ? ' pri' : ''), on
 // Tarjeta de envío (cumpleaños, fiestas, mensajes, relación, revivir): mismo formato que las demás, con el mensaje listo y Enviar.
 function tarjetaEnvio(x, texto0, enviar, chips) {
   const texto = el('div', { cls:'msg' }, texto0);
-  const t = el('div', { cls:'t ' + String(x.temp || '').toUpperCase(), onclick: () => abrir(x.id, 'contacto') },
+  const t = el('div', { cls:'t ' + (String(x.temp || '').toUpperCase() || (x.etapa ? 'VEND' : '')), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), x.cuando ? el('span', { cls:'dias' }, x.cuando) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : '',
     x.consulto && !x.resumen ? el('div', { cls:'busca' }, 'Consultó por: ' + x.consulto) : '',
@@ -807,8 +813,8 @@ function pintarHoy(r, viejo) {
 
 // ─── Cartera: con quién estás trabajando ───
 // Filtro (chips) + orden (desplegable) + buscador, y "¿A quién le sirve?" para cruzar una propiedad con los compradores.
-const FILTROS = [['todos','Todos', () => true], ['cal','Calientes', x => String(x.temp).toUpperCase() === 'CALIENTE'], ['lim','Fecha límite', x => x.limite],
-  ['vend','Vendedores', x => x.vendedor], ['cash','Cash', x => x.cash], ['cli','Clientes', x => x.cliente]];
+const FILTROS = [['todos','Todos', () => true], ['nuevos','Nuevos', x => x.nuevo], ['comp','Compran', x => x.comprador], ['vend','Venden', x => x.vendedor],
+  ['cal','Calientes', x => String(x.temp).toUpperCase() === 'CALIENTE'], ['lim','Con fecha', x => x.limite], ['cash','Cash', x => x.cash], ['cli','Clientes', x => x.cliente]];
 const ORDENES = [['contacto','Último contacto'], ['nuevos','Más nuevos'], ['temp','Temperatura']];
 function enHoyIds() {
   try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv'))
@@ -822,7 +828,7 @@ function filaCartera(x, hoyIds, extra) {
   const vuelve = hoyIds && hoyIds.has(String(x.id)) ? 'Hoy' : x.vuelve || '';
   const dias = x.diasSin === null || x.diasSin === undefined ? 'sin contactos' : x.diasSin === 0 ? 'hablaron hoy' : x.diasSin === 1 ? 'hablaron ayer' : 'hace ' + x.diasSin + ' días';
   const dato = [t ? t.charAt(0) + t.slice(1).toLowerCase() : '', x.prio ? 'P' + x.prio : '', x.etapa ? (ETAPA_V_TXT[x.etapa] || x.etapa) : '', x.estado === 'NUEVO' ? 'Lead' : '', dias].filter(Boolean).join(' · ');
-  return el('div', { cls:'t ' + t, onclick: () => abrir(x.id, 'contacto') },
+  return el('div', { cls:'t ' + (t || (x.vendedor ? 'VEND' : '')), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), vuelve ? el('span', { cls:'vuelve' + (vuelve === 'Hoy' || (vf && vf < hoyISO) ? ' rojo' : '') }, vuelve.split(' · ')[0]) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : el('div', { cls:'busca' }, [x.fuente ? 'Lead de ' + x.fuente : '', x.consulto ? 'consultó por ' + x.consulto : ''].filter(Boolean).join(' · ')),
     x.requisitos ? el('div', { cls:'req' }, el('b', {}, 'Requisitos: '), x.requisitos) : '',
@@ -846,7 +852,7 @@ function verBuscar() {
       onclick: () => { filtro = k; sessionStorage.setItem('crm_filtro', k); pintar(); } }, txt, el('em', {}, datos.personas.filter(fn).length))));
     res.replaceChildren(...(xs.length ? xs.map(x => filaCartera(x, hoyIds)) : [el('div', { cls:'vacio' }, 'Nadie en este filtro.')]));
   };
-  const chips = el('div', { cls:'grid3' });
+  const chips = el('div', { cls:'grid4' });
   const sel = el('select', { onchange: () => { orden = sel.value; sessionStorage.setItem('crm_orden', orden); pintar(); } },
     ...ORDENES.map(([k, txt]) => el('option', { value:k, selected: k === orden ? '' : undefined }, txt)));
   const lista = (titulo, xs) => res.replaceChildren(
@@ -865,57 +871,35 @@ function verBuscar() {
     oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
     onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
   l.replaceChildren(el('h2', {}, 'Cartera'), inp, chips,
-    el('div', { cls:'orden' }, 'Ordenar', sel, el('button', { cls:'btn pri', onclick: () => aQuien(datos) }, '¿A quién le sirve?')), res);
+    el('div', { cls:'orden' }, 'Ordenar', sel, el('button', { cls:'btn pri', onclick: () => datos && verBusquedas(datos) }, 'Búsquedas')), res);
   pintar();
   api('api_cartera').then(g => { datos = g; if (!ultimo) pintar(); }).catch(() => {});
   // Desde Hoy: "N contactos sin forma de pago o temperatura" abre esa lista
   if (sessionStorage.getItem('crm_lista') === 'incompletos') { ultimo = 'incompletos'; api('api_lista', 'incompletos').then(xs => lista('Para completar', xs)).catch(() => {}); }
 }
 
-// ¿A quién le sirve? Cargás la propiedad y el CRM la cruza con los compradores activos.
-// Encaja: todo coincide. También podría: falla una sola cosa (un ambiente, o hasta 15% arriba del tope).
-function aQuien(datos) {
-  const l = document.getElementById('lista');
-  const v = { tipo:'', amb:'' };
-  const unaOpcion = (ops, k) => { const g = el('div', { cls:'grid3' + (ops.length > 3 ? ' g4' : '') }, ...ops.map(o => { const b = el('button', { cls:'chip seg', type:'button', onclick: () => {
-    v[k] = v[k] === o ? '' : o; g.querySelectorAll('.chip').forEach(x => x.classList.remove('on')); if (v[k]) b.classList.add('on'); } }, o); return b; })); return g; };
-  const barrios = multi((datos && datos.barrios) || [], '', true);
-  const usd = el('input', { inputmode:'numeric', placeholder:'Ej.: 135000' });
-  const dir = el('input', { placeholder:'Ej.: Av. La Plata 25' }), link = el('input', { type:'url', placeholder:'https://…' });
-  const res = el('div');
-  const mandar = x => el('button', { cls:'btn sec', style:'min-height:38px;padding:6px 12px;font-size:14px;margin-top:8px', onclick: async e => {
-    e.stopPropagation();
-    if (!x.wa) return toast('Falta un teléfono válido', true);
-    const nombre = primerNombreApp(x.nombre), lk = link.value.trim();
-    abrirExterno(waUrl(x.wa, lk ? 'Hola ' + nombre + '! Te paso esta opción: ' + lk : ''));
-    if (!dir.value.trim()) return toast('Abrí WhatsApp. Sin dirección no queda registrado que se la mandaste');
-    await api('api_opciones', x.id, [{ direccion: dir.value.trim(), link: lk }]);
-    e.target.textContent = 'Mandada ✓'; e.target.disabled = true; toast('Registrado: le mandaste ' + dir.value.trim());
-  }}, 'Mandar');
-  const tarjeta = x => filaCartera(x, null, [el('div', { cls:'por' }, ...x.por.filter(p => p.t).map(p => el('span', { cls: p.ok ? '' : 'ojo' }, p.t)),
-    x.ya ? el('span', { cls:'ya' }, 'ya se la mandaste') : ''), mandar(x)]);
-  const buscar = async () => {
-    if (!v.tipo || !barrios.valor()) return toast('Elegí el tipo y al menos un barrio', true);
-    const r = await api('api_aQuien', { tipo: v.tipo, barrios: barrios.valor().split(',').map(s => s.trim()), amb: v.amb === '5+' ? 5 : v.amb, usd: usd.value.replace(/\D/g, ''),
-      direccion: dir.value.trim(), link: link.value.trim() });
-    const grupo = (titulo, ayuda, xs) => [el('div', { cls:'bloque' }, el('h3', {}, titulo), el('span', { cls:'c' }, xs.length), el('small', {}, ayuda)),
-      ...(xs.length ? xs.map(tarjeta) : [el('div', { cls:'vacio' }, 'Nadie.')])];
-    res.replaceChildren(...grupo('Encaja', 'tipo, barrio, ambientes y precio', r.alto), ...grupo('También podría', 'falla una sola cosa', r.medio));
-  };
+// Búsquedas: la demanda que ya tenés cargada, agrupada por tipo y barrio ("PH · Caballito — 3 personas · 3-4 amb · 110k a 160k").
+// Sirve para buscar una vez para varios y para leer el grupo de colegas sabiendo a quién le sirve cada cosa.
+// Alguien que busca en dos barrios aparece en los dos grupos. Grupos más grandes primero; adentro, por tope de precio.
+function verBusquedas(datos) {
+  const l = document.getElementById('lista'), hoyIds = enHoyIds();
+  const grupos = {};
+  datos.personas.forEach(x => (x.busq || []).forEach(b => { (grupos[b.k] = grupos[b.k] || { t: b.t, b: b.b, xs: [] }).xs.push(x); }));
+  const k$ = n => n ? Math.round(n / 1000) + 'k' : '';
+  const rango = (a, b) => a === b ? a : a + ' a ' + b;
+  const lista = Object.values(grupos).sort((a, b) => b.xs.length - a.xs.length || (a.t + a.b).localeCompare(b.t + b.b));
   l.replaceChildren(
-    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, '¿A quién le sirve?'),
+    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, 'Búsquedas (' + lista.length + ')'),
       el('button', { cls:'chip chico', type:'button', onclick: verBuscar }, '‹ Cartera')),
-    el('div', { cls:'card' },
-      el('label', {}, 'Tipo'), unaOpcion(['Depto','PH','Casa'], 'tipo'),
-      el('label', {}, 'Barrios (uno o varios)'), barrios,
-      el('label', {}, 'Ambientes'), unaOpcion(['1','2','3','4','5+'], 'amb'),
-      el('label', {}, 'Precio USD'), usd,
-      el('label', {}, 'Dirección (para que quede registrado a quién se la mandaste)'), dir,
-      el('label', {}, 'Link de la publicación (opcional)'), link,
-      el('button', { cls:'btn pri ancho', style:'margin-top:12px', onclick: buscar }, 'Buscar compradores')),
-    res);
+    el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Tu demanda por tipo y barrio. Tocá un grupo para ver quiénes son.'),
+    ...(lista.length ? lista.map(g => {
+      const xs = g.xs.slice().sort((a, b) => (a.usd || 9e9) - (b.usd || 9e9));
+      const usds = xs.map(x => x.usd).filter(Boolean), mins = xs.map(x => x.ambMin).filter(Boolean), maxs = xs.map(x => x.ambMax || x.ambMin).filter(Boolean);
+      const resumen = [mins.length ? rango(Math.min(...mins), Math.max(...maxs) >= 5 ? '5+' : Math.max(...maxs)) + ' amb' : '', usds.length ? rango(k$(Math.min(...usds)), k$(Math.max(...usds))) : ''].filter(Boolean).join(' · ');
+      return el('details', { cls:'grp' }, el('summary', {}, el('span', { cls:'gt' }, g.t + ' · ' + g.b), el('span', { cls:'gc' }, xs.length), resumen ? el('span', { cls:'gs' }, resumen) : ''),
+        ...xs.map(x => filaCartera(x, hoyIds)));
+    }) : [el('div', { cls:'vacio' }, 'Nadie tiene la búsqueda cargada con tipo y barrio.')]));
 }
-const primerNombreApp = n => String(n || '').trim().split(/\s+/)[0];
 
 // Menu lateral: links a las otras herramientas, ajustes y, al final, cerrar sesion.
 let LINKS = {};
