@@ -318,8 +318,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '42';
-const COMPILACION = '42.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '43';
+const COMPILACION = '43';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1020,7 +1020,8 @@ function verNuevo() {
   const l = document.getElementById('lista');
   // Solo lo básico: si compra o vende se completa después en Búsqueda o Venta
   const f = { NOMBRE: el('input', { autocomplete:'off', autocapitalize:'words' }), TELEFONO: el('input', { inputmode:'tel', placeholder:'11xxxxxxxx' }),
-    FUENTE: select(FUENTES, 'Instagram'), 'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi', autocapitalize:'sentences' }) };
+    FUENTE: select(FUENTES, 'Instagram'), 'CONSULTO POR': el('input', { placeholder:'Ej.: el PH de Alberdi', autocapitalize:'sentences' }),
+    NOTA: el('textarea', { placeholder:'Ej.: quiere permutar su depto de 3 amb. Queda en el historial como nota.', autocapitalize:'sentences', style:'min-height:70px' }) };
   const ayuda = el('div', { cls:'actual', style:'margin-top:8px' });
   const explicar = () => { ayuda.textContent = ['Conocido','Referido','Colega'].includes(f.FUENTE.value)
     ? 'Entra EN CONTACTO, sin llamadas en cadencia (es conocido, referido o colega).'
@@ -1041,7 +1042,7 @@ function verNuevo() {
           el('div', { cls:'grid2', style:'margin-top:12px' },
             /^\d+$/.test(String(r.id)) ? el('button', { cls:'btn pri', icon:'wa', onclick: () => abrirExterno(waUrl(r.id)) }, 'WhatsApp') : '',
             el('button', { cls:'btn sec', onclick: () => abrir(r.id, 'contacto') }, 'Abrir ficha'))));
-        Object.values(f).forEach(i => { if (i.tagName === 'INPUT') i.value = ''; });
+        Object.values(f).forEach(i => { if (i.tagName === 'INPUT' || i.tagName === 'TEXTAREA') i.value = ''; });
       }}, 'Guardar contacto'))),
     resultado);
 }
