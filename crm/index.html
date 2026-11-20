@@ -319,7 +319,7 @@
 
 <script>
 const VERSION = '42';
-const COMPILACION = '42.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '42.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1256,11 +1256,24 @@ async function abrir(id, seg, ya) {
     const mostrarCae = () => { const x = new Date(fecha.value + 'T12:00');
       const dia = x.toLocaleDateString('es-AR', { weekday:'long' });
       cae.textContent = fecha.value ? dia.charAt(0).toUpperCase() + dia.slice(1) + ' ' + String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0') + '/' + String(x.getFullYear()).slice(2) : 'Elegir otra fecha';
+      if (crmDecide && fecha.value) cae.textContent += ' · lo calcula el CRM (tocá para cambiarla)';
       cae.classList.toggle('vacia', !fecha.value); };
+    // Cuándo lo vuelve a mostrar Hoy si no ponés fecha: compradores por temperatura (desde hoy si registrás Qué pasó; si no, desde la última charla),
+    // vendedores en captar/prelisting/ACM cada 7 días y en venta cada 14. Leads y vendedores no captados siguen su cadencia o sus hitos: sin fecha fija.
+    // ponytail: es una estimación; si le debés opciones o tiene fecha límite cerca, Hoy lo puede mostrar antes.
+    const estimadoCRM = () => {
+      if (ESTADOS_CADENCIA_APP.includes(d.ESTADO) || ['NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']) && !d['BUSCA TIPO']) return '';
+      const vend = { CAPTAR:7, PRELISTING:7, ACM:7, 'EN VENTA':14 }[d['ETAPA VENTA']];
+      const dias = !d['BUSCA TIPO'] && vend ? vend : ({ CALIENTE:1, TIBIO:4, FRIO:10 }[String(temp.valor() || d.TEMPERATURA || '').toUpperCase()] || 4);
+      const base = tipo.valor() || !d['ULT CONTACTO'] ? new Date() : new Date(aISO(d['ULT CONTACTO']) + 'T12:00');
+      const x = new Date(base); x.setDate(x.getDate() + dias);
+      const hoy = new Date(); return isoLocal(x < hoy ? hoy : x);
+    };
     const cuando = elegible([['0','Hoy'],['1','Mañana'],['2','+2'],['3','+3'],['5','+5'],['7','+7'],['15','+15'],['CRM','Lo decide\nel CRM']], v => {
       crmDecide = v === 'CRM';
       explicaCRM.style.display = crmDecide ? '' : 'none';
-      if (v && !crmDecide) { const x = new Date(); if (x.getHours() < 4) x.setDate(x.getDate() - 1); x.setDate(x.getDate() + parseInt(v)); fecha.value = isoLocal(x); } else fecha.value = '';
+      if (v && !crmDecide) { const x = new Date(); if (x.getHours() < 4) x.setDate(x.getDate() - 1); x.setDate(x.getDate() + parseInt(v)); fecha.value = isoLocal(x); }
+      else fecha.value = crmDecide ? estimadoCRM() : '';   // con "Lo decide el CRM" se ve la fecha que calcula; si la cambiás, pasa a ser un paso tuyo
       mostrarCae();
     }, '', 'g4');
     fecha.addEventListener('change', () => { cuando.limpiar(); crmDecide = false; mostrarCae(); });
@@ -1328,8 +1341,22 @@ async function abrir(id, seg, ya) {
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
         el('div', { cls:'pregunta', style:'margin-top:6px' }, 'Si registrás algo en Qué pasó, el próximo paso es obligatorio (o "Lo decide el CRM").'),
         herramientas),
-      msjs.length ? el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline' }, 'Mensajes')), tarjetaMensaje()) : ''
+      msjs.length ? el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline' }, 'Mensajes')), tarjetaMensaje()) : '',
+      tarjetaArchivar()
     ];
+  };
+  // Archivar, desde Contacto: si escribiste Qué pasó, lo guarda primero (sin pedir próximo paso: deja de tener sentido) y después archiva
+  const tarjetaArchivar = () => {
+    const motivo = select(MOTIVOS, MOTIVOS[0]);
+    return el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline;color:var(--alerta)' }, 'Archivar')),
+      el('div', { cls:'grid2', style:'margin-top:8px' }, motivo, el('button', { cls:'btn peligro', onclick: async () => {
+        if (!confirm('¿Archivar a ' + String(d.NOMBRE).split(' - ')[0] + '? Motivo: ' + motivo.value)) return;
+        const x = (pend && pend()) || {};
+        if (x.accion || Object.keys(x.campos || {}).length) await api('api_lote', id, x.campos || {}, '', null, x.accion || null);
+        const nueva = await api('api_lote', id, {}, '', null, ['DESCARTAR', motivo.value, '']);
+        pend = null; toast('Archivado'); refrescar(); reabrir(nueva);
+      }}, 'Archivar')),
+      el('div', { cls:'actual', style:'margin-top:8px' }, '"No busca ahora": vuelve a aparecer en 45 días hábiles. Cualquier otro motivo: no vuelve.'));
   };
 
   // ── BUSQUEDA (compra)
@@ -1471,7 +1498,6 @@ async function abrir(id, seg, ya) {
   const segPerfil = () => {
     const con = formulario(d, CAMPOS_CONTACTO, listas);
     const sobre = el('textarea', { style:'min-height:110px', placeholder:'Familia, hijos y edades, trabajo, qué lo motiva, qué le preocupa, cómo le gusta que le hablen...' }); sobre.value = d['SOBRE LA PERSONA'] || '';
-    const motivo = select(MOTIVOS, MOTIVOS[0]);
     const estado = select(ESTADOS, d.ESTADO);
     pend = () => { const campos = con.cambios(); if (sobre.value !== (d['SOBRE LA PERSONA'] || '')) campos['SOBRE LA PERSONA'] = sobre.value;
       if (estado.value !== (d.ESTADO || '')) campos.ESTADO = estado.value; return { campos }; };
@@ -1482,9 +1508,7 @@ async function abrir(id, seg, ya) {
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
         el('div', { cls:'actual', style:'margin-top:10px' }, 'El nombre en tu agenda (y en WhatsApp) se actualiza solo al guardar el nombre, la búsqueda o la venta. ',
           el('a', { href:'#', style:'color:var(--verde-profundo);font-weight:600', onclick: async e => { e.preventDefault(); toast('Contactos de Google: ' + await api('api_contactoGoogle', id)); } }, 'Forzar ahora'))),
-      el('div', { cls:'card' }, el('h3', {}, 'Archivar'),
-        el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: () => { if (confirm('¿Archivar a ' + d.NOMBRE + '?')) accion('DESCARTAR', motivo.value); } }, 'Archivar')),
-        el('div', { cls:'actual', style:'margin-top:8px' }, '"No busca ahora": vuelve a aparecer en 45 días hábiles. Cualquier otro motivo: no vuelve.'))
+      el('div', { cls:'actual', style:'margin:0 2px' }, 'Archivar está en la solapa Contacto, abajo de todo.')
     ];
   };
 
