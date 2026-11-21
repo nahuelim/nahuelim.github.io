@@ -167,6 +167,10 @@
   .t .nota1 { font-size:13px; color:var(--tinta-suave); margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
   .t .acc { display:flex; gap:8px; margin-top:12px; }
   .t .acc .btn { flex:1; min-height:48px; font-weight:600; font-size:15px; }
+  .btn.ico, .t .acc .btn.ico, .fila > .btn.ico { flex:0 0 52px; padding:0; }
+  .lb .tipo { padding:8px 12px 4px; font-size:14px; font-weight:700; color:var(--verde-profundo); border-top:1px solid var(--linea); }
+  .lb .tipo:first-child { border-top:0; }
+  .hoy-res { margin:-2px 0 10px; }
   .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:1px; background:var(--linea); }
   .dot.CALIENTE { background:#C0392B; } .dot.TIBIO { background:#C9A227; } .dot.FRIO { background:#4A7FA7; }
   .seg3 { display:flex; border:1px solid var(--linea); border-radius:12px; overflow:hidden; background:var(--blanco); }
@@ -318,8 +322,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '43';
-const COMPILACION = '43';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '44';
+const COMPILACION = '44';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -339,10 +343,11 @@ const ICON = {
 
 const ESTADOS = ['NUEVO','EN CONTACTO','CLIENTE','EN PAUSA','DESCARTADO'];
 const ESTADOS_CADENCIA_APP = ['NUEVO','EN CADENCIA'];
-const ETAPA_COMPRA = ['','OPCIONES','CALIFICADO','VISITAS','OFERTA','RESERVA','CERRADA'];
+const ETAPA_COMPRA = ['','OPCIONES','VISITAS','RESERVA','CERRADA'];
 const DONDE_BUSCAR = [['Zonaprop','https://www.zonaprop.com.ar'],['Argenprop','https://www.argenprop.com'],['Mercado Libre','https://inmuebles.mercadolibre.com.ar'],
   ['RE/MAX','https://www.remax.com.ar'],['Century 21','https://www.century21.com.ar'],['Coldwell Banker','https://www.coldwellbanker.com.ar'],['Redsuma',''],['Pallarols Santander',''],['Roilands','']];
-const ETAPA_COMPRA_TXT = ['—','Enviar opciones','Calificado','Visitas','Oferta','Reserva','Cerrada'];
+const ETAPA_COMPRA_TXT = ['Buscando','Opciones enviadas','Visita','Reserva','Cerrada'];
+const ETAPA_C_TXT = { OPCIONES:'Opciones enviadas', VISITAS:'Visita', RESERVA:'Reserva' };
 const ETAPA_VENTA = ['','CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO','EN PUBLICACION','EN VENTA','RESERVA','VENDIDA'];
 const ETAPA_VENTA_TXT = ['—','Captar','Prelisting','ACM','No captada','Con otra inmobiliaria','Captada: en proceso de publicación','Captada: en venta','Reserva','Vendida (por mí)'];
 const VENTA_SEGUIMIENTO = ['NO CAPTADA','CON OTRA INMO'];
@@ -371,7 +376,7 @@ const PREGUNTAS = {
 };
 const PRIO_TXT = { 1:'P1 · estar encima', 2:'P2 · estar encima', 3:'P3 · buscar y estar atento', 4:'P4 · cuando haya tiempo', 5:'P5 · cuando haya tiempo' };
 const PRIO_PAGO = { 'PARTE DE PAGO':1, 'VENTA':1, 'CASH':2, 'CREDITO APROBADO':3, 'CREDITO EN TRAMITE':4, 'CREDITO SIN CONFIRMAR':5 };
-const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','RELACION','CUMPLEANOS','FECHA COMPRA','NOTAS'];
+const CAMPOS_CONTACTO = ['NOMBRE','TELEFONO','FUENTE','ROL','CONSULTO POR','RELACION','CUMPLEANOS','FECHA COMPRA'];
 const TILDES = { 'RELACION':'Relación', 'FECHA LIMITE':'Fecha límite (si la sabés)', 'MOTIVO LIMITE':'Motivo de la fecha', 'TELEFONO':'Teléfono', 'CONSULTO POR':'Consultó por', 'CUMPLEANOS':'Cumpleaños', 'VENDE DIRECCION':'Dirección', 'MOTIVACION':'Motivación',
   'HACE CUANTO BUSCA':'Hace cuánto busca', 'VENDE PUBLICACION':'Publicación', 'BUSCA TIPO':'Tipo', 'BUSCA AMB MIN':'Amb. mínimo', 'BUSCA AMB MAX':'Amb. máximo',
   'BUSCA BARRIOS':'Barrios', 'BUSCA HASTA USD':'Hasta USD', 'BUSCA FORMA DE PAGO':'Forma de pago', 'BUSCA COCHERA':'Cochera', 'BUSCA REQUISITOS':'Requisitos',
@@ -491,7 +496,7 @@ function formulario(d, campos, listas, anchos) {
     if (k === 'BUSCA FORMA DE PAGO') return sel(['','PARTE DE PAGO','VENTA','CASH','CREDITO APROBADO','CREDITO EN TRAMITE','CREDITO SIN CONFIRMAR']);
     if (k === 'BUSCA COCHERA') return sel(['','SI','NO','DESEABLE']);
     if (k === 'FUENTE') return sel(['', ...FUENTES]);
-    if (k === 'ROL') return sel(['','COMPRADOR','VENDEDOR','AMBOS']);
+    if (k === 'ROL') { const s = select(['','COMPRADOR','VENDEDOR','AMBOS'], v, ['—','Compra','Vende','Vende y compra']); return { nodo:s, valor:() => s.value }; }
     if (k === 'TEMPERATURA') return sel(['','CALIENTE','TIBIO','FRIO']);
     if (k === 'RELACION') { const s = select(['','A','B','C'], v, ['No','A · cada 30 días','B · cada 60 días','C · cada 90 días']); return { nodo:s, valor:() => s.value }; }
     if (k === 'CUMPLEANOS' || /FECHA|DESDE|AUTORIZACION/.test(k)) { const i = el('input', { type:'date', value: aISO(v) }); return { nodo:i, valor:() => i.value, orig: aISO(v) }; }
@@ -647,6 +652,8 @@ const bLlamarLead = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclic
   abrirExterno(waUrl(x.wa));
   acc.replaceChildren(el('button', { cls:'btn pri', onclick: () => { sessionStorage.setItem('crm_atendio', x.id); abrir(x.id, 'contacto'); } }, 'Atendió'), bNoContesto(x));
 }}, 'Llamar') : '';
+// WhatsApp chico, solo ícono: abre el chat vacío (sirve aunque el contacto todavía no esté en la agenda)
+const bWaChico = tel => tel ? el('button', { cls:'btn sec ico', icon:'wa', 'aria-label':'Abrir WhatsApp', onclick: () => abrirExterno(waUrl(tel)) }) : '';
 const bAbrir = (x, t, pri) => el('button', { cls:'btn' + (pri ? ' pri' : ''), onclick: () => abrir(x.id, 'contacto') }, t);
 
 // Checklist (revivir, relación, cumpleaños): el mensaje ya elegido, se puede cambiar, Enviar y listo. Sin abrir la ficha.
@@ -662,14 +669,13 @@ function tarjetaEnvio(x, texto0, enviar, chips) {
     el('div', { cls:'porque' }, x.porque || x.accion || ''),
     x.ultimo ? el('div', { cls:'dato' }, 'Último: ' + x.ultimo) : '',
     chips || '', texto,
-    el('div', { cls:'acc', onclick: e => e.stopPropagation() }, el('button', { cls:'btn sec', icon:'wa', onclick: async () => {
-      if (!x.wa) return toast('Falta un teléfono válido', true);
+    el('div', { cls:'acc', onclick: e => e.stopPropagation() }, el('button', { cls:'btn pri', onclick: async () => {
       const tx = texto.textContent;
       if (/\{\w+\}/.test(tx)) return toast('Este mensaje tiene datos sin completar: abrí la ficha', true);
-      abrirExterno(waUrl(x.wa, tx));
+      try { await navigator.clipboard.writeText(tx); } catch (e) { return toast('No pude copiar el texto', true); }
       t.style.opacity = .4;
-      await enviar(tx); t.remove();
-    }}, 'Enviar')));
+      await enviar(tx); toast('Copiado y registrado'); t.remove();
+    }}, 'Copiar y registrar'), bWaChico(x.wa)));
   t.texto = texto;
   return t;
 }
@@ -727,10 +733,29 @@ async function verHoy() {
   if (!semanaAbierta) semanaDatos = null;
   else api('api_semana').then(x => { semanaDatos = x; if (semanaCuerpo) pintarSemana(semanaCuerpo, x); }).catch(() => {});
 }
+// Buscador de Hoy: para encontrar a alguien (ej. te escribió después de marcar "no contestó") sin ir a la Cartera.
+// Es un solo nodo: Hoy se repinta cuando contesta el servidor y el texto que estás escribiendo no se pierde.
+let buscaHoy = null;
+function buscadorHoy() {
+  if (buscaHoy) return buscaHoy;
+  const res = el('div', { cls:'hoy-res' });
+  let t, ultimo = '';
+  const inp = el('input', { type:'search', placeholder:'Buscar persona (nombre o teléfono)', autocomplete:'off', enterkeyhint:'search',
+    oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); } });
+  const buscar = async () => {
+    const q = inp.value.trim(); ultimo = q;
+    if (q.length < 2) return res.replaceChildren();
+    const xs = await api('api_buscar', q);
+    if (q === ultimo) res.replaceChildren(...(xs.length ? xs.map(x => filaCartera(x)) : [el('div', { cls:'vacio' }, 'No encontré a nadie.')]));
+  };
+  return (buscaHoy = el('div', {}, inp, res));
+}
 function pintarHoy(r, viejo) {
   const l = document.getElementById('lista');
   LINKS = r.links || {};
-  l.replaceChildren();
+  const bh = buscadorHoy(), foco = bh.contains(document.activeElement);
+  l.replaceChildren(bh);
+  if (foco) bh.querySelector('input').focus();
   if (viejo) l.append(el('div', { cls:'actual', style:'margin:0 2px 6px' }, 'Actualizando…'));
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   const L = k => r[k] || [];
@@ -742,6 +767,24 @@ function pintarHoy(r, viejo) {
 
   // ponytail: sin contadores arriba: los títulos de los bloques ya dicen cuántos hay y se ponen rojos si hay algo urgente
   l.append(semana());
+  // ¿Te respondieron?: los mensajes a gente importante (antes de las 16 vuelven a las 17:30; después, al día siguiente)
+  {
+    const xs = L('respuestas');
+    if (xs.length) {
+      const marcar = (x, tipo, msj, luego) => async e => {
+        e.currentTarget.closest('.t').style.opacity = .4;
+        await api('api_accion', x.id, tipo); toast(msj);
+        if (luego) luego(); else verHoy();
+      };
+      const cuerpo = el('div', {}, ...xs.map(x => item(Object.assign({}, x, { jugada: '' }), x.cadencia ? 'Lead' : ETAPA_C_TXT[x.etapaC] || '', { botones: x.feedback
+        ? [el('button', { cls:'btn pri', onclick: marcar(x, 'QUIERE_VISITAR', 'Pasó a Visita: agendá la visita', () => abrir(x.id, 'contacto')) }, 'Quiere visitar'),
+           el('button', { cls:'btn', onclick: marcar(x, 'MAS_OPCIONES', 'Quedó en Mandar opciones') }, 'Mandar más'),
+           el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', 'Te lo vuelvo a mostrar') }, 'Todavía no')]
+        : [el('button', { cls:'btn pri', onclick: () => { sessionStorage.setItem('crm_respondio', x.id); abrir(x.id, 'contacto'); } }, 'Respondió'),
+           el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', x.cadencia ? 'Sigue su cadencia' : 'Vuelve mañana para el seguimiento') }, 'Todavía no')] })));
+      l.append(el('details', { cls:'blk', id:'sec-respuestas', open:'' }, el('summary', {}, el('div', { cls:'bloque' }, el('h3', {}, '¿Te respondieron?'), el('span', { cls:'c' }, xs.length), el('small', {}, 'marcá qué pasó'))), cuerpo));
+    }
+  }
   // Leads nuevos de C21 desde la última vez que los viste: tocar la línea abre Llamar; × la cierra. Los dos los marcan como vistos.
   {
     const c21 = L('llamar').filter(x => x.fuente === 'C21').map(x => String(x.id));
@@ -801,8 +844,8 @@ function pintarHoy(r, viejo) {
       extra: el('div', { cls:'dato' }, cuando, x.atrasado > 0 ? el('span', { cls:'rojo' }, ' · atrasado ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días')) : ''),
       temp: esComprador(x), botones: [boton, bAbrir(x, 'Lo hice')] });
   });
-  // 2. Calientes y tibios que ya sabés qué buscan y no les mandaste nada
-  sec('opciones', 'Mandar opciones', 'calientes y tibios', 'Nadie esperando opciones.', L('opciones'), x => item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
+  // 2. Todos los que ya sabés qué buscan y no les mandaste nada (o pidieron más), y el feedback del día después de mandarles
+  sec('opciones', 'Mandar opciones', 'opciones y feedback', 'Nadie esperando opciones.', L('opciones'), x => x.feedback ? filaEnvio(x) : item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
   // 3. Leads: las 3 llamadas (de a 5). Los que ya llamaste hoy van al final, con el aviso de probar en otro horario
   const yaHoy = x => x.intento > 0 && x.diasSin === 0;
   sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', L('llamar').filter(x => !yaHoy(x)).concat(L('llamar').filter(yaHoy)), x => item(x, '', {
@@ -824,8 +867,11 @@ function pintarHoy(r, viejo) {
 
 // ─── Cartera: con quién estás trabajando ───
 // Filtro (chips) + orden (desplegable) + buscador, y "¿A quién le sirve?" para cruzar una propiedad con los compradores.
-const FILTROS = [['todos','Todos', () => true], ['nuevos','Nuevos', x => x.nuevo], ['comp','Compran', x => x.comprador], ['vend','Venden', x => x.vendedor],
-  ['cal','Calientes', x => String(x.temp).toUpperCase() === 'CALIENTE'], ['lim','Con fecha', x => x.limite], ['cash','Cash', x => x.cash], ['cli','Clientes', x => x.cliente]];
+// Cartera activa por etapa. Buscando incluye "Opciones enviadas"; Captar incluye vendedores sin etapa, Prelisting y ACM; No captada incluye "Con otra".
+const FILTROS = [['todos','Todos', () => true], ['nuevos','Nuevos', x => x.nuevo], ['busc','Buscando', x => x.comprador && ['','OPCIONES'].includes(x.etapaC || '')],
+  ['vis','Visitas', x => x.etapaC === 'VISITAS'], ['res','Reservas', x => x.etapaC === 'RESERVA' || x.etapa === 'RESERVA'],
+  ['cap','Captar', x => x.vendedor && ['','CAPTAR','PRELISTING','ACM'].includes(x.etapa || '')], ['noc','No captada', x => ['NO CAPTADA','CON OTRA INMO'].includes(x.etapa)],
+  ['venta','En venta', x => ['EN VENTA','EN PUBLICACION'].includes(x.etapa)]];
 const ORDENES = [['contacto','Último contacto'], ['nuevos','Más nuevos'], ['temp','Temperatura']];
 function enHoyIds() {
   try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv'))
@@ -838,7 +884,7 @@ function filaCartera(x, hoyIds, extra) {
   const hoyISO = isoLocal(new Date()), vf = aISO(x.vuelveFecha || '');
   const vuelve = hoyIds && hoyIds.has(String(x.id)) ? 'Hoy' : x.vuelve || '';
   const dias = x.diasSin === null || x.diasSin === undefined ? 'sin contactos' : x.diasSin === 0 ? 'hablaron hoy' : x.diasSin === 1 ? 'hablaron ayer' : 'hace ' + x.diasSin + ' días';
-  const dato = [t ? t.charAt(0) + t.slice(1).toLowerCase() : '', x.prio ? 'P' + x.prio : '', x.etapa ? (ETAPA_V_TXT[x.etapa] || x.etapa) : '', x.estado === 'NUEVO' ? 'Lead' : '', dias].filter(Boolean).join(' · ');
+  const dato = [t ? t.charAt(0) + t.slice(1).toLowerCase() : '', x.prio ? 'P' + x.prio : '', x.etapa ? (ETAPA_V_TXT[x.etapa] || x.etapa) : '', ETAPA_C_TXT[x.etapaC] || '', x.estado === 'NUEVO' ? 'Nuevo' : '', dias].filter(Boolean).join(' · ');
   return el('div', { cls:'t ' + (t || (x.vendedor ? 'VEND' : '')), onclick: () => abrir(x.id, 'contacto') },
     el('div', { cls:'f1' }, el('span', { cls:'nom' }, String(x.nombre).split(' - ')[0]), vuelve ? el('span', { cls:'vuelve' + (vuelve === 'Hoy' || (vf && vf < hoyISO) ? ' rojo' : '') }, vuelve.split(' · ')[0]) : ''),
     x.resumen ? el('div', { cls:'busca' }, x.resumen) : el('div', { cls:'busca' }, [x.fuente ? 'Lead de ' + x.fuente : '', x.consulto ? 'consultó por ' + x.consulto : ''].filter(Boolean).join(' · ')),
@@ -850,7 +896,7 @@ function verBuscar() {
   tabs('tBuscar');
   const l = document.getElementById('lista');
   const res = el('div');
-  let datos = null, filtro = sessionStorage.getItem('crm_filtro') || 'todos', orden = sessionStorage.getItem('crm_orden') || 'contacto', t, ultimo = '';
+  let datos = null, filtro = FILTROS.some(f => f[0] === sessionStorage.getItem('crm_filtro')) ? sessionStorage.getItem('crm_filtro') : 'todos', orden = sessionStorage.getItem('crm_orden') || 'contacto', t, ultimo = '';
   const hoyIds = enHoyIds();
   const ordenar_ = xs => xs.slice().sort(orden === 'nuevos' ? (a, b) => (b.altaTs || 0) - (a.altaTs || 0)
     : orden === 'temp' ? null : (a, b) => (a.diasSin ?? 99999) - (b.diasSin ?? 99999));
@@ -914,26 +960,30 @@ function filaBusqueda(x, hoyIds) {
     x.requisitos ? el('div', { cls:'req' }, el('b', {}, 'Requisitos: '), x.requisitos) : '',
     el('div', { cls:'c2' }, dias));
 }
-// Búsquedas: la demanda que ya tenés cargada, agrupada por tipo y barrio ("PH · Caballito — 3 personas · 3-4 amb · 110k a 160k").
+// Búsquedas: la demanda que ya tenés cargada, por barrio → tipo → rango de precio ("Caballito · 6 — Depto 4 · PH 2").
 // Sirve para buscar una vez para varios y para leer el grupo de colegas sabiendo a quién le sirve cada cosa.
-// Alguien que busca en dos barrios aparece en los dos grupos. Grupos más grandes primero; adentro, por tope de precio.
+// Alguien que busca en dos barrios aparece en los dos. Barrios con más gente primero; adentro, cada tipo de mayor a menor presupuesto.
 function verBusquedas(datos) {
   const l = document.getElementById('lista'), hoyIds = enHoyIds();
-  const grupos = {};
-  datos.personas.forEach(x => (x.busq || []).forEach(b => { (grupos[b.k] = grupos[b.k] || { t: b.t, b: b.b, xs: [] }).xs.push(x); }));
-  const k$ = n => n ? Math.round(n / 1000) + 'k' : '';
-  const rango = (a, b) => a === b ? a : a + ' a ' + b;
-  const lista = Object.values(grupos).sort((a, b) => b.xs.length - a.xs.length || (a.t + a.b).localeCompare(b.t + b.b));
+  const barrios = {};
+  datos.personas.forEach(x => (x.busq || []).forEach(b => {
+    const [tk, bk] = b.k.split('|');
+    const g = barrios[bk] = barrios[bk] || { b: b.b, ids: new Set(), tipos: {} };
+    g.ids.add(String(x.id));
+    (g.tipos[tk] = g.tipos[tk] || { t: b.t, xs: [] }).xs.push(x);
+  }));
+  const lista = Object.values(barrios).sort((a, b) => b.ids.size - a.ids.size || a.b.localeCompare(b.b));
+  const total = new Set(lista.flatMap(g => [...g.ids])).size;
   l.replaceChildren(
-    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, 'Búsquedas (' + lista.length + ')'),
+    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, 'Búsquedas (' + total + ')'),
       el('button', { cls:'chip chico', type:'button', onclick: verBuscar }, '‹ Cartera')),
-    el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Tu demanda por tipo y barrio. Tocá un grupo para ver quiénes son.'),
+    el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Tu demanda por barrio, tipo y precio. Tocá un barrio para ver quiénes son.'),
     ...(lista.length ? lista.map(g => {
-      const xs = g.xs.slice().sort((a, b) => (b.usd || 0) - (a.usd || 0));   // de mayor a menor presupuesto
-      const usds = xs.map(x => x.usd).filter(Boolean), mins = xs.map(x => x.ambMin).filter(Boolean), maxs = xs.map(x => x.ambMax || x.ambMin).filter(Boolean);
-      const resumen = [mins.length ? rango(Math.min(...mins), Math.max(...maxs) >= 5 ? '5+' : Math.max(...maxs)) + ' amb' : '', usds.length ? rango(k$(Math.min(...usds)), k$(Math.max(...usds))) : ''].filter(Boolean).join(' · ');
-      return el('details', { cls:'grp' }, el('summary', {}, el('span', { cls:'gt' }, g.t + ' · ' + g.b), el('span', { cls:'gc' }, xs.length), resumen ? el('span', { cls:'gs' }, resumen) : ''),
-        el('div', { cls:'lb' }, ...porPrecio(xs).flatMap(sg => [el('div', { cls:'sub' }, sg.titulo + ' · ' + sg.xs.length), ...sg.xs.map(x => filaBusqueda(x, hoyIds))])));
+      const tipos = Object.values(g.tipos).sort((a, b) => b.xs.length - a.xs.length);
+      return el('details', { cls:'grp' }, el('summary', {}, el('span', { cls:'gt' }, g.b), el('span', { cls:'gc' }, g.ids.size),
+          el('span', { cls:'gs' }, tipos.map(t => t.t + ' ' + t.xs.length).join(' · '))),
+        el('div', { cls:'lb' }, ...tipos.flatMap(t => [el('div', { cls:'tipo' }, t.t),
+          ...porPrecio(t.xs.slice().sort((a, b) => (b.usd || 0) - (a.usd || 0))).flatMap(sg => [el('div', { cls:'sub' }, sg.titulo + ' · ' + sg.xs.length), ...sg.xs.map(x => filaBusqueda(x, hoyIds))])])));
     }) : [el('div', { cls:'vacio' }, 'Nadie tiene la búsqueda cargada con tipo y barrio.')]));
 }
 
@@ -1100,7 +1150,7 @@ async function abrir(id, seg, ya) {
     pend = null; toast('Guardado'); reabrir(nueva); refrescar();
   };
   const filaMatch = m => el('div', { cls:'match' + (m.enviada ? ' gris' : '') }, el('div', { style:'flex:1' }, m.texto),
-    m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Ver ficha') : m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
+    m.link ? el('span', { style:'display:flex;gap:12px;white-space:nowrap' }, el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Mía'), m.og ? el('a', { href:m.og, target:'_blank', rel:'noopener' }, 'Original ↗') : '') : m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
   const mCompra = r.matches.filter(m => m.tipo !== 'Comprador' && !m.enviada), mEnviadas = r.matches.filter(m => m.enviada), mVenta = r.matches.filter(m => m.tipo === 'Comprador');
 
   // Ultimo resultado registrado hoy (para marcar el boton)
@@ -1213,13 +1263,11 @@ async function abrir(id, seg, ya) {
     // Mensajes: su propio desplegable (no dentro de "Hacerlo ahora"), para tenerlos a mano también para copiar
     const tarjetaMensaje = () => msjs.length ? el('div', { style:'margin-top:4px' }, el('label', {}, 'Elegí el mensaje (arriba, el sugerido)'), situacion, el('div', { style:'margin-top:10px' }, opciones),
       el('label', {}, 'Texto a enviar (lo podés editar)'), texto,
-      el('button', { cls:'btn pri ancho', icon:'wa', style:'margin-top:10px', onclick: () => {
-        if (!r.wa) return toast('Falta un teléfono válido', true);
+      el('div', { cls:'fila', style:'margin-top:10px' }, el('button', { cls:'btn pri', onclick: async () => {
         if (/\{\w+\}/.test(texto.value)) return toast('Completá los campos entre llaves', true);
-        abrirExterno(waUrl(r.wa, texto.value));
+        try { await navigator.clipboard.writeText(texto.value); } catch (e) { return toast('No pude copiar el texto', true); }
         accion('MENSAJE', situacion.value + '-' + (variante + 1), texto.value);
-      }}, 'Enviar por WhatsApp'),
-      el('button', { cls:'btn ancho', style:'margin-top:8px', onclick: () => navigator.clipboard.writeText(texto.value).then(() => toast('Mensaje copiado')) }, 'Copiar')) : '';
+      }}, 'Copiar y registrar'), bWaChico(r.wa))) : '';
 
     // ── Temperatura arriba de todo
     let tempElegida = '';
@@ -1229,12 +1277,13 @@ async function abrir(id, seg, ya) {
     const linea = [prio ? 'P' + prio : 'sin forma de pago', d['FECHA LIMITE'] ? 'fecha límite ' + d['FECHA LIMITE'] : '', [d.FUENTE, d['FECHA ALTA'] ? 'desde ' + d['FECHA ALTA'] : ''].filter(Boolean).join(' · ')].filter(Boolean).join(' · ');
     const sobre = d['SOBRE LA PERSONA']
       ? el('div', { cls:'sobre', onclick: e => e.currentTarget.classList.toggle('abierto') }, d['SOBRE LA PERSONA'])
-      : el('div', { cls:'sobre', style:'color:var(--tinta-suave)', onclick: () => mostrar('perfil') }, 'Sobre la persona: todavía nada. Tocá para sumarlo en Perfil.');
+      : el('div', { cls:'sobre', style:'color:var(--tinta-suave)', onclick: () => mostrar('perfil') }, 'Notas: todavía nada. Tocá para sumarlas en Perfil.');
 
     // ── Qué pasó
     const TIPOS_HECHO = ['Llamada','WhatsApp','Reunión','Prelisting','ACM','Visita'];
     const atendio = sessionStorage.getItem('crm_atendio') === String(id); sessionStorage.removeItem('crm_atendio');   // vino de "Atendió" en Hoy
-    const tipo = elegible(TIPOS_HECHO.map(t => [t, t]), null, atendio ? 'Llamada' : '', 'g3');
+    const respondio = sessionStorage.getItem('crm_respondio') === String(id); sessionStorage.removeItem('crm_respondio');   // vino de "Respondió" en ¿Te respondieron?
+    const tipo = elegible(TIPOS_HECHO.map(t => [t, t]), null, atendio ? 'Llamada' : respondio ? 'WhatsApp' : '', 'g3');
     const hablo = el('textarea', { placeholder:'¿Qué se habló? Podés dictar con el micrófono del teclado.' });
     const NOMBRE_HECHO = { CONTACTO:'', LLAMADA_NO:'no contestó', LLAMADA_SI:'contestó la llamada', RESPONDIO:'contestó', MENSAJE:'mensaje', OPCIONES:'le mandaste opciones', NO_GUSTO:'no le gustó',
       REVISION:'revisaste si publicó', EVENTO:'evento agendado', AVISO:'confirmación enviada', NOTA:'nota' };
@@ -1263,9 +1312,11 @@ async function abrir(id, seg, ya) {
     // vendedores en captar/prelisting/ACM cada 7 días y en venta cada 14. Leads y vendedores no captados siguen su cadencia o sus hitos: sin fecha fija.
     // ponytail: es una estimación; si le debés opciones o tiene fecha límite cerca, Hoy lo puede mostrar antes.
     const estimadoCRM = () => {
-      if (ESTADOS_CADENCIA_APP.includes(d.ESTADO) || ['NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']) && !d['BUSCA TIPO']) return '';
-      const vend = { CAPTAR:7, PRELISTING:7, ACM:7, 'EN VENTA':14 }[d['ETAPA VENTA']];
-      const dias = !d['BUSCA TIPO'] && vend ? vend : ({ CALIENTE:1, TIBIO:4, FRIO:10 }[String(temp.valor() || d.TEMPERATURA || '').toUpperCase()] || 4);
+      const soloVende = d.ROL === 'VENDEDOR' && !d['BUSCA TIPO'] && !d['BUSCA BARRIOS'];   // sin ritmo: solo con fecha tuya
+      if (soloVende || ESTADOS_CADENCIA_APP.includes(d.ESTADO) || ['NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']) && !d['BUSCA TIPO']) return '';
+      const vend = { CAPTAR:1, PRELISTING:1, ACM:3, 'EN VENTA':14 }[d['ETAPA VENTA']];
+      const porEtapa = { OPCIONES:1, VISITAS:1, RESERVA:1 }[d['ETAPA COMPRA']];
+      const dias = !d['BUSCA TIPO'] && vend ? vend : porEtapa || ({ CALIENTE:1, TIBIO:4, FRIO:10 }[String(temp.valor() || d.TEMPERATURA || '').toUpperCase()] || 4);
       const base = tipo.valor() || !d['ULT CONTACTO'] ? new Date() : new Date(aISO(d['ULT CONTACTO']) + 'T12:00');
       const x = new Date(base); x.setDate(x.getDate() + dias);
       const hoy = new Date(); return isoLocal(x < hoy ? hoy : x);
@@ -1400,7 +1451,8 @@ async function abrir(id, seg, ya) {
       chk.onchange = () => chk.checked ? marcados.add(m) : marcados.delete(m);
       return el('div', { cls:'match' },
         el('label', { style:'display:flex;gap:8px;align-items:flex-start;flex:1;margin:0;font-size:15px;color:var(--tinta)' }, chk, el('span', {}, m.texto)),
-        m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Ver') : '',
+        m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Mía') : '',
+        m.og ? el('a', { href:m.og, target:'_blank', rel:'noopener' }, 'Original ↗') : '',
         m.link && m.tipo !== 'Vendedor' ? el('a', { href:'#', style:'color:var(--alerta)', onclick: async e => {
           e.preventDefault();
           if (!confirm('¿Marcar esta ficha como que ya no está? Deja de aparecer como match para todos.')) return;
@@ -1417,7 +1469,7 @@ async function abrir(id, seg, ya) {
     otra();
     const motivo = select(['Precio','Zona','Distribución','Metros','Estado','Otro'], 'Precio');
     return el('div', { cls: embebida ? '' : 'card', style: embebida ? 'margin-top:8px' : '' }, embebida ? '' : el('h3', {}, 'Opciones para mandarle (' + mCompra.length + ')'),
-      el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Antes de mandar, tocá "Ver" para chequear que siga publicada.'),
+      el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Antes de mandar, tocá "Original" para chequear que siga publicada. "Mía" es tu ficha.'),
       mCompra.length ? mCompra.map(filaOpcion) : el('div', { cls:'vacio' }, 'Sin matches. Hace falta tipo, barrios, ambientes y presupuesto, o buscá a mano (abajo).'),
       el('label', { style:'margin-top:12px' }, 'Opciones sueltas (las que mandás sin el generador)'), sueltas,
       el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: otra }, '+ otra'),
@@ -1503,7 +1555,7 @@ async function abrir(id, seg, ya) {
     pend = () => { const campos = con.cambios(); if (sobre.value !== (d['SOBRE LA PERSONA'] || '')) campos['SOBRE LA PERSONA'] = sobre.value;
       if (estado.value !== (d.ESTADO || '')) campos.ESTADO = estado.value; return { campos }; };
     return [
-      el('div', { cls:'card' }, el('h3', {}, 'Sobre la persona'), sobre),
+      el('div', { cls:'card' }, el('h3', {}, 'Notas'), sobre),
       el('div', { cls:'card' }, el('h3', {}, 'Estado'), estado,
         el('div', { cls:'actual', style:'margin-top:8px' }, 'Lo maneja el CRM solo. Cambialo a mano solo si quedó mal.')),
       el('div', { cls:'card' }, el('h3', {}, 'Datos de contacto'), con.nodo,
@@ -1549,7 +1601,7 @@ async function abrir(id, seg, ya) {
         el('img', { cls:'mono', src:'../assets/nl-mono-crema.svg', alt:'NL' })),
       r.etiqueta.includes(' - ') ? el('div', { cls:'etiqueta' }, el('span', {}, r.etiqueta.split(' - ').slice(1).join(' - '))) : '',
       el('div', { cls:'estado-linea' }, el('span', { cls:'pill' }, d.ESTADO || 'Sin estado'),
-        d['ETAPA COMPRA'] ? el('span', { cls:'pill' }, 'Compra: ' + d['ETAPA COMPRA']) : '',
+        d['ETAPA COMPRA'] ? el('span', { cls:'pill' }, 'Compra: ' + (ETAPA_C_TXT[d['ETAPA COMPRA']] || d['ETAPA COMPRA'])) : '',
         d['ETAPA VENTA'] ? el('span', { cls:'pill' }, 'Venta: ' + d['ETAPA VENTA']) : ''),
       dondeEsta(d, id),
       barra),
@@ -1559,7 +1611,7 @@ async function abrir(id, seg, ya) {
 }
 
 // Dónde está en la app: en qué bloque de Hoy (sale del Hoy guardado en el dispositivo) y en qué grupo de la cartera de Contactos
-const BLOQUE_TXT = { visitas:'Hoy sí o sí', fechas:'Relación', fiestas:'Relación', proximos:'Hoy sí o sí', opciones:'Mandar opciones',
+const BLOQUE_TXT = { respuestas:'¿Te respondieron?', visitas:'Hoy sí o sí', fechas:'Relación', fiestas:'Relación', proximos:'Hoy sí o sí', opciones:'Mandar opciones',
   llamar:'Llamar', mensajes:'Mensajes', atento:'Seguimiento', relacion:'Relación', revivir:'Revivir' };
 const ETAPA_V_TXT = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Otra inmo', 'EN PUBLICACION':'Publicando', 'EN VENTA':'En venta', RESERVA:'Reserva' };
 function dondeEsta(d, id) {
@@ -1572,12 +1624,13 @@ function dondeEsta(d, id) {
     : d.ESTADO === 'DESCARTADO' ? 'no (archivado)'
     : prox && aISO(prox) > isoLocal(new Date()) ? 'no, vuelve el ' + prox.slice(0, 5) + (d['PROX DEFINIDO'] ? ' (paso tuyo)' : '')
     : 'no le toca hoy';
-  const t = String(d.TEMPERATURA || '').toUpperCase(), etapaV = ETAPA_V_TXT[d['ETAPA VENTA']];
-  const cartera = [d.ESTADO === 'NUEVO' ? 'Leads nuevos' : '', d.ESTADO === 'CLIENTE' ? 'Clientes' : '',
-    d.ESTADO === 'EN CONTACTO' && (d['BUSCA TIPO'] || !d['ETAPA VENTA']) ? 'Compradores ' + ({ CALIENTE:'calientes', TIBIO:'tibios', FRIO:'fríos' }[t] || 'sin temp.') : '',
-    ['NUEVO','DESCARTADO','EN PAUSA'].includes(d.ESTADO) || !etapaV ? '' : 'Vendedores · ' + etapaV].filter(Boolean).join(' y ')
-    || ({ 'EN PAUSA':'no (en pausa)', DESCARTADO:'no (archivado)' }[d.ESTADO] || '—');
-  return el('div', { cls:'donde' }, 'Hoy: ', el('b', {}, enHoy), ' · Contactos: ', el('b', {}, cartera));
+  // En qué filtros de la Cartera aparece (los mismos FILTROS que usa la Cartera)
+  const etapa = d['ETAPA VENTA'] || '';
+  const x = { nuevo: d.ESTADO === 'NUEVO', comprador: !!(d['BUSCA TIPO'] || d['BUSCA BARRIOS']), etapaC: d['ETAPA COMPRA'] || '', etapa,
+    vendedor: !!(d['VENDE TIPO'] || (etapa && etapa !== 'VENDIDA') || ['VENTA','PARTE DE PAGO'].includes(d['BUSCA FORMA DE PAGO']) || ['VENDEDOR','AMBOS'].includes(d.ROL)) };
+  const fuera = { 'EN PAUSA':'no (en pausa)', DESCARTADO:'no (archivado)' }[d.ESTADO] || (d.ESTADO === 'CLIENTE' && (!etapa || etapa === 'VENDIDA') ? 'no (cliente)' : '');
+  const cartera = fuera || FILTROS.slice(1).filter(f => f[2](x)).map(f => f[1]).join(' y ') || 'Todos';
+  return el('div', { cls:'donde' }, 'Hoy: ', el('b', {}, enHoy), ' · Cartera: ', el('b', {}, cartera));
 }
 
 // Con la ficha abierta en el celular, Hoy no se recalcula en cada Guardar (es el pedido más pesado y competía con el guardado):
