@@ -322,8 +322,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '44';
-const COMPILACION = '44';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '45';
+const COMPILACION = '45';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -777,7 +777,7 @@ function pintarHoy(r, viejo) {
         if (luego) luego(); else verHoy();
       };
       const cuerpo = el('div', {}, ...xs.map(x => item(Object.assign({}, x, { jugada: '' }), x.cadencia ? 'Lead' : ETAPA_C_TXT[x.etapaC] || '', { botones: x.feedback
-        ? [el('button', { cls:'btn pri', onclick: marcar(x, 'QUIERE_VISITAR', 'Pasó a Visita: agendá la visita', () => abrir(x.id, 'contacto')) }, 'Quiere visitar'),
+        ? [el('button', { cls:'btn pri', onclick: marcar(x, 'QUIERE_VISITAR', 'Pasó a Visita: agendá la visita', () => { sessionStorage.setItem('crm_visita', x.id); abrir(x.id, 'agenda'); }) }, 'Quiere visitar'),
            el('button', { cls:'btn', onclick: marcar(x, 'MAS_OPCIONES', 'Quedó en Mandar opciones') }, 'Mandar más'),
            el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', 'Te lo vuelvo a mostrar') }, 'Todavía no')]
         : [el('button', { cls:'btn pri', onclick: () => { sessionStorage.setItem('crm_respondio', x.id); abrir(x.id, 'contacto'); } }, 'Respondió'),
@@ -1164,7 +1164,8 @@ async function abrir(id, seg, ya) {
     const caja = el('div', { cls:'card' });
     const ultimo = r.hist.find(x => x.tipo === 'EVENTO' || x.tipo === 'EVENTO CORREGIDO');
     const tipo = select(['VISITA','ACM','PRELISTING','FIRMA'], 'VISITA', ['Visita','ACM','Prelisting','Firma']);
-    const lado = select(['','PV','PC','DP'], '', ['Elegí la punta','Punta vendedora','Punta compradora','Doble punta']);
+    const quiereVisitar = sessionStorage.getItem('crm_visita') === String(id); sessionStorage.removeItem('crm_visita');   // vino de "Quiere visitar"
+    const lado = select(['','PV','PC','DP'], quiereVisitar ? 'PC' : '', ['Elegí la punta','Punta vendedora','Punta compradora','Doble punta']);
     const direccion = el('input', { placeholder:'Calle y altura', value: d['VENDE DIRECCION'] || '' });
     const uf = el('input', { placeholder:'Ej.: 3B (opcional)' });
     const localidad = el('input', { placeholder:'CABA (si es otra, escribila)' });
@@ -1191,11 +1192,19 @@ async function abrir(id, seg, ya) {
         localidad: localidad.value, nombre: nombre.value.trim(), colega: colega.value.trim(), vendedor: vendedor.value.trim(), comprador: comprador.value.trim(),
         fecha: fecha.value, hora: hora.value, eventoId: corregir.checked && ultimo ? ultimo.detalle : '' };
       const res = await api('api_evento', id, e);
-      const txt = el('textarea', { readonly:'', style:'min-height:180px' }); txt.value = res.mensaje;
-      salida.replaceChildren(el('div', { cls:'aviso', style:'background:var(--verde-claro);color:var(--verde-profundo);font-weight:600' }, res.resumen), txt,
+      // El mensaje se puede editar antes de copiar: lo que ves es lo que se manda
+      const txt = el('textarea', { style:'min-height:180px' }); txt.value = res.mensaje;
+      const linea = (t, ...h) => el('div', { cls:'actual', style:'margin:8px 0 6px' }, t, ...h);
+      salida.replaceChildren(el('div', { cls:'aviso', style:'background:var(--verde-claro);color:var(--verde-profundo);font-weight:600' }, res.resumen),
+        res.visita ? (res.ficha ? linea('Link: tu ficha de ' + res.ficha.direccion + ' · ', el('a', { href:res.ficha.link, target:'_blank', rel:'noopener', style:'color:var(--verde-profundo);font-weight:600' }, 'Ver ↗'), '. Si no es esa, borrala del texto.')
+          : linea('No encontré tu ficha de esa dirección: el mensaje va sin link. Si querés, pegalo en el texto.')) : '',
+        res.visita ? linea(res.notas ? 'Con las notas: es su primera visita.' : 'Sin las notas: no es su primera visita.') : '',
+        txt,
         el('div', { cls:'fila', style:'margin-top:10px' },
-          el('button', { cls:'btn', onclick: () => navigator.clipboard.writeText(res.mensaje).then(() => toast('Mensaje copiado')) }, 'Copiar mensaje'),
-          el('button', { cls:'btn sec', onclick: () => r.wa ? abrirExterno(waUrl(r.wa, res.mensaje)) : toast('Falta un teléfono válido', true) }, 'Enviar a ' + (d.NOMBRE || '').split(' ')[0])));
+          el('button', { cls:'btn pri', onclick: async () => {
+            try { await navigator.clipboard.writeText(txt.value); } catch (er) { return toast('No pude copiar el texto', true); }
+            accion('MENSAJE', 'EVENTO-' + e.tipo, txt.value);
+          }}, 'Copiar y registrar'), bWaChico(r.wa)));
       toast(e.eventoId ? 'Evento corregido' : 'Evento creado en Calendar');
       refrescar();
     }}, 'Crear evento');
