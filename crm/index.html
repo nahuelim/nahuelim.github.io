@@ -322,8 +322,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '45';
-const COMPILACION = '45';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '46';
+const COMPILACION = '46';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -404,8 +404,12 @@ function toast(m, error) {
 const cfg = () => ({ url: localStorage.getItem(LS.url), key: localStorage.getItem(LS.key) });
 let pendientes = 0;
 const SOLO_LEE = ['api_hoy', 'api_ficha', 'api_buscar', 'api_estadisticas'];
+// Tiempos: cuánto tarda cada pedido (ida y vuelta). Los últimos 60 quedan en este dispositivo; el promedio se ve en Ajustes.
+function anotarTiempo(fn, ms) {
+  try { const xs = JSON.parse(localStorage.getItem('crm_tiempos') || '[]'); xs.push([fn, ms]); localStorage.setItem('crm_tiempos', JSON.stringify(xs.slice(-60))); } catch (e) {}
+}
 async function api(fn, ...args) {
-  const { url, key } = cfg();
+  const { url, key } = cfg(), t0 = Date.now();
   pendientes++; document.getElementById('cargando').style.display = 'block';
   try {
     // "Load failed": el iPhone corta la conexión cuando la app pasa a segundo plano (WhatsApp, llamada).
@@ -420,6 +424,7 @@ async function api(fn, ...args) {
       }
     }
     const j = await res.json();
+    anotarTiempo(fn, Date.now() - t0);
     if (!j.ok) {
       if (j.error === 'no autorizado') { pantallaConfig('La clave no es válida. Volvé a cargarla.'); }
       throw new Error(j.error);
@@ -642,9 +647,22 @@ const ordenar = xs => xs.slice().sort((a, b) =>
 // ponytail: WhatsApp no tiene un enlace público para iniciar la llamada directo; si lo saca, va acá.
 const bLlamar = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(x.wa)) }, 'Llamar') : '';
 const bWhatsApp = x => x.wa ? el('button', { cls:'btn sec', icon:'wa', onclick: () => abrirExterno(waUrl(x.wa, ((x.opciones || [])[0] || {}).texto)) }, 'WhatsApp') : '';   // si trae mensaje sugerido (ej. NOAT), lo abre escrito
-const bNoContesto = x => el('button', { cls:'btn', onclick: async e => {
-  e.currentTarget.closest('.t').style.opacity = .4;
-  await api('api_accion', x.id, 'LLAMADA_NO'); toast('Registrado: no contestó'); verHoy();
+// Botones de Hoy: la tarjeta se va al instante y lo que hiciste se guarda por detrás. Si falla, avisa y Hoy la vuelve a mostrar.
+// Hoy se vuelve a pedir una sola vez, 4 segundos después del último toque (si tocás varias seguidas, no recarga entre medio).
+let recargaHoy;
+function sacarDeHoy(card, id) {
+  card.remove();
+  try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null');
+    if (c) { Object.keys(c.r).forEach(k => { if (Array.isArray(c.r[k])) c.r[k] = c.r[k].filter(x => String(x.id) !== String(id)); }); localStorage.setItem(LS_HOY, JSON.stringify(c)); } } catch (e) {}
+}
+function guardarPorDetras(pedido, msj) {
+  toast(msj);
+  pedido.then(() => { clearTimeout(recargaHoy); recargaHoy = setTimeout(() => { if (document.getElementById('tHoy').classList.contains('on')) verHoy(); }, 4000); })
+    .catch(() => verHoy());
+}
+const bNoContesto = x => el('button', { cls:'btn', onclick: e => {
+  sacarDeHoy(e.currentTarget.closest('.t'), x.id);
+  guardarPorDetras(api('api_accion', x.id, 'LLAMADA_NO'), 'Registrado: no contestó');
 }}, 'No contestó');
 // Leads: al tocar Llamar, la tarjeta pregunta qué pasó (Atendió abre la ficha con "Llamada" ya elegida)
 const bLlamarLead = x => x.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: e => {
@@ -673,8 +691,7 @@ function tarjetaEnvio(x, texto0, enviar, chips) {
       const tx = texto.textContent;
       if (/\{\w+\}/.test(tx)) return toast('Este mensaje tiene datos sin completar: abrí la ficha', true);
       try { await navigator.clipboard.writeText(tx); } catch (e) { return toast('No pude copiar el texto', true); }
-      t.style.opacity = .4;
-      await enviar(tx); toast('Copiado y registrado'); t.remove();
+      sacarDeHoy(t, x.id); guardarPorDetras(enviar(tx), 'Copiado y registrado');
     }}, 'Copiar y registrar'), bWaChico(x.wa)));
   t.texto = texto;
   return t;
@@ -772,9 +789,10 @@ function pintarHoy(r, viejo) {
     const xs = L('respuestas');
     if (xs.length) {
       const marcar = (x, tipo, msj, luego) => async e => {
-        e.currentTarget.closest('.t').style.opacity = .4;
-        await api('api_accion', x.id, tipo); toast(msj);
-        if (luego) luego(); else verHoy();
+        const card = e.currentTarget.closest('.t');
+        if (!luego) { sacarDeHoy(card, x.id); return guardarPorDetras(api('api_accion', x.id, tipo), msj); }
+        card.style.opacity = .4;   // "Quiere visitar" abre la ficha: espera a que quede en Visita
+        await api('api_accion', x.id, tipo); toast(msj); luego();
       };
       const cuerpo = el('div', {}, ...xs.map(x => item(Object.assign({}, x, { jugada: '' }), x.cadencia ? 'Lead' : ETAPA_C_TXT[x.etapaC] || '', { botones: x.feedback
         ? [el('button', { cls:'btn pri', onclick: marcar(x, 'QUIERE_VISITAR', 'Pasó a Visita: agendá la visita', () => { sessionStorage.setItem('crm_visita', x.id); abrir(x.id, 'agenda'); }) }, 'Quiere visitar'),
@@ -1045,6 +1063,13 @@ function verAjustes() {
       el('div', { cls:'actual' }, 'Zona de la hora: ' + Math.round(document.querySelector('.tope-ios').getBoundingClientRect().height) + ' px · ' +
         (navigator.standalone || matchMedia('(display-mode: standalone)').matches ? 'app de inicio' : 'navegador')),
       el('div', { cls:'actual' }, 'Face ID: ' + (conFace ? 'activado' : 'no activado')),
+      (() => {   // Promedio de los últimos pedidos, por tipo: para saber qué tarda
+        const xs = (() => { try { return JSON.parse(localStorage.getItem('crm_tiempos') || '[]'); } catch (e) { return []; } })(), por = {};
+        xs.forEach(([fn, ms]) => (por[fn] = por[fn] || []).push(ms));
+        const NOM = { api_hoy:'Hoy', api_ficha:'Abrir ficha', api_lote:'Guardar', api_accion:'Botones', api_cartera:'Cartera', api_buscar:'Buscar', api_semana:'Esta semana', api_evento:'Crear evento' };
+        const filas = Object.entries(por).map(([fn, v]) => (NOM[fn] || fn) + ': ' + (v.reduce((a, b) => a + b, 0) / v.length / 1000).toFixed(1) + ' s (' + v.length + ')');
+        return el('div', { cls:'actual' }, filas.length ? 'Tiempos promedio: ' + filas.join(' · ') : 'Tiempos: todavía no hay datos.');
+      })(),
       conFace ? '' : el('button', { cls:'btn sec ancho', onclick: async () => {
         try { await activarFaceId(); toast('Face ID activado'); verAjustes(); } catch (e) { toast('No se pudo activar: ' + e.message, true); }
       }}, 'Activar Face ID')));
