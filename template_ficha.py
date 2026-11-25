@@ -137,6 +137,14 @@ footer a{{color:var(--dorado);text-decoration:none}}
   }}
   .sticky-wa-btn:hover{{background:#004330}}
 }}
+/* Carrusel de fotos en el celular: se desliza ahí mismo; tocar una foto abre el visor */
+.car{{display:none;position:relative;background:var(--bg)}}
+@media(max-width:700px){{.mosaic{{display:none}}.car{{display:block}}}}
+.car-track{{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;height:300px;scrollbar-width:none;-webkit-overflow-scrolling:touch}}
+.car-track::-webkit-scrollbar{{display:none}}
+.car-track img{{flex:0 0 100%;width:100%;height:100%;object-fit:cover;scroll-snap-align:center;scroll-snap-stop:always;cursor:pointer}}
+.car-cnt{{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;pointer-events:none}}
+.car .mg-btn-video{{bottom:12px}}
 </style>
 </head>
 <body>
@@ -265,6 +273,15 @@ document.addEventListener('keydown',e=>{{if(!document.getElementById('lb').class
 (function(){{let x0=null,y0=null;const el=document.querySelector('.mosaic');if(!el)return;el.addEventListener('touchstart',e=>{{x0=e.touches[0].clientX;y0=e.touches[0].clientY;}},{{passive:true}});el.addEventListener('touchend',e=>{{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40){{if(!document.getElementById('lb').classList.contains('open'))openLB(dx<0?1:0);}}x0=null;y0=null;}},{{passive:true}});}})();
 /* Touch swipe — lightbox */
 (function(){{let x0=null,y0=null;const el=document.getElementById('lb');if(!el)return;el.addEventListener('touchstart',e=>{{x0=e.touches[0].clientX;y0=e.touches[0].clientY;}},{{passive:true}});el.addEventListener('touchend',e=>{{if(x0===null)return;const dx=e.changedTouches[0].clientX-x0;const dy=e.changedTouches[0].clientY-y0;if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>40)lbGo(dx<0?1:-1);x0=null;y0=null;}},{{passive:true}});}})();
+</script>
+<script>
+/* Carrusel de fotos en el celular (se arma con las mismas fotos del visor) */
+(function(){{const m=document.querySelector('.mosaic');if(!m||typeof photos==='undefined'||!photos.length)return;
+const car=document.createElement('div');car.className='car';const tr=document.createElement('div');tr.className='car-track';
+photos.forEach((u,i)=>{{const im=document.createElement('img');im.src=u;im.alt='Foto '+(i+1);if(i>1)im.loading='lazy';im.onclick=()=>openLB(i);tr.appendChild(im);}});
+const c=document.createElement('div');c.className='car-cnt';c.textContent='1 / '+photos.length;
+tr.addEventListener('scroll',()=>{{c.textContent=(Math.round(tr.scrollLeft/tr.clientWidth)+1)+' / '+photos.length;}},{{passive:true}});
+car.append(tr,c);const v=m.querySelector('.mg-btn-video');if(v)car.appendChild(v.cloneNode(true));m.after(car);}})();
 </script>
 </body>
 </html>'''
