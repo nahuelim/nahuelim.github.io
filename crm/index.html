@@ -283,6 +283,8 @@
   .match:first-of-type { border-top:0; }
   .match.gris { color:var(--tinta-suave); }
   .match a { color:var(--verde-profundo); font-weight:600; white-space:nowrap; }
+  .match.col { flex-direction:column; align-items:stretch; gap:4px; }
+  .match .lk { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:14px; } .match .lk a.rojo { color:var(--alerta); }
   .actual { font-size:14px; color:var(--tinta-suave); margin-bottom:8px; }
 
   /* Bloqueo y configuracion */
@@ -322,8 +324,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '46';
-const COMPILACION = '46';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '47';
+const COMPILACION = '47';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1174,9 +1176,24 @@ async function abrir(id, seg, ya) {
     const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null);
     pend = null; toast('Guardado'); reabrir(nueva); refrescar();
   };
-  const filaMatch = m => el('div', { cls:'match' + (m.enviada ? ' gris' : '') }, el('div', { style:'flex:1' }, m.texto),
-    m.link ? el('span', { style:'display:flex;gap:12px;white-space:nowrap' }, el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Mía'), m.og ? el('a', { href:m.og, target:'_blank', rel:'noopener' }, 'Original ↗') : '') : m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
-  const mCompra = r.matches.filter(m => m.tipo !== 'Comprador' && !m.enviada), mEnviadas = r.matches.filter(m => m.enviada), mVenta = r.matches.filter(m => m.tipo === 'Comprador');
+  // Las 4 acciones de una ficha, en una fila: Mía y Original solo abren; No mostrar la oculta para esta persona (un toque,
+  // se deshace en "Ocultas"); No publicada la saca para todos (pide confirmación).
+  const nombre1 = String(d.NOMBRE || '').split(' - ')[0].split(' ')[0];
+  const lkFicha = (m, fila) => el('div', { cls:'lk' },
+    el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Mía'),
+    m.og ? el('a', { href:m.og, target:'_blank', rel:'noopener' }, 'Original ↗') : '',
+    el('a', { href:'#', onclick: e => { e.preventDefault();
+      fila.remove(); if (fila.alOcultar) fila.alOcultar();
+      api('api_accion', id, 'OCULTAR_FICHA', m.link, m.texto).then(() => toast('No se la muestro más a ' + nombre1 + ' (está en Ocultas)')).catch(() => reabrir());
+    }}, 'No mostrar'),
+    el('a', { href:'#', cls:'rojo', onclick: async e => { e.preventDefault();
+      if (!confirm('¿Ya no está publicada? Deja de aparecer como match para TODOS tus clientes.')) return;
+      await api('api_fichaBaja', m.link); toast('Listo: esa ficha ya no aparece'); reabrir();
+    }}, 'No publicada'));
+  const filaMatch = m => { if (m.link) { const f = el('div', { cls:'match col' + (m.enviada ? ' gris' : '') }, el('div', {}, m.texto)); f.append(lkFicha(m, f)); return f; }
+    return el('div', { cls:'match' + (m.enviada ? ' gris' : '') }, el('div', { style:'flex:1' }, m.texto), m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : ''); };
+  const mCompra = r.matches.filter(m => m.tipo !== 'Comprador' && !m.enviada && !m.oculta), mEnviadas = r.matches.filter(m => m.enviada && !m.oculta),
+    mOcultas = r.matches.filter(m => m.oculta), mVenta = r.matches.filter(m => m.tipo === 'Comprador');
 
   // Ultimo resultado registrado hoy (para marcar el boton)
   const hoyDM = (() => { const x = new Date(); return String(x.getDate()).padStart(2, '0') + '/' + String(x.getMonth() + 1).padStart(2, '0'); })();
@@ -1483,17 +1500,16 @@ async function abrir(id, seg, ya) {
     const filaOpcion = m => {
       const chk = el('input', { type:'checkbox', style:'width:auto;margin-top:3px' });
       chk.onchange = () => chk.checked ? marcados.add(m) : marcados.delete(m);
-      return el('div', { cls:'match' },
-        el('label', { style:'display:flex;gap:8px;align-items:flex-start;flex:1;margin:0;font-size:15px;color:var(--tinta)' }, chk, el('span', {}, m.texto)),
-        m.link ? el('a', { href:m.link, target:'_blank', rel:'noopener' }, 'Mía') : '',
-        m.og ? el('a', { href:m.og, target:'_blank', rel:'noopener' }, 'Original ↗') : '',
-        m.link && m.tipo !== 'Vendedor' ? el('a', { href:'#', style:'color:var(--alerta)', onclick: async e => {
-          e.preventDefault();
-          if (!confirm('¿Marcar esta ficha como que ya no está? Deja de aparecer como match para todos.')) return;
-          await api('api_fichaBaja', m.link); toast('Listo: esa ficha ya no aparece'); reabrir();
-        }}, 'Ya no está') : '',
-        m.id ? el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir') : '');
+      const fila = el('div', { cls:'match col' },
+        el('label', { style:'display:flex;gap:8px;align-items:flex-start;margin:0;font-size:15px;color:var(--tinta)' }, chk, el('span', {}, m.texto)));
+      if (m.link) { fila.alOcultar = () => marcados.delete(m); fila.append(lkFicha(m, fila)); }
+      else if (m.id) fila.append(el('div', { cls:'lk' }, el('a', { href:'#', onclick: e => { e.preventDefault(); abrir(m.id, 'contacto'); } }, 'Abrir')));
+      return fila;
     };
+    // Las que ocultaste para esta persona: plegadas al final, con "Volver a mostrar"
+    const ocultas = mOcultas.length ? el('details', { style:'margin-top:10px' }, el('summary', { style:'font-weight:600;cursor:pointer;color:var(--tinta-suave)' }, 'Ocultas para ' + nombre1 + ' (' + mOcultas.length + ')'),
+      ...mOcultas.map(m => { const f = el('div', { cls:'match gris' }, el('div', { style:'flex:1' }, m.texto + (m.ocultaFecha ? ' · ' + m.ocultaFecha : '')),
+        el('a', { href:'#', onclick: async e => { e.preventDefault(); await api('api_accion', id, 'MOSTRAR_FICHA', m.link, m.texto); toast('Vuelve a aparecer'); reabrir(); } }, 'Volver a mostrar')); return f; })) : '';
     const sueltas = el('div');
     const otra = () => {
       const dir = el('input', { placeholder:'Dirección (obligatoria)' }), link = el('input', { type:'url', placeholder:'Link (opcional)' });
@@ -1505,6 +1521,7 @@ async function abrir(id, seg, ya) {
     return el('div', { cls: embebida ? '' : 'card', style: embebida ? 'margin-top:8px' : '' }, embebida ? '' : el('h3', {}, 'Opciones para mandarle (' + mCompra.length + ')'),
       el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Antes de mandar, tocá "Original" para chequear que siga publicada. "Mía" es tu ficha.'),
       mCompra.length ? mCompra.map(filaOpcion) : el('div', { cls:'vacio' }, 'Sin matches. Hace falta tipo, barrios, ambientes y presupuesto, o buscá a mano (abajo).'),
+      ocultas,
       el('label', { style:'margin-top:12px' }, 'Opciones sueltas (las que mandás sin el generador)'), sueltas,
       el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: otra }, '+ otra'),
       el('button', { cls:'btn pri ancho', style:'margin-top:12px', onclick: async () => {
