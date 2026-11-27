@@ -168,6 +168,11 @@
   .t .acc { display:flex; gap:8px; margin-top:12px; }
   .t .acc .btn { flex:1; min-height:48px; font-weight:600; font-size:15px; }
   .btn.ico, .t .acc .btn.ico, .fila > .btn.ico { flex:0 0 52px; padding:0; }
+  .segmentos button.sucia::after { content:' •'; color:var(--dorado); }
+  .guardar-fijo .txt { font-size:13px; color:var(--tinta-suave); margin-right:auto; }
+  .modal-fondo { position:fixed; inset:0; z-index:90; background:rgba(20,35,29,.5); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal { background:var(--blanco); border-radius:16px; padding:18px; width:100%; max-width:380px; display:flex; flex-direction:column; gap:8px; }
+  .modal h3 { margin:0; font-size:18px; } .modal p { margin:0 0 6px; color:var(--tinta-suave); font-size:14px; }
   .lb .tipo { padding:8px 12px 4px; font-size:14px; font-weight:700; color:var(--verde-profundo); border-top:1px solid var(--linea); }
   .lb .tipo:first-child { border-top:0; }
   .hoy-res { margin:-2px 0 10px; }
@@ -237,7 +242,8 @@
   a.btn { text-decoration:none; color:var(--tinta); display:flex; align-items:center; justify-content:center; }
   .grid2 > div { display:flex; flex-direction:column; }
   .grid2 > div > :last-child { margin-top:auto; }   /* las cajas de una fila quedan alineadas abajo aunque una tenga texto de ayuda */
-  .guardar-fijo { position:sticky; bottom:0; padding:10px 0 calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--crema) 30%); z-index:2; }
+  .guardar-fijo { position:sticky; bottom:0; padding:10px 0 calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--crema) 30%); z-index:2; display:flex; align-items:center; gap:10px; }
+  .guardar-fijo .btn { flex:none; min-width:130px; } .guardar-fijo:not(.activa) .btn { opacity:.5; }
   .pregunta { font-size:13px; font-style:italic; color:var(--tinta-suave); margin:-2px 0 6px; }
 
   input, select, textarea { width:100%; border:1px solid var(--linea); border-radius:12px; padding:11px 12px; background:var(--blanco); }
@@ -325,7 +331,7 @@
 
 <script>
 const VERSION = '48';
-const COMPILACION = '48';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '48.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1141,10 +1147,31 @@ function imagenJpeg(file) {
 // ─── ficha por segmentos ───
 let segmentoActual = 'contacto';
 let fichaSucia = () => false;
-function cerrar() {
-  if (fichaSucia() && !confirm('Tenés cambios sin guardar. ¿Cerrar igual?')) return;
-  fichaSucia = () => false; document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista');
-  if (hoyPendiente) refrescar(); }
+// Al cerrar con cambios sin guardar: Guardar y salir · Seguir editando · Salir sin guardar
+let guardarFicha = null;
+function preguntarSalida(detalle) {
+  return new Promise(ok => {
+    const fin = v => { fondo.remove(); ok(v); };
+    const fondo = el('div', { cls:'modal-fondo', onclick: e => { if (e.target === fondo) fin('seguir'); } },
+      el('div', { cls:'modal' }, el('h3', {}, 'Tenés cambios sin guardar'), detalle ? el('p', {}, detalle) : '',
+        el('button', { cls:'btn pri ancho', onclick: () => fin('guardar') }, 'Guardar y salir'),
+        el('button', { cls:'btn ancho', onclick: () => fin('seguir') }, 'Seguir editando'),
+        el('button', { cls:'btn peligro ancho', onclick: () => fin('salir') }, 'Salir sin guardar')));
+    document.body.append(fondo);
+  });
+}
+function cerrarYa() {
+  fichaSucia = () => false; guardarFicha = null; document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista');
+  if (hoyPendiente) refrescar();
+}
+async function cerrar() {
+  if (fichaSucia()) {
+    const r = await preguntarSalida(fichaSucia.detalle ? fichaSucia.detalle() : '');
+    if (r === 'seguir') return;
+    if (r === 'guardar') { if (!(guardarFicha && await guardarFicha())) return; }
+  }
+  cerrarYa();
+}
 
 // ya: la ficha que devolvió el Guardar (así no se pide de nuevo al servidor)
 async function abrir(id, seg, ya) {
@@ -1156,7 +1183,7 @@ async function abrir(id, seg, ya) {
   // Primero la acción y después lo tuyo: si elegiste a mano el próximo paso o el estado, gana lo que elegiste.
   // Si tenías escrito "Qué pasó" sin guardar, no se pierde: queda en pantalla para que lo guardes vos.
   const accion = async (tipo, detalle, texto) => {
-    const x = (pend && pend()) || {};
+    const x = juntar();
     const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.error ? null : (x.proximo || null), [tipo, detalle || '', texto || '']);
     refrescar();
     if (x.accion) return toast('Registrado. Falta guardar lo que pasó');
@@ -1164,18 +1191,32 @@ async function abrir(id, seg, ya) {
   };
   // Después de guardar se vuelve a dibujar la ficha, pero solo si seguís en ella (si la cerraste, no se reabre)
   const reabrir = ya => { if (document.getElementById('ficha').classList.contains('abierta') && sessionStorage.getItem('crm_vista') === String(id)) abrir(id, undefined, ya && ya.datos ? ya : undefined); };
-  // Un solo Guardar por solapa: cada solapa declara qué tiene pendiente; se manda todo junto en un viaje.
+  // Un solo Guardar para toda la ficha: cada solapa declara qué tiene pendiente (pends) y se manda todo junto en un viaje.
+  // Las solapas se dibujan una vez y quedan en memoria: pasar de una a otra no pierde lo que editaste.
   let pend = null;
+  const pends = {};
   const vacio = x => !x || (!Object.keys(x.campos || {}).length && !x.nota && !x.proximo && !x.accion && !x.error);
-  fichaSucia = () => !!pend && !vacio(pend());
-  const guardarTab = async () => {
-    const x = pend && pend();
-    if (vacio(x)) return toast('No hay cambios');
-    if (x.error) return toast(x.error, true);
-    if (x.aviso && !confirm(x.aviso)) return;   // Cancelar = volver a cambiarlo; Aceptar = guardar igual
-    const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null);
-    pend = null; toast('Guardado'); reabrir(nueva); refrescar();
+  const juntar = () => {
+    const r = { campos:{} };
+    Object.values(pends).forEach(f => { const x = f() || {};
+      Object.assign(r.campos, x.campos || {});
+      if (x.nota) r.nota = [r.nota, x.nota].filter(Boolean).join('\n');
+      ['proximo', 'accion', 'error', 'aviso'].forEach(k => { if (x[k] && !r[k]) r[k] = x[k]; }); });
+    return r;
   };
+  const conCambios = () => Object.keys(pends).filter(k => !vacio(pends[k]()));
+  fichaSucia = () => !vacio(juntar());
+  fichaSucia.detalle = () => { const ks = conCambios(); return ks.length ? 'Cambios en ' + ks.map(k => SEGMENTOS.find(s => s[0] === k)[1]).join(' y ') + '.' : ''; };
+  const guardarTab = async () => {
+    const x = juntar();
+    if (vacio(x)) { toast('No hay cambios'); return false; }
+    if (x.error) { toast(x.error, true); return false; }
+    if (x.aviso && !confirm(x.aviso)) return false;   // Cancelar = volver a cambiarlo; Aceptar = guardar igual
+    const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null);
+    toast('Guardado'); reabrir(nueva); refrescar();
+    return true;
+  };
+  guardarFicha = guardarTab;
   // Las 4 acciones de una ficha, en una fila: Mía y Original solo abren; No mostrar la oculta para esta persona (un toque,
   // se deshace en "Ocultas"); No publicada la saca para todos (pide confirmación).
   const nombre1 = String(d.NOMBRE || '').split(' - ')[0].split(' ')[0];
@@ -1454,7 +1495,7 @@ async function abrir(id, seg, ya) {
     return el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline;color:var(--alerta)' }, 'Archivar')),
       el('div', { cls:'grid2', style:'margin-top:8px' }, motivo, el('button', { cls:'btn peligro', onclick: async () => {
         if (!confirm('¿Archivar a ' + String(d.NOMBRE).split(' - ')[0] + '? Motivo: ' + motivo.value)) return;
-        const x = (pend && pend()) || {};
+        const x = juntar();
         if (x.accion || Object.keys(x.campos || {}).length) await api('api_lote', id, x.campos || {}, '', null, x.accion || null);
         const nueva = await api('api_lote', id, {}, '', null, ['DESCARTAR', motivo.value, '']);
         pend = null; toast('Archivado'); refrescar(); reabrir(nueva);
@@ -1633,15 +1674,25 @@ async function abrir(id, seg, ya) {
     ['venta','Venta',segVenta,mVenta.length], ['agenda','Agenda',segAgenda,0], ['historial','Historial',segHistorial,0]];
   const cuerpo = el('div', { cls:'ficha-body' });
   const barra = el('div', { cls:'segmentos' });
+  const vistas = {};
+  // Barra fija de Guardar: dice cuántas solapas tienen cambios; el punto en cada solapa marca dónde
+  const txtGuardar = el('span', { cls:'txt' });
+  const barraGuardar = el('div', { cls:'guardar-fijo' }, txtGuardar, el('button', { cls:'btn pri', onclick: guardarTab }, 'Guardar'));
+  const marcar = () => {
+    const ks = conCambios();
+    barra.querySelectorAll('button').forEach(b => b.classList.toggle('sucia', ks.includes(b.dataset.k)));
+    txtGuardar.textContent = ks.length ? (ks.length === 1 ? 'Cambios en ' + SEGMENTOS.find(s => s[0] === ks[0])[1] : 'Cambios en ' + ks.length + ' solapas') : 'Sin cambios';
+    barraGuardar.classList.toggle('activa', !!ks.length);
+  };
   const mostrar = key => {
-    if (key !== segmentoActual && fichaSucia() && !confirm('Tenés cambios sin guardar en esta solapa. ¿Salir igual?')) return;
-    pend = null;
     segmentoActual = key; sessionStorage.setItem('crm_seg', key);
     barra.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === key));
-    cuerpo.replaceChildren(...SEGMENTOS.find(s => s[0] === key)[2]());
-    if (pend) cuerpo.append(el('div', { cls:'guardar-fijo' }, el('button', { cls:'btn pri ancho', onclick: guardarTab }, 'Guardar')));
-    p.scrollTop = 0;
+    if (!vistas[key]) { pend = null; vistas[key] = el('div', {}, ...SEGMENTOS.find(s => s[0] === key)[2]()); if (pend) pends[key] = pend; pend = juntar; }
+    cuerpo.replaceChildren(vistas[key]);
+    if (Object.keys(pends).length) cuerpo.append(barraGuardar);
+    marcar(); p.scrollTop = 0;
   };
+  ['input', 'change', 'click'].forEach(ev => cuerpo.addEventListener(ev, () => setTimeout(marcar, 0)));
   SEGMENTOS.forEach(([k, t, , n]) => barra.append(el('button', { 'data-k':k, onclick: () => mostrar(k) }, t, n ? el('span', { cls:'n' }, n) : '')));
 
   p.replaceChildren(
