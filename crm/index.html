@@ -367,8 +367,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '49';
-const COMPILACION = '49.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '50';
+const COMPILACION = '50';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1011,11 +1011,13 @@ function paraOrdenar(caja, alCambiar) {
   let items = [], contactos = [];
   const fechaTxt = (f, h) => { if (!f) return ''; const [y, m, d] = f.split('-'); const hoy = isoLocal(new Date()); return (f === hoy ? 'hoy' : d + '/' + m) + (h ? ' ' + h : ''); };
   const destino = x => x.id
-    ? el('div', { cls:'dest' }, '→ ', el('b', {}, (x.nota ? 'Nota' : '') + (x.nota && x.fecha ? ' + ' : '') + (x.fecha ? 'paso ' + fechaTxt(x.fecha, x.hora) : '') + (!x.nota && !x.fecha ? 'Nada para guardar' : '') + ' en ' + x.nombre),
-        x.fecha && x.paso ? ': ' + x.paso : '')
+    ? el('div', { cls:'dest' }, '→ ', el('b', {}, (x.nota ? 'Nota' : '') + (x.nota && (x.fecha || x.paso) ? ' + ' : '') + (x.fecha || x.paso ? 'paso ' + (fechaTxt(x.fecha, x.hora) || 'hoy') : '') + (!x.nota && !x.fecha && !x.paso ? 'Nada para guardar' : '') + ' en ' + x.nombre),
+        x.paso ? ': ' + x.paso : '')
+    : x.nuevo ? el('div', { cls:'dest duda' }, '→ ', el('b', {}, 'Persona nueva: ' + x.nuevo.nombre), x.nuevo.vende ? ' (vende)' : '', ' · no está en el CRM')
     : x.candidatos && x.candidatos.length ? el('div', { cls:'dest duda' }, '→ ', el('b', {}, '¿Cuál?'), ' Elegí abajo')
     : el('div', { cls:'dest' }, '→ ', el('b', {}, 'Hacer ' + (fechaTxt(x.fecha, x.hora) || 'hoy')), ': ' + (x.paso || x.nota || x.texto));
-  const listo = x => !(x.candidatos && x.candidatos.length && !x.id) && !(x.id && !x.nota && !x.fecha);
+  const listo = x => !x.nuevo && !(x.candidatos && x.candidatos.length && !x.id) && !(x.id && !x.nota && !x.fecha && !x.paso);
+  const etiq = c => c.nombre + (c.archivado ? ' (archivada)' : '');
   const confirmar = xs => {
     xs.forEach(x => (items = items.filter(y => y !== x))); pintar();
     api('api_bandejaConfirmar', xs.map(x => ({ fila: x.fila, id: x.id, nota: x.nota, paso: x.paso, fecha: x.fecha, hora: x.hora })))
@@ -1023,7 +1025,7 @@ function paraOrdenar(caja, alCambiar) {
       .catch(() => cargar());
   };
   const editor = (x, nodo) => {
-    const persona = el('input', { list:'po-contactos', value: x.nombre || '', placeholder:'Sin persona (queda en Hoy como "Hacer")' });
+    const persona = el('input', { list:'po-contactos', value: x.nombre || (x.nuevo ? x.nuevo.nombre : ''), placeholder:'Sin persona (queda en Hoy como "Hacer"). Si no está en el CRM, escribí el nombre' });
     const nota = el('textarea', { style:'min-height:60px' }); nota.value = x.nota || '';
     const paso = el('input', { value: x.paso || '', placeholder:'Ej.: Confirmarle la visita' });
     const fecha = el('input', { type:'date', value: x.fecha || '' }), hora = el('input', { type:'time', value: x.hora || '', step:'300' });
@@ -1038,21 +1040,49 @@ function paraOrdenar(caja, alCambiar) {
       campo('Próximo paso de la persona (o, sin persona, qué hacer)', paso, true), agregar, diaHora),
       el('div', { cls:'bt' }, el('button', { cls:'btn pri', onclick: () => {
         const nom = persona.value.trim(), c = contactos.find(k => k.nombre === nom);
-        if (nom && !c) return toast('No encontré a "' + nom + '": elegilo de la lista', true);
-        Object.assign(x, { id: c ? c.id : '', nombre: c ? c.nombre : '', candidatos: [], nota: nota.value.trim(), paso: paso.value.trim(), fecha: fecha.value, hora: hora.value });
-        if (!x.id && !x.paso && x.nota) { x.paso = x.nota; x.nota = ''; }
+        Object.assign(x, { id: c ? c.id : '', nombre: c ? c.nombre : '', candidatos: [], alternativas: [], nuevo: nom && !c ? { nombre: nom, vende: false } : null,
+          nota: nota.value.trim(), paso: paso.value.trim(), fecha: fecha.value, hora: hora.value });
+        if (!x.id && !x.nuevo && !x.paso && x.nota) { x.paso = x.nota; x.nota = ''; }
         pintar();
       } }, 'Listo'), el('button', { cls:'btn', onclick: pintar }, 'Cancelar')));
   };
   const fila = x => {
     const nodo = el('div', { cls:'it' }, el('div', { cls:'tx' }, '“' + x.texto + '”', x.cuando ? el('small', {}, x.cuando) : ''), destino(x),
       x.candidatos && x.candidatos.length && !x.id ? el('div', { cls:'bt' }, ...x.candidatos.map(c => el('button', { cls:'btn', onclick: () => { Object.assign(x, { id: c.id, nombre: c.nombre, candidatos: [] });
-        if (!x.nota && !x.fecha) x.nota = x.texto.replace(/^[^:]+:\s*/, ''); pintar(); } }, c.nombre))) : '',
+        if (!x.nota && !x.fecha) x.nota = x.texto.replace(/^[^:?]+[:?]\s*/, ''); pintar(); } }, etiq(c)))) : '',
+      x.id && x.alternativas && x.alternativas.length ? el('div', { cls:'bt', style:'align-items:center' }, el('span', { cls:'actual' }, '¿No es?'), ...x.alternativas.map(c =>
+        el('button', { cls:'btn', onclick: () => { Object.assign(x, { id: c.id, nombre: c.nombre, alternativas: [] }); pintar(); } }, etiq(c)))) : '',
       el('div', { cls:'bt' },
         listo(x) ? el('button', { cls:'btn sec', onclick: () => confirmar([x]) }, 'Confirmar') : '',
+        x.nuevo ? el('button', { cls:'btn pri', onclick: () => crearContacto(x) }, 'Crear contacto') : '',
         el('button', { cls:'btn', onclick: () => editor(x, nodo) }, 'Editar'),
         el('button', { cls:'btn peligro', onclick: () => { items = items.filter(y => y !== x); pintar(); api('api_bandejaDescartar', x.fila).catch(() => cargar()); } }, 'Descartar')));
     return nodo;
+  };
+  const crearContacto = x => {
+    const nombre = el('input', { value: x.nuevo.nombre });
+    const tel = el('input', { type:'tel', inputmode:'tel', placeholder:'Buscando en tus contactos de Google…' });
+    const sug = el('div', { cls:'bt' });
+    const fuente = select(FUENTES, 'Conocido');
+    const rol = select(['VENDEDOR','COMPRADOR','AMBOS',''], x.nuevo.vende ? 'VENDEDOR' : '', ['Vende','Compra','Vende y compra','—']);
+    const nota = el('textarea', { style:'min-height:70px' }); nota.value = [x.nota, x.paso].filter(Boolean).join('. ');
+    const campo = (t, i) => el('div', {}, el('label', {}, t), i);
+    const fondo = el('div', { cls:'modal-fondo', onclick: e => { if (e.target === fondo) fondo.remove(); } }, el('div', { cls:'modal' },
+      el('h3', {}, 'Crear contacto'), campo('Nombre', nombre), campo('Teléfono', tel), sug, el('div', { cls:'grid2' }, campo('Fuente', fuente), campo('Rol', rol)), campo('Nota', nota),
+      el('button', { cls:'btn pri ancho', onclick: async () => {
+        if (!nombre.value.trim()) return toast('Falta el nombre', true);
+        fondo.remove(); items = items.filter(y => y !== x); pintar();
+        try { toast(await api('api_bandejaNuevo', x.fila, { NOMBRE: nombre.value.trim(), TELEFONO: tel.value.trim(), FUENTE: fuente.value, ROL: rol.value, NOTA: nota.value.trim() })); refrescar(); }
+        catch (e) { cargar(); }
+      } }, 'Crear'),
+      el('button', { cls:'btn ancho', onclick: () => fondo.remove() }, 'Cancelar')));
+    document.body.append(fondo);
+    // Si está agendado en tu teléfono (Contactos de Google), completa el número
+    api('api_telGoogle', x.nuevo.nombre).then(xs => {
+      tel.placeholder = xs.length ? 'Elegí abajo o escribilo' : 'No lo encontré en tus contactos: escribilo o pegalo';
+      if (xs.length === 1 && !tel.value) tel.value = xs[0].tel;
+      if (xs.length) sug.replaceChildren(...xs.map(o => el('button', { cls:'btn', type:'button', onclick: () => { tel.value = o.tel; if (!nombre.value.trim()) nombre.value = o.nombre; } }, o.nombre + ' · ' + o.tel)));
+    }).catch(() => { tel.placeholder = 'Escribilo o pegalo'; });
   };
   const pegar = () => {
     const t = el('textarea', { style:'min-height:160px', placeholder:'Pegá acá lo que tenías en Notes (una nota por línea)' });
