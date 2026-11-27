@@ -182,6 +182,7 @@
   .linea-po { margin:2px 4px 8px; cursor:pointer; color:var(--verde-profundo); }
   /* Para ordenar (arriba de Cartera) */
   .po { background:var(--blanco); border:2px solid var(--dorado); border-radius:16px; padding:10px 12px; margin:4px 0 12px; }
+  .btn.mas { flex:none; width:38px; min-height:38px; padding:0; font-size:22px; font-weight:600; line-height:1; border-radius:50%; background:var(--verde-profundo); border-color:var(--verde-profundo); color:var(--crema); }
   .po .hd { display:flex; align-items:center; gap:8px; padding-bottom:10px; margin-bottom:2px; border-bottom:1px solid var(--linea); }
   .po .hd + datalist + .it { border-top:0; } .po .hd h3 { margin:0; font-size:17px; } .po .hd .btn { margin-left:auto; min-height:34px; padding:5px 12px; font-size:13px; }
   .po .it { border-top:1px solid var(--linea); padding:10px 0; } .po .it:first-of-type { border-top:0; }
@@ -368,7 +369,7 @@
 
 <script>
 const VERSION = '50';
-const COMPILACION = '50';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '50.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1085,8 +1086,8 @@ function paraOrdenar(caja, alCambiar) {
     }).catch(() => { tel.placeholder = 'Escribilo o pegalo'; });
   };
   const pegar = () => {
-    const t = el('textarea', { style:'min-height:160px', placeholder:'Pegá acá lo que tenías en Notes (una nota por línea)' });
-    const fondo = el('div', { cls:'modal-fondo', onclick: e => { if (e.target === fondo) fondo.remove(); } }, el('div', { cls:'modal' }, el('h3', {}, 'Pegar notas'), t,
+    const t = el('textarea', { style:'min-height:160px', placeholder:'Escribí o pegá una o varias notas (una por línea). Ej.: Mara: recordame mañana a las 11 confirmarle' });
+    const fondo = el('div', { cls:'modal-fondo', onclick: e => { if (e.target === fondo) fondo.remove(); } }, el('div', { cls:'modal' }, el('h3', {}, 'Anotar'), t,
       el('button', { cls:'btn pri ancho', onclick: async () => { if (!t.value.trim()) return; fondo.remove(); toast(await api('api_anotar', t.value)); cargar(); } }, 'Agregar a Para ordenar'),
       el('button', { cls:'btn ancho', onclick: () => fondo.remove() }, 'Cancelar')));
     document.body.append(fondo); t.focus();
@@ -1095,12 +1096,12 @@ function paraOrdenar(caja, alCambiar) {
     const ok = items.filter(listo);
     caja.replaceChildren(items.length ? el('div', { cls:'po' },
       el('div', { cls:'hd' }, el('h3', {}, 'Para ordenar'), el('span', { cls:'c', style:'font-size:13px;font-weight:700;color:var(--crema);background:var(--tinta);border-radius:999px;padding:1px 8px' }, items.length),
-        el('button', { cls:'btn', onclick: pegar }, 'Pegar')),
+        el('button', { cls:'btn mas', 'aria-label':'Anotar', onclick: pegar }, '+')),
       el('datalist', { id:'po-contactos' }, ...contactos.map(c => el('option', { value:c.nombre }))),
       ...items.map(fila),
       ok.length ? el('button', { cls:'btn pri ancho', style:'margin-top:6px', onclick: () => confirmar(ok) }, 'Confirmar todo (' + ok.length + ')') : '')
       : el('div', { cls:'actual', style:'margin:0 2px 8px;display:flex;gap:8px;align-items:center' }, 'Para ordenar: nada pendiente.',
-        el('a', { href:'#', style:'margin-left:auto;color:var(--verde-profundo);font-weight:600', onclick: e => { e.preventDefault(); pegar(); } }, 'Pegar notas')));
+        el('button', { cls:'btn mas', style:'margin-left:auto', 'aria-label':'Anotar', onclick: pegar }, '+')));
   };
   const cargar = () => api('api_bandeja').then(b => { items = b.items; contactos = b.contactos; pintar(); }).catch(() => {});
   pintar(); cargar();
