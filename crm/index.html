@@ -368,7 +368,7 @@
 
 <script>
 const VERSION = '49';
-const COMPILACION = '49.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '49.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -937,7 +937,7 @@ const GRUPOS_CARTERA = [
   ['Compradores · Reserva', x => x.comprador && x.etapaC === 'RESERVA']];
 const enCartera = x => GRUPOS_CARTERA.some(g => g[1](x));
 const sinPaso = x => !x.vuelveFecha;
-const FILTROS = [['todos', 'Todos', () => true], ['comp', 'Compran', x => GRUPOS_CARTERA.slice(4).some(g => g[1](x))], ['vend', 'Venden', x => GRUPOS_CARTERA.slice(0, 4).some(g => g[1](x))],
+const FILTROS = [['todos', 'Todos', () => true], ['vend', 'Venden', x => GRUPOS_CARTERA.slice(0, 4).some(g => g[1](x))], ['comp', 'Compran', x => GRUPOS_CARTERA.slice(4).some(g => g[1](x))],
   ['sin', 'Sin paso', sinPaso]];
 function enHoyIds() {
   try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv'))
