@@ -171,8 +171,9 @@
   .btn.ico, .t .acc .btn.ico, .fila > .btn.ico { flex:0 0 52px; padding:0; }
   /* Buscador general */
   .busca-g { position:sticky; top:0; z-index:45; background:var(--tinta); padding:0 12px 10px; }
-  .busca-g input { width:100%; border:0; border-radius:12px; padding:10px 14px; font-size:16px; background:var(--crema); }
-  #resBusca { display:none; position:absolute; left:0; right:0; top:100%; max-height:75vh; overflow:auto; background:var(--crema); box-shadow:0 12px 30px rgba(20,35,29,.25); padding:6px 12px 14px; }
+  .busca-g > input, .busca-g > #resBusca { max-width:720px; margin:0 auto; }
+  .busca-g input { width:100%; display:block; border:0; border-radius:12px; padding:10px 14px; font-size:16px; background:var(--crema); }
+  #resBusca { display:none; position:absolute; left:0; right:0; margin:0 auto; top:100%; max-height:75vh; overflow:auto; background:var(--crema); box-shadow:0 12px 30px rgba(20,35,29,.25); padding:6px 12px 14px; }
   #resBusca.on { display:block; }
   #resBusca h4 { margin:12px 2px 6px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-suave); }
   #resBusca .rb { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:9px 12px; margin-bottom:6px; cursor:pointer; font-size:14px; }
@@ -181,7 +182,8 @@
   .linea-po { margin:2px 4px 8px; cursor:pointer; color:var(--verde-profundo); }
   /* Para ordenar (arriba de Cartera) */
   .po { background:var(--blanco); border:2px solid var(--dorado); border-radius:16px; padding:10px 12px; margin:4px 0 12px; }
-  .po .hd { display:flex; align-items:center; gap:8px; } .po .hd h3 { margin:0; font-size:17px; } .po .hd .btn { margin-left:auto; min-height:34px; padding:5px 12px; font-size:13px; }
+  .po .hd { display:flex; align-items:center; gap:8px; padding-bottom:10px; margin-bottom:2px; border-bottom:1px solid var(--linea); }
+  .po .hd + datalist + .it { border-top:0; } .po .hd h3 { margin:0; font-size:17px; } .po .hd .btn { margin-left:auto; min-height:34px; padding:5px 12px; font-size:13px; }
   .po .it { border-top:1px solid var(--linea); padding:10px 0; } .po .it:first-of-type { border-top:0; }
   .po .tx { font-size:14px; color:var(--tinta-suave); font-style:italic; white-space:pre-wrap; } .po .tx small { font-style:normal; margin-left:6px; }
   .po .dest { font-size:14px; margin-top:4px; } .po .dest b { color:var(--verde-profundo); } .po .dest.duda b { color:var(--alerta); }
@@ -195,6 +197,13 @@
   .pl .fr b { display:block; font-size:14.5px; } .pl .fr small { display:block; color:var(--tinta-suave); font-size:12px; line-height:1.3; }
   .pl .fr .px { font-weight:700; font-size:13.5px; } .pl .fr .px.rojo { color:var(--alerta); } .pl .fr .px.hoy { color:var(--verde-profundo); }
   .pl .cab { display:grid; grid-template-columns:1.15fr 1.25fr 1fr; gap:8px; padding:5px 10px; font-size:10.5px; font-weight:700; color:var(--tinta-suave); text-transform:uppercase; letter-spacing:.05em; border-top:1px solid var(--linea); }
+  .fila3 { display:grid; grid-template-columns:1fr 1fr 56px; gap:8px; margin:0 0 12px; } .fila3 .btn { min-width:0; padding:10px 6px; }
+  details.grp { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; overflow:hidden; }
+  details.grp > summary { border:0 !important; border-radius:0 !important; }
+  details.grp[open] > summary { border-bottom:1px solid var(--linea) !important; margin-bottom:0 !important; }
+  details.grp .lb { border:0; border-radius:0; margin:0; }
+  .lb .sub { background:var(--verde-claro) !important; color:var(--verde-profundo) !important; }
+  .lb .tipo { background:var(--crema); }
   .segmentos button.sucia::after { content:' •'; color:var(--dorado); }
   .guardar-fijo .txt { font-size:13px; color:var(--tinta-suave); margin-right:auto; }
   .modal-fondo { position:fixed; inset:0; z-index:90; background:rgba(20,35,29,.5); display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -269,8 +278,8 @@
   a.btn { text-decoration:none; color:var(--tinta); display:flex; align-items:center; justify-content:center; }
   .grid2 > div { display:flex; flex-direction:column; }
   .grid2 > div > :last-child { margin-top:auto; }   /* las cajas de una fila quedan alineadas abajo aunque una tenga texto de ayuda */
-  .guardar-fijo { position:sticky; bottom:0; padding:10px 0 calc(10px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--crema) 30%); z-index:2; display:flex; align-items:center; gap:10px; }
-  .guardar-fijo .btn { flex:none; min-width:130px; } .guardar-fijo:not(.activa) .btn { opacity:.5; }
+  .guardar-fijo { position:sticky; bottom:0; margin:12px -16px 0; padding:10px 16px calc(10px + env(safe-area-inset-bottom)); background:var(--tinta); z-index:2; display:none; align-items:center; gap:10px; }
+  .guardar-fijo.activa { display:flex; } .guardar-fijo .txt { color:var(--crema) !important; } .guardar-fijo .btn { flex:none; min-width:120px; min-height:42px; background:var(--dorado); border-color:var(--dorado); color:var(--tinta); font-weight:700; }
   .pregunta { font-size:13px; font-style:italic; color:var(--tinta-suave); margin:-2px 0 6px; }
 
   input, select, textarea { width:100%; border:1px solid var(--linea); border-radius:12px; padding:11px 12px; background:var(--blanco); }
@@ -359,7 +368,7 @@
 
 <script>
 const VERSION = '49';
-const COMPILACION = '49';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '49.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -381,7 +390,7 @@ const ICON = {
 const ESTADOS = ['NUEVO','EN CONTACTO','CLIENTE','EN PAUSA','DESCARTADO'];
 const ESTADOS_CADENCIA_APP = ['NUEVO','EN CADENCIA'];
 const ETAPA_COMPRA = ['','OPCIONES','VISITAS','RESERVA','CERRADA'];
-const DONDE_BUSCAR = [['Zonaprop','https://www.zonaprop.com.ar'],['Argenprop','https://www.argenprop.com'],['Mercado Libre','https://inmuebles.mercadolibre.com.ar'],
+const DONDE_BUSCAR = [['Roomix','https://roomix.ai/'],['Zonaprop','https://www.zonaprop.com.ar'],['Argenprop','https://www.argenprop.com'],['Mercado Libre','https://inmuebles.mercadolibre.com.ar'],
   ['RE/MAX','https://www.remax.com.ar'],['Century 21','https://www.century21.com.ar'],['Coldwell Banker','https://www.coldwellbanker.com.ar'],['Redsuma',''],['Pallarols Santander',''],['Roilands','']];
 const ETAPA_COMPRA_TXT = ['Buscando','Opciones enviadas','Visita','Reserva','Cerrada'];
 const ETAPA_C_TXT = { OPCIONES:'Opciones enviadas', VISITAS:'Visita', RESERVA:'Reserva' };
@@ -876,8 +885,8 @@ function pintarHoy(r, viejo) {
   };
   // Tarea sin persona (anotada con el atajo): "Hecho" la saca
   const pintarTarea = x => el('div', { cls:'t' + (x.atrasado > 0 ? ' urge' : '') },
-    el('div', { cls:'f1' }, el('span', { cls:'nom' }, x.texto), el('span', { cls:'dias' + (x.atrasado > 0 ? ' rojo' : '') }, x.hora || (x.atrasado > 0 ? 'atrasada' : 'hoy'))),
-    el('div', { cls:'dato' }, 'Tarea' + (x.atrasado > 0 ? ' · atrasada ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días') : '')),
+    el('div', { cls:'f1' }, el('span', { cls:'nom' }, x.texto), el('span', { cls:'dias' + (x.atrasado > 0 ? ' rojo' : '') }, x.hora || (x.atrasado > 0 ? 'atrasado' : 'hoy'))),
+    el('div', { cls:'dato' }, 'Hacer' + (x.atrasado > 0 ? ' · atrasado ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días') : '')),
     el('div', { cls:'acc' }, el('button', { cls:'btn pri', onclick: e => { const t = e.currentTarget.closest('.t'); t.remove();
       api('api_tareaHecha', x.fila).then(() => toast('Hecha')).catch(() => verHoy()); } }, 'Hecho')));
   const visitas = L('visitas').map(v => Object.assign({ _t:'visita' }, v, { resumen:'' }));
@@ -929,7 +938,7 @@ const GRUPOS_CARTERA = [
 const enCartera = x => GRUPOS_CARTERA.some(g => g[1](x));
 const sinPaso = x => !x.vuelveFecha;
 const FILTROS = [['todos', 'Todos', () => true], ['comp', 'Compran', x => GRUPOS_CARTERA.slice(4).some(g => g[1](x))], ['vend', 'Venden', x => GRUPOS_CARTERA.slice(0, 4).some(g => g[1](x))],
-  ['sin', 'Sin próximo paso', sinPaso]];
+  ['sin', 'Sin paso', sinPaso]];
 function enHoyIds() {
   try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv'))
     return new Set(Object.keys(BLOQUE_TXT).flatMap(k => (c.r[k] || []).map(x => String(x.id)))); } catch (e) {}
@@ -1000,7 +1009,7 @@ function paraOrdenar(caja, alCambiar) {
     ? el('div', { cls:'dest' }, '→ ', el('b', {}, (x.nota ? 'Nota' : '') + (x.nota && x.fecha ? ' + ' : '') + (x.fecha ? 'paso ' + fechaTxt(x.fecha, x.hora) : '') + (!x.nota && !x.fecha ? 'Nada para guardar' : '') + ' en ' + x.nombre),
         x.fecha && x.paso ? ': ' + x.paso : '')
     : x.candidatos && x.candidatos.length ? el('div', { cls:'dest duda' }, '→ ', el('b', {}, '¿Cuál?'), ' Elegí abajo')
-    : el('div', { cls:'dest' }, '→ ', el('b', {}, 'Tarea ' + (fechaTxt(x.fecha, x.hora) || 'hoy')), ': ' + (x.paso || x.nota || x.texto));
+    : el('div', { cls:'dest' }, '→ ', el('b', {}, 'Hacer ' + (fechaTxt(x.fecha, x.hora) || 'hoy')), ': ' + (x.paso || x.nota || x.texto));
   const listo = x => !(x.candidatos && x.candidatos.length && !x.id) && !(x.id && !x.nota && !x.fecha);
   const confirmar = xs => {
     xs.forEach(x => (items = items.filter(y => y !== x))); pintar();
@@ -1009,13 +1018,19 @@ function paraOrdenar(caja, alCambiar) {
       .catch(() => cargar());
   };
   const editor = (x, nodo) => {
-    const persona = el('input', { list:'po-contactos', value: x.nombre || '', placeholder:'Sin persona (queda como tarea)' });
+    const persona = el('input', { list:'po-contactos', value: x.nombre || '', placeholder:'Sin persona (queda en Hoy como "Hacer")' });
     const nota = el('textarea', { style:'min-height:60px' }); nota.value = x.nota || '';
     const paso = el('input', { value: x.paso || '', placeholder:'Ej.: Confirmarle la visita' });
     const fecha = el('input', { type:'date', value: x.fecha || '' }), hora = el('input', { type:'time', value: x.hora || '', step:'300' });
     const campo = (t, i, ancho) => el('div', { cls: ancho ? 'ancho2' : '' }, el('label', {}, t), i);
+    // Día y hora solo si los agregás: el iPhone muestra la fecha de hoy en los campos vacíos y parece que ya estuvieran puestos
+    const diaHora = el('div', { cls:'ancho2 ed', style:'margin:0' }, campo('Día', fecha), campo('Hora (aviso en el calendario)', hora),
+      el('a', { href:'#', cls:'ancho2', style:'font-size:13px;color:var(--alerta)', onclick: e => { e.preventDefault(); fecha.value = ''; hora.value = ''; diaHora.style.display = 'none'; agregar.style.display = ''; } }, 'Sacar día y hora'));
+    const agregar = el('button', { cls:'btn ancho2', type:'button', onclick: () => { if (!fecha.value) fecha.value = isoLocal(new Date()); diaHora.style.display = ''; agregar.style.display = 'none'; } }, '+ Agregar día y hora');
+    if (x.fecha) agregar.style.display = 'none'; else diaHora.style.display = 'none';
     nodo.replaceChildren(el('div', { cls:'tx' }, '“' + x.texto + '”'), el('div', { cls:'ed' },
-      campo('Persona', persona, true), campo('Nota (queda en su historial)', nota, true), campo('Próximo paso o tarea', paso, true), campo('Día', fecha), campo('Hora', hora)),
+      campo('Persona', persona, true), campo('Nota (queda en su historial)', nota, true),
+      campo('Próximo paso de la persona (o, sin persona, qué hacer)', paso, true), agregar, diaHora),
       el('div', { cls:'bt' }, el('button', { cls:'btn pri', onclick: () => {
         const nom = persona.value.trim(), c = contactos.find(k => k.nombre === nom);
         if (nom && !c) return toast('No encontré a "' + nom + '": elegilo de la lista', true);
@@ -1574,13 +1589,12 @@ async function abrir(id, seg, ya) {
     const dir = [d['VENDE DIRECCION'], d['VENDE BARRIO']].filter(Boolean).join(', ');
     const q = '"' + (d['VENDE DIRECCION'] || '') + '" (site:zonaprop.com.ar OR site:argenprop.com OR site:mercadolibre.com.ar)';
     const compra = !!d['BUSCA TIPO'];
-    const herramientas = el('details', { style:'margin-top:14px' },
-      el('summary', { style:'font-weight:600;cursor:pointer' }, 'Hacerlo ahora'),
-      el('div', { cls:'grid2', style:'margin-top:10px' },
-        r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(r.wa)) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
-        el('button', { cls:'btn', onclick: () => accion('LLAMADA_NO') }, 'Llamé y no contestó'),
-        el('button', { cls:'btn sec ancho2', icon:'wa', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }, 'WhatsApp')),
-      compra ? el('details', { style:'margin-top:12px' }, el('summary', { style:'font-weight:600;cursor:pointer' }, 'Mandar opciones (' + mCompra.length + ' sin mandar)'), tarjetaOpciones(true)) : '',
+    // Arriba de Qué pasó: Llamar · No contestó · WhatsApp (solo ícono), en una fila
+    const botonesContacto = el('div', { cls:'fila3' },
+      r.wa ? el('button', { cls:'btn pri', icon:'tel', onclick: () => abrirExterno(waUrl(r.wa)) }, 'Llamar') : el('button', { cls:'btn', disabled:'' }, 'Sin tel'),
+      el('button', { cls:'btn', onclick: () => accion('LLAMADA_NO') }, 'No contestó'),
+      el('button', { cls:'btn sec ico', icon:'wa', 'aria-label':'WhatsApp', onclick: () => r.wa ? abrirExterno(waUrl(r.wa)) : toast('Falta un teléfono válido', true) }));
+    const herramientas = el('div', {},
       vendedorNoCaptado ? el('div', { style:'margin-top:12px' },
         dir ? el('button', { cls:'btn ancho', onclick: () => abrirExterno('https://www.google.com/search?q=' + encodeURIComponent(q)) }, 'Buscar en portales: ' + dir)
             : el('div', { cls:'aviso' }, 'Cargá la dirección en Venta para buscarla en los portales.'),
@@ -1593,6 +1607,7 @@ async function abrir(id, seg, ya) {
     return [
       el('div', { style:'margin-bottom:8px' }, temp, el('div', { cls:'actual', style:'margin:6px 2px 0' }, linea)),
       sobre,
+      botonesContacto,
       el('div', { cls:'card' }, el('h3', {}, 'Qué pasó'), tipo, el('div', { style:'margin-top:10px' }, hablo),
         el('label', { style:'margin-top:10px' }, 'Últimos registros'),
         hechos.length ? hechos.map(x => el('div', { style:'margin-bottom:4px;font-size:14px;white-space:pre-wrap' }, el('span', { cls:'actual' }, x.fecha + ' · '), det(x), editar(x)))
@@ -1607,6 +1622,7 @@ async function abrir(id, seg, ya) {
           el('button', { cls:'chip', type:'button', style:'margin-top:8px', onclick: () => { proxTxt.value = r.jugada.jugada; proxTxt.focus(); } }, 'Usar esto')) : '',
         el('div', { cls:'pregunta', style:'margin-top:6px' }, 'Si registrás algo en Qué pasó, el próximo paso es obligatorio (o "Lo decide el CRM").'),
         herramientas),
+      compra ? el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline' }, 'Mandar opciones (' + mCompra.length + ' sin mandar)')), tarjetaOpciones(true)) : '',
       msjs.length ? el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline' }, 'Mensajes')), tarjetaMensaje()) : '',
       tarjetaArchivar()
     ];
