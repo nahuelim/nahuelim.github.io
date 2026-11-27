@@ -125,6 +125,7 @@
   .t.CALIENTE { --banda:#C0392B; } .t.TIBIO { --banda:#C9A227; } .t.FRIO { --banda:#4A7FA7; } .t.VEND { --banda:var(--verde-profundo); }   /* vendedor: color propio */
   .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:4px 0 8px; }
   .grid4 .chip { border-radius:10px; text-align:center; padding:6px 2px; font-size:13px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .grid4 .chip.rojo { color:var(--alerta); } .grid4 .chip.rojo.on { background:var(--alerta); color:var(--crema); border-color:var(--alerta); }
   .grid4 .chip em { display:block; font-style:normal; font-weight:700; font-size:15px; margin:1px 0 0; }   /* el número abajo: todos del mismo tamaño */
   details.grp { margin-bottom:6px; } details.grp > summary { list-style:none; cursor:pointer; background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:10px 12px; }
   /* Búsquedas: lista compacta (filas separadas por líneas, sin color): para comparar a varios de un vistazo */
@@ -168,6 +169,32 @@
   .t .acc { display:flex; gap:8px; margin-top:12px; }
   .t .acc .btn { flex:1; min-height:48px; font-weight:600; font-size:15px; }
   .btn.ico, .t .acc .btn.ico, .fila > .btn.ico { flex:0 0 52px; padding:0; }
+  /* Buscador general */
+  .busca-g { position:sticky; top:0; z-index:45; background:var(--tinta); padding:0 12px 10px; }
+  .busca-g input { width:100%; border:0; border-radius:12px; padding:10px 14px; font-size:16px; background:var(--crema); }
+  #resBusca { display:none; position:absolute; left:0; right:0; top:100%; max-height:75vh; overflow:auto; background:var(--crema); box-shadow:0 12px 30px rgba(20,35,29,.25); padding:6px 12px 14px; }
+  #resBusca.on { display:block; }
+  #resBusca h4 { margin:12px 2px 6px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta-suave); }
+  #resBusca .rb { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; padding:9px 12px; margin-bottom:6px; cursor:pointer; font-size:14px; }
+  #resBusca .rb b { display:block; font-size:15px; } #resBusca .rb small { color:var(--tinta-suave); display:block; }
+  #resBusca .rb .lk { display:flex; gap:14px; margin-top:4px; } #resBusca .rb .lk a { color:var(--verde-profundo); font-weight:600; }
+  .linea-po { margin:2px 4px 8px; cursor:pointer; color:var(--verde-profundo); }
+  /* Para ordenar (arriba de Cartera) */
+  .po { background:var(--blanco); border:2px solid var(--dorado); border-radius:16px; padding:10px 12px; margin:4px 0 12px; }
+  .po .hd { display:flex; align-items:center; gap:8px; } .po .hd h3 { margin:0; font-size:17px; } .po .hd .btn { margin-left:auto; min-height:34px; padding:5px 12px; font-size:13px; }
+  .po .it { border-top:1px solid var(--linea); padding:10px 0; } .po .it:first-of-type { border-top:0; }
+  .po .tx { font-size:14px; color:var(--tinta-suave); font-style:italic; white-space:pre-wrap; } .po .tx small { font-style:normal; margin-left:6px; }
+  .po .dest { font-size:14px; margin-top:4px; } .po .dest b { color:var(--verde-profundo); } .po .dest.duda b { color:var(--alerta); }
+  .po .bt { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; } .po .bt .btn { min-height:36px; padding:6px 12px; font-size:13px; }
+  .po .ed { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; } .po .ed .ancho2 { grid-column:1 / -1; } .po .ed label { font-size:12px; color:var(--tinta-suave); margin:0; }
+  /* Cartera tipo planilla */
+  .pl { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+  .pl .gh { background:var(--crema); padding:8px 10px; font-weight:700; color:var(--tinta-suave); font-size:12px; letter-spacing:.05em; text-transform:uppercase; display:flex; border-top:1px solid var(--linea); }
+  .pl .gh:first-child { border-top:0; } .pl .gh span { margin-left:auto; }
+  .pl .fr { display:grid; grid-template-columns:1.15fr 1.25fr 1fr; gap:8px; padding:9px 10px; border-top:1px solid var(--linea); cursor:pointer; font-size:13px; align-items:start; }
+  .pl .fr b { display:block; font-size:14.5px; } .pl .fr small { display:block; color:var(--tinta-suave); font-size:12px; line-height:1.3; }
+  .pl .fr .px { font-weight:700; font-size:13.5px; } .pl .fr .px.rojo { color:var(--alerta); } .pl .fr .px.hoy { color:var(--verde-profundo); }
+  .pl .cab { display:grid; grid-template-columns:1.15fr 1.25fr 1fr; gap:8px; padding:5px 10px; font-size:10.5px; font-weight:700; color:var(--tinta-suave); text-transform:uppercase; letter-spacing:.05em; border-top:1px solid var(--linea); }
   .segmentos button.sucia::after { content:' •'; color:var(--dorado); }
   .guardar-fijo .txt { font-size:13px; color:var(--tinta-suave); margin-right:auto; }
   .modal-fondo { position:fixed; inset:0; z-index:90; background:rgba(20,35,29,.5); display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -316,11 +343,12 @@
   <span class="fecha" id="fecha"></span>
   <button id="bMenu" class="burger" aria-label="Menú"></button>
 </div>
+<div class="busca-g"><input id="qGlobal" type="search" placeholder="Buscar personas, propiedades o notas" autocomplete="off" enterkeyhint="search"><div id="resBusca"></div></div>
 <main id="lista"></main>
 <nav class="tabs">
-  <button id="tHoy" class="on"><span data-i="hoy"></span>Hoy</button>
+  <button id="tBuscar" class="on"><span data-i="cartera"></span>Cartera</button>
+  <button id="tHoy"><span data-i="hoy"></span>Hoy</button>
   <button id="tNuevo"><span data-i="mas"></span>Nuevo</button>
-  <button id="tBuscar"><span data-i="buscar"></span>Cartera</button>
 </nav>
 <div id="ficha"></div>
 <div id="velo"></div>
@@ -330,8 +358,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '48';
-const COMPILACION = '48.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '49';
+const COMPILACION = '49';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -339,6 +367,7 @@ const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
 const ICON = {
   hoy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
   buscar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  cartera:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg>',
   mas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
   cerrar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   tel:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
@@ -758,29 +787,10 @@ async function verHoy() {
   if (!semanaAbierta) semanaDatos = null;
   else api('api_semana').then(x => { semanaDatos = x; if (semanaCuerpo) pintarSemana(semanaCuerpo, x); }).catch(() => {});
 }
-// Buscador de Hoy: para encontrar a alguien (ej. te escribió después de marcar "no contestó") sin ir a la Cartera.
-// Es un solo nodo: Hoy se repinta cuando contesta el servidor y el texto que estás escribiendo no se pierde.
-let buscaHoy = null;
-function buscadorHoy() {
-  if (buscaHoy) return buscaHoy;
-  const res = el('div', { cls:'hoy-res' });
-  let t, ultimo = '';
-  const inp = el('input', { type:'search', placeholder:'Buscar persona (nombre o teléfono)', autocomplete:'off', enterkeyhint:'search',
-    oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); } });
-  const buscar = async () => {
-    const q = inp.value.trim(); ultimo = q;
-    if (q.length < 2) return res.replaceChildren();
-    const xs = await api('api_buscar', q);
-    if (q === ultimo) res.replaceChildren(...(xs.length ? xs.map(x => filaCartera(x)) : [el('div', { cls:'vacio' }, 'No encontré a nadie.')]));
-  };
-  return (buscaHoy = el('div', {}, inp, res));
-}
 function pintarHoy(r, viejo) {
   const l = document.getElementById('lista');
   LINKS = r.links || {};
-  const bh = buscadorHoy(), foco = bh.contains(document.activeElement);
-  l.replaceChildren(bh);
-  if (foco) bh.querySelector('input').focus();
+  l.replaceChildren();
   if (viejo) l.append(el('div', { cls:'actual', style:'margin:0 2px 6px' }, 'Actualizando…'));
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   const L = k => r[k] || [];
@@ -788,29 +798,13 @@ function pintarHoy(r, viejo) {
   // Cuántos muestra cada bloque (Llamar y Mensajes de a 5, Revivir de a 3) y qué bloques abriste: se recuerda en el día
   const estado = (() => { try { const e = JSON.parse(localStorage.getItem('crm_hoy_ui') || '{}'); return e.dia === hoyISO ? e : { dia: hoyISO, ver: {}, abiertos: {} }; } catch (e) { return { dia: hoyISO, ver: {}, abiertos: {} }; } })();
   const guardarEstado = () => localStorage.setItem('crm_hoy_ui', JSON.stringify(estado));
-  const PASO = { llamar:5, mensajes:5, revivir:3 };
+  const PASO = { parahoy:12, leads:6, tiempo:5 };
 
   // ponytail: sin contadores arriba: los títulos de los bloques ya dicen cuántos hay y se ponen rojos si hay algo urgente
   l.append(semana());
-  // ¿Te respondieron?: los mensajes a gente importante (antes de las 16 vuelven a las 17:30; después, al día siguiente)
-  {
-    const xs = L('respuestas');
-    if (xs.length) {
-      const marcar = (x, tipo, msj, luego) => async e => {
-        const card = e.currentTarget.closest('.t');
-        if (!luego) { sacarDeHoy(card, x.id); return guardarPorDetras(api('api_accion', x.id, tipo), msj); }
-        card.style.opacity = .4;   // "Quiere visitar" abre la ficha: espera a que quede en Visita
-        await api('api_accion', x.id, tipo); toast(msj); luego();
-      };
-      const cuerpo = el('div', {}, ...xs.map(x => item(Object.assign({}, x, { jugada: '' }), x.cadencia ? 'Lead' : ETAPA_C_TXT[x.etapaC] || '', { botones: x.feedback
-        ? [el('button', { cls:'btn pri', onclick: marcar(x, 'QUIERE_VISITAR', 'Pasó a Visita: agendá la visita', () => { sessionStorage.setItem('crm_visita', x.id); abrir(x.id, 'agenda'); }) }, 'Quiere visitar'),
-           el('button', { cls:'btn', onclick: marcar(x, 'MAS_OPCIONES', 'Quedó en Mandar opciones') }, 'Mandar más'),
-           el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', 'Te lo vuelvo a mostrar') }, 'Todavía no')]
-        : [el('button', { cls:'btn pri', onclick: () => { sessionStorage.setItem('crm_respondio', x.id); abrir(x.id, 'contacto'); } }, 'Respondió'),
-           el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', x.cadencia ? 'Sigue su cadencia' : 'Vuelve mañana para el seguimiento') }, 'Todavía no')] })));
-      l.append(el('details', { cls:'blk', id:'sec-respuestas', open:'' }, el('summary', {}, el('div', { cls:'bloque' }, el('h3', {}, '¿Te respondieron?'), el('span', { cls:'c' }, xs.length), el('small', {}, 'marcá qué pasó'))), cuerpo));
-    }
-  }
+  // Para ordenar: lo que anotaste con el atajo y todavía no ordenaste (se ordena en Cartera)
+  if (r.paraOrdenar) l.append(el('div', { cls:'actual linea-po', onclick: () => verBuscar() },
+    el('b', {}, r.paraOrdenar + (r.paraOrdenar === 1 ? ' nota para ordenar' : ' notas para ordenar')), ' · en Cartera ›'));
   // Leads nuevos de C21 desde la última vez que los viste: tocar la línea abre Llamar; × la cierra. Los dos los marcan como vistos.
   {
     const c21 = L('llamar').filter(x => x.fuente === 'C21').map(x => String(x.id));
@@ -843,7 +837,7 @@ function pintarHoy(r, viejo) {
   const sec = (k, titulo, ayuda, vacio, xs, pintar, pie) => {
     const paso = PASO[k], ver = paso ? (estado.ver[k] || paso) : Infinity;
     const cuerpo = el('div');
-    const d = el('details', { cls:'blk' + (xs.length ? '' : ' vacio'), id:'sec-' + k, open: estado.abiertos[k] ? '' : undefined },
+    const d = el('details', { cls:'blk' + (xs.length ? '' : ' vacio'), id:'sec-' + k, open: (estado.abiertos[k] ?? k !== 'tiempo') ? '' : undefined },
       el('summary', {}, el('div', { cls:'bloque' }, el('h3', { cls: xs.some(urgente) ? 'rojo' : '' }, titulo), xs.length ? el('span', { cls:'c' }, xs.length) : '', ayuda ? el('small', {}, ayuda) : '')),
       cuerpo);
     d.addEventListener('toggle', () => { estado.abiertos[k] = d.open; guardarEstado(); });
@@ -858,47 +852,84 @@ function pintarHoy(r, viejo) {
   const ETQ_V = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Con otra inmo', 'EN VENTA':'En venta' };
   const esComprador = x => !x.etapa && x.estado !== 'NUEVO';
 
-  // 1. Hoy sí o sí: confirmar las visitas y lo que agendaste vos (hoy y atrasado)
-  const visitas = L('visitas').map(v => Object.assign({ _visita:true }, v, { resumen:'' }));
-  sec('proximos', 'Hoy sí o sí', 'agendado y visitas', 'Nada agendado para hoy.', visitas.concat(L('proximos')), x => {
-    if (x._visita) return tarjetaEnvio(x, x.texto, tx => api('api_accion', x.id, 'AVISO', x.clave, tx));
+  // Hoy es una lista de tareas: lo que vence hoy o está atrasado, en un solo lugar. El estado de cada negocio está en Cartera.
+  // ¿Te respondieron? (antes de las 16 vuelve a las 17:30; después, al día siguiente)
+  const marcar = (x, tipo, msj, luego) => async e => {
+    const card = e.currentTarget.closest('.t');
+    if (!luego) { sacarDeHoy(card, x.id); return guardarPorDetras(api('api_accion', x.id, tipo), msj); }
+    card.style.opacity = .4;   // "Quiere visitar" abre la ficha: espera a que quede en Visita
+    await api('api_accion', x.id, tipo); toast(msj); luego();
+  };
+  const pintarRespuesta = x => item(Object.assign({}, x, { jugada: '' }), (x.cadencia ? 'Lead · ' : '') + '¿Te respondió?', { botones: x.feedback
+    ? [el('button', { cls:'btn pri', onclick: marcar(x, 'QUIERE_VISITAR', 'Pasó a Visita: agendá la visita', () => { sessionStorage.setItem('crm_visita', x.id); abrir(x.id, 'agenda'); }) }, 'Quiere visitar'),
+       el('button', { cls:'btn', onclick: marcar(x, 'MAS_OPCIONES', 'Quedó para mandarle más opciones') }, 'Mandar más'),
+       el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', 'Te lo vuelvo a mostrar') }, 'Todavía no')]
+    : [el('button', { cls:'btn pri', onclick: () => { sessionStorage.setItem('crm_respondio', x.id); abrir(x.id, 'contacto'); } }, 'Respondió'),
+       el('button', { cls:'btn', onclick: marcar(x, 'SIN_RESPUESTA', x.cadencia ? 'Sigue su cadencia' : 'Vuelve mañana para el seguimiento') }, 'Todavía no')] });
+  const pintarPaso = x => {
     const canal = String(x.canal || '');
     const boton = canal === 'Llamada' ? bLlamar(x) : canal === 'WhatsApp' ? bWhatsApp(x) : canal ? el('button', { cls:'btn sec', onclick: () => abrir(x.id, 'agenda') }, 'Agendar ' + canal.toLowerCase()) : bWhatsApp(x);
-    const cuando = [x.hora ? 'a las ' + x.hora : '', x.definidoHace !== null && x.definidoHace !== undefined ? 'Lo pusiste ' + (x.definidoHace === 0 ? 'hoy' : 'hace ' + x.definidoHace + (x.definidoHace === 1 ? ' día' : ' días')) : '',
-      canal ? 'por ' + canal : ''].filter(Boolean).join(' · ');
-    return item(Object.assign({}, x, { porque: x.porque, jugada: '' }), '', {
-      extra: el('div', { cls:'dato' }, cuando, x.atrasado > 0 ? el('span', { cls:'rojo' }, ' · atrasado ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días')) : ''),
+    const cuando = [x.hora ? 'a las ' + x.hora : '', canal ? 'por ' + canal : ''].filter(Boolean).join(' · ');
+    return item(Object.assign({}, x, { jugada: '' }), '', {
+      extra: cuando || x.atrasado > 0 ? el('div', { cls:'dato' }, cuando, x.atrasado > 0 ? el('span', { cls:'rojo' }, (cuando ? ' · ' : '') + 'atrasado ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días')) : '') : '',
       temp: esComprador(x), botones: [boton, bAbrir(x, 'Lo hice')] });
-  });
-  // 2. Todos los que ya sabés qué buscan y no les mandaste nada (o pidieron más), y el feedback del día después de mandarles
-  sec('opciones', 'Mandar opciones', 'opciones y feedback', 'Nadie esperando opciones.', L('opciones'), x => x.feedback ? filaEnvio(x) : item(x, '', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }));
-  // 3. Leads: las 3 llamadas (de a 5). Los que ya llamaste hoy van al final, con el aviso de probar en otro horario
+  };
+  // Tarea sin persona (anotada con el atajo): "Hecho" la saca
+  const pintarTarea = x => el('div', { cls:'t' + (x.atrasado > 0 ? ' urge' : '') },
+    el('div', { cls:'f1' }, el('span', { cls:'nom' }, x.texto), el('span', { cls:'dias' + (x.atrasado > 0 ? ' rojo' : '') }, x.hora || (x.atrasado > 0 ? 'atrasada' : 'hoy'))),
+    el('div', { cls:'dato' }, 'Tarea' + (x.atrasado > 0 ? ' · atrasada ' + x.atrasado + (x.atrasado === 1 ? ' día' : ' días') : '')),
+    el('div', { cls:'acc' }, el('button', { cls:'btn pri', onclick: e => { const t = e.currentTarget.closest('.t'); t.remove();
+      api('api_tareaHecha', x.fila).then(() => toast('Hecha')).catch(() => verHoy()); } }, 'Hecho')));
+  const visitas = L('visitas').map(v => Object.assign({ _t:'visita' }, v, { resumen:'' }));
+  // Orden: atrasado primero, después lo que tiene hora, después el resto (respuestas, visitas, opciones, seguimiento)
+  const peso = x => (x.atrasado > 0 ? 0 : x.hora ? 1 : 2);
+  const paraHoy = [].concat(
+    L('tareas').map(x => Object.assign({ _t:'tarea' }, x)),
+    L('proximos').map(x => Object.assign({ _t:'paso' }, x)),
+    L('respuestas').map(x => Object.assign({ _t:'resp' }, x)),
+    visitas,
+    L('opciones').map(x => Object.assign({ _t:'opc' }, x)),
+    L('atento').filter(x => x.tipo !== 'calificar').map(x => Object.assign({ _t:'seg' }, x)))
+    .map((x, i) => Object.assign(x, { _i:i })).sort((a, b) => peso(a) - peso(b) || (a.hora || '99').localeCompare(b.hora || '99') || a._i - b._i);
+  sec('parahoy', 'Para hoy', 'atrasado primero', 'Nada para hoy.', paraHoy, x =>
+    x._t === 'tarea' ? pintarTarea(x)
+    : x._t === 'paso' ? pintarPaso(x)
+    : x._t === 'resp' ? pintarRespuesta(x)
+    : x._t === 'visita' ? tarjetaEnvio(x, x.texto, tx => api('api_accion', x.id, 'AVISO', x.clave, tx))
+    : x._t === 'opc' ? (x.feedback ? filaEnvio(x) : item(x, 'Mandar opciones', { temp:true, botones:[bAbrir(x, 'Elegir opciones', true)] }))
+    : item(x, ETQ_V[x.etapa] || '', { temp: esComprador(x), botones: x.deuda ? [bAbrir(x, 'Elegir opciones', true)] : [bLlamar(x), bWhatsApp(x)] }));
+  // Leads: las 3 llamadas, los mensajes de la cadencia y los que ya contestaron pero falta saber qué buscan
   const yaHoy = x => x.intento > 0 && x.diasSin === 0;
-  sec('llamar', 'Llamar', 'leads nuevos', 'Nadie para llamar.', L('llamar').filter(x => !yaHoy(x)).concat(L('llamar').filter(yaHoy)), x => item(x, '', {
-    extra: yaHoy(x) ? el('div', { cls:'dato', style:'color:var(--dorado-oscuro);font-weight:600' }, 'Ya lo llamaste hoy: probá en otro horario') : '',
-    botones:[bLlamarLead(x), bNoContesto(x)] }));
-  // 4. Mensajes de la cadencia (de a 5)
-  sec('mensajes', 'Mensajes', 'cadencia', 'No hay mensajes para hoy.', L('mensajes'), x => filaEnvio(x));
-  // 5. Seguimiento: a quien le toca según su ritmo (temperatura, etapa del vendedor, fecha límite, por calificar)
-  sec('atento', 'Seguimiento', 'según el ritmo de cada uno', 'Nadie más para hoy.', L('atento'), x => item(x, x.tipo === 'calificar' ? 'Por calificar' : ETQ_V[x.etapa] || '', {
-    temp: esComprador(x), botones: x.deuda ? [bAbrir(x, 'Elegir opciones', true)] : [bLlamar(x), bWhatsApp(x)] }));
-  // Cuando tengas tiempo: relación (con cumpleaños, aniversarios y fiestas) y revivir
+  const leads = [].concat(L('llamar').filter(x => !yaHoy(x)).map(x => Object.assign({ _t:'llamar' }, x)), L('llamar').filter(yaHoy).map(x => Object.assign({ _t:'llamar' }, x)),
+    L('mensajes').map(x => Object.assign({ _t:'msj' }, x)), L('atento').filter(x => x.tipo === 'calificar').map(x => Object.assign({ _t:'calif' }, x)));
+  sec('leads', 'Leads', 'llamar, mensajes y calificar', 'Ningún lead para hoy.', leads, x =>
+    x._t === 'llamar' ? item(x, '', { extra: yaHoy(x) ? el('div', { cls:'dato', style:'color:var(--dorado-oscuro);font-weight:600' }, 'Ya lo llamaste hoy: probá en otro horario') : '',
+      botones:[bLlamarLead(x), bNoContesto(x)] })
+    : x._t === 'msj' ? filaEnvio(x)
+    : item(x, 'Calificar', { temp:true, botones:[bLlamar(x), bAbrir(x, 'Cargar búsqueda')] }));
+  // Cuando tengas tiempo: relación (cumpleaños, aniversarios, fiestas) y revivir, todo plegado
   l.append(el('div', { cls:'sep-hoy' }, 'Cuando tengas tiempo'));
-  sec('relacion', 'Relación', 'cumpleaños y saludos', 'Nadie de relación para hoy.', L('fechas').concat(L('fiestas'), L('relacion')), x => filaEnvio(x),
+  sec('tiempo', 'Relación y revivir', 'cumpleaños, saludos y base vieja', 'Nada por ahora.', L('fechas').concat(L('fiestas'), L('relacion'), L('revivir')), x => filaEnvio(x),
     (r.fiestasPendientes || 0) > L('fiestas').length && L('fiestas').length ? el('div', { cls:'actual', style:'margin:0 2px 8px' }, 'Hasta 20 saludos de fiestas por día. El resto aparece mañana.') : '');
-  // Revivir (de a 3), del más viejo al más nuevo. El servidor ya corta en el tope de seguridad de WhatsApp.
-  sec('revivir', 'Revivir', 'del más viejo al más nuevo', 'Nadie para revivir.', L('revivir'), x => filaEnvio(x));
   if (r.sinTel) l.append(el('div', { cls:'aviso' }, r.sinTel + ' contactos activos no tienen teléfono. Buscalos y completalos.'));
 }
 
 // ─── Cartera: con quién estás trabajando ───
-// Filtro (chips) + orden (desplegable) + buscador, y "¿A quién le sirve?" para cruzar una propiedad con los compradores.
-// Cartera activa por etapa. Buscando incluye "Opciones enviadas"; Captar incluye vendedores sin etapa, Prelisting y ACM; No captada incluye "Con otra".
-const FILTROS = [['todos','Todos', () => true], ['nuevos','Nuevos', x => x.nuevo], ['busc','Buscando', x => x.comprador && ['','OPCIONES'].includes(x.etapaC || '')],
-  ['vis','Visitas', x => x.etapaC === 'VISITAS'], ['res','Reservas', x => x.etapaC === 'RESERVA' || x.etapa === 'RESERVA'],
-  ['cap','Captar', x => x.vendedor && ['','CAPTAR','PRELISTING','ACM'].includes(x.etapa || '')], ['noc','No captada', x => ['NO CAPTADA','CON OTRA INMO'].includes(x.etapa)],
-  ['venta','En venta', x => ['EN VENTA','EN PUBLICACION'].includes(x.etapa)]];
-const ORDENES = [['contacto','Último contacto'], ['nuevos','Más nuevos'], ['temp','Temperatura']];
+// Cartera = la cartera activa: vendedores (Rol Vende, solapa Venta o etapa de venta) y compradores (sabés qué buscan).
+// Los leads sin búsqueda no van acá: están en Hoy → Leads. Agrupada por etapa, vendedores primero; una fila por persona.
+const GRUPOS_CARTERA = [
+  ['Vendedores · Captar', x => x.vendedor && ['', 'CAPTAR'].includes(x.etapa || '')],
+  ['Vendedores · No captada / Con otra', x => ['NO CAPTADA', 'CON OTRA INMO'].includes(x.etapa)],
+  ['Vendedores · Prelisting / ACM', x => ['PRELISTING', 'ACM'].includes(x.etapa)],
+  ['Vendedores · En venta', x => ['EN PUBLICACION', 'EN VENTA', 'RESERVA'].includes(x.etapa)],
+  ['Compradores · Buscando', x => x.comprador && !x.etapaC],
+  ['Compradores · Opciones enviadas', x => x.comprador && x.etapaC === 'OPCIONES'],
+  ['Compradores · Visita', x => x.comprador && x.etapaC === 'VISITAS'],
+  ['Compradores · Reserva', x => x.comprador && x.etapaC === 'RESERVA']];
+const enCartera = x => GRUPOS_CARTERA.some(g => g[1](x));
+const sinPaso = x => !x.vuelveFecha;
+const FILTROS = [['todos', 'Todos', () => true], ['comp', 'Compran', x => GRUPOS_CARTERA.slice(4).some(g => g[1](x))], ['vend', 'Venden', x => GRUPOS_CARTERA.slice(0, 4).some(g => g[1](x))],
+  ['sin', 'Sin próximo paso', sinPaso]];
 function enHoyIds() {
   try { const c = JSON.parse(localStorage.getItem(LS_HOY) || 'null'); if (c && c.dia === new Date().toLocaleDateString('sv'))
     return new Set(Object.keys(BLOQUE_TXT).flatMap(k => (c.r[k] || []).map(x => String(x.id)))); } catch (e) {}
@@ -918,48 +949,139 @@ function filaCartera(x, hoyIds, extra) {
     el('div', { cls:'dato' }, dato + (x.vuelve && x.vuelve.includes(' · ') ? ' · ' + x.vuelve.split(' · ').slice(1).join(' · ') : '')),
     extra || '');
 }
+// Fila de la planilla: Quién · Qué pasó · Próximo paso (en rojo si está atrasado o falta)
+function filaPlanilla(x) {
+  const hoyISO = isoLocal(new Date()), vf = aISO(x.vuelveFecha || '');
+  const [fechaTxt, ...resto] = String(x.vuelve || '').split(' · ');
+  const accion = resto.join(' · ') || (String(x.vuelve).includes('(CRM)') ? 'lo decide el CRM' : '');
+  const px = !vf ? 'sin próximo paso' : vf === hoyISO ? 'hoy' + (x.hora ? ' ' + x.hora : '') : fechaTxt + (x.hora ? ' ' + x.hora : '');
+  const [ultFecha, ...ultTipo] = String(x.ultimo || '').split(' · ');
+  return el('div', { cls:'fr', onclick: () => abrir(x.id, 'contacto') },
+    el('span', {}, el('b', {}, String(x.nombre).split(' - ')[0]), x.resumen ? el('small', {}, x.resumen) : ''),
+    el('span', {}, x.ultimo ? el('small', {}, el('b', { style:'display:inline;font-size:12px' }, ultFecha), x.nota ? ' · ' + x.nota : ultTipo.length ? ' · ' + ultTipo.join(' · ') : '') : el('small', {}, 'sin contactos')),
+    el('span', { cls:'px' + (!vf || vf < hoyISO ? ' rojo' : vf === hoyISO ? ' hoy' : '') }, px, el('small', {}, !vf ? 'tocá para ponerlo' : accion)));
+}
 function verBuscar() {
   tabs('tBuscar');
   const l = document.getElementById('lista');
-  const res = el('div');
-  let datos = null, filtro = FILTROS.some(f => f[0] === sessionStorage.getItem('crm_filtro')) ? sessionStorage.getItem('crm_filtro') : 'todos', orden = sessionStorage.getItem('crm_orden') || 'contacto', t, ultimo = '';
-  const hoyIds = enHoyIds();
-  const ordenar_ = xs => xs.slice().sort(orden === 'nuevos' ? (a, b) => (b.altaTs || 0) - (a.altaTs || 0)
-    : orden === 'temp' ? null : (a, b) => (a.diasSin ?? 99999) - (b.diasSin ?? 99999));
+  const caja = el('div'), res = el('div'), po = el('div');
+  let datos = null, filtro = FILTROS.some(f => f[0] === sessionStorage.getItem('crm_filtro')) ? sessionStorage.getItem('crm_filtro') : 'todos';
   const pintar = () => {
     if (!datos) return res.replaceChildren(el('div', { cls:'vacio' }, 'Cargando la cartera…'));
+    const activos = datos.personas.filter(enCartera);
+    chips.replaceChildren(...FILTROS.map(([k, txt, fn]) => el('button', { cls:'chip seg' + (k === filtro ? ' on' : '') + (k === 'sin' ? ' rojo' : ''), type:'button',
+      onclick: () => { filtro = k; sessionStorage.setItem('crm_filtro', k); pintar(); } }, txt, el('em', {}, activos.filter(fn).length))));
     const f = FILTROS.find(x => x[0] === filtro)[2];
-    let xs = datos.personas.filter(f);
-    xs = orden === 'temp' ? ordenar(xs) : ordenar_(xs);
-    chips.replaceChildren(...FILTROS.map(([k, txt, fn]) => el('button', { cls:'chip seg' + (k === filtro ? ' on' : ''), type:'button',
-      onclick: () => { filtro = k; sessionStorage.setItem('crm_filtro', k); pintar(); } }, txt, el('em', {}, datos.personas.filter(fn).length))));
-    res.replaceChildren(...(xs.length ? xs.map(x => filaCartera(x, hoyIds)) : [el('div', { cls:'vacio' }, 'Nadie en este filtro.')]));
+    // Dentro de cada etapa: sin próximo paso arriba, después por fecha (lo atrasado primero)
+    const orden = (a, b) => (aISO(a.vuelveFecha || '') || '0') < (aISO(b.vuelveFecha || '') || '0') ? -1 : 1;
+    const bloques = GRUPOS_CARTERA.map(([titulo, fn]) => [titulo, activos.filter(x => fn(x) && f(x)).sort(orden)]).filter(g => g[1].length);
+    res.replaceChildren(bloques.length ? el('div', { cls:'pl' }, ...bloques.flatMap(([titulo, xs], i) => [el('div', { cls:'gh' }, titulo, el('span', {}, xs.length)),
+      i ? '' : el('div', { cls:'cab' }, el('span', {}, 'Quién'), el('span', {}, 'Qué pasó'), el('span', {}, 'Próximo paso')), ...xs.map(filaPlanilla)]))
+      : el('div', { cls:'vacio' }, 'Nadie en este filtro.'));
   };
   const chips = el('div', { cls:'grid4' });
-  const sel = el('select', { onchange: () => { orden = sel.value; sessionStorage.setItem('crm_orden', orden); pintar(); } },
-    ...ORDENES.map(([k, txt]) => el('option', { value:k, selected: k === orden ? '' : undefined }, txt)));
-  const lista = (titulo, xs) => res.replaceChildren(
-    el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:6px 2px' }, el('h2', { style:'margin:0' }, titulo + ' (' + xs.length + ')'),
-      el('button', { cls:'chip chico', type:'button', onclick: volver }, '‹ Cartera')),
-    ...(xs.length ? xs.map(x => filaCartera(x, hoyIds)) : [el('div', { cls:'vacio' }, 'Nadie.')]));
-  const volver = () => { inp.value = ''; ultimo = ''; sessionStorage.removeItem('crm_lista'); pintar(); };
-  const buscar = async () => {
-    const q = inp.value.trim();
-    if (q.length < 2) { if (!q) volver(); return; }
-    ultimo = q;
-    const xs = await api('api_buscar', q);
-    if (q === ultimo) lista('Resultados', xs);
-  };
-  const inp = el('input', { type:'search', placeholder:'Buscar por nombre o teléfono', autocomplete:'off', enterkeyhint:'search',
-    oninput: () => { clearTimeout(t); t = setTimeout(buscar, 350); },
-    onkeydown: e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); inp.blur(); } } });
-  l.replaceChildren(el('h2', {}, 'Cartera'), inp, chips,
-    el('div', { cls:'orden' }, 'Ordenar', sel, el('button', { cls:'btn pri', onclick: () => datos && verBusquedas(datos) }, 'Búsquedas')), res);
+  l.replaceChildren(po, el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:2px 2px 8px' }, el('h2', { style:'margin:0' }, 'Cartera'),
+    el('button', { cls:'btn sec', style:'flex:none;min-height:36px;padding:6px 14px;font-size:13px', onclick: () => datos && verBusquedas(datos) }, 'Búsquedas')), chips, res, caja);
   pintar();
-  api('api_cartera').then(g => { datos = g; if (!ultimo) pintar(); }).catch(() => {});
+  const cargar = () => api('api_cartera').then(g => { datos = g; pintar(); }).catch(() => {});
+  cargar();
+  paraOrdenar(po, cargar);
   // Desde Hoy: "N contactos sin forma de pago o temperatura" abre esa lista
-  if (sessionStorage.getItem('crm_lista') === 'incompletos') { ultimo = 'incompletos'; api('api_lista', 'incompletos').then(xs => lista('Para completar', xs)).catch(() => {}); }
+  if (sessionStorage.getItem('crm_lista') === 'incompletos') { sessionStorage.removeItem('crm_lista'); api('api_lista', 'incompletos').then(xs => caja.replaceChildren(
+    el('h2', { style:'margin:14px 2px 6px' }, 'Para completar (' + xs.length + ')'), ...xs.map(x => filaCartera(x, null)))).catch(() => {}); }
 }
+
+// Para ordenar: lo que anotaste con el atajo, con el destino que propone el CRM. Confirmar · Editar · Descartar; "Confirmar todo" arriba.
+// Se ve entero y abierto, para leerlo de una pasada. Lo que confirmás va a la ficha de esa persona (nota y/o próximo paso) o queda como tarea.
+function paraOrdenar(caja, alCambiar) {
+  let items = [], contactos = [];
+  const fechaTxt = (f, h) => { if (!f) return ''; const [y, m, d] = f.split('-'); const hoy = isoLocal(new Date()); return (f === hoy ? 'hoy' : d + '/' + m) + (h ? ' ' + h : ''); };
+  const destino = x => x.id
+    ? el('div', { cls:'dest' }, '→ ', el('b', {}, (x.nota ? 'Nota' : '') + (x.nota && x.fecha ? ' + ' : '') + (x.fecha ? 'paso ' + fechaTxt(x.fecha, x.hora) : '') + (!x.nota && !x.fecha ? 'Nada para guardar' : '') + ' en ' + x.nombre),
+        x.fecha && x.paso ? ': ' + x.paso : '')
+    : x.candidatos && x.candidatos.length ? el('div', { cls:'dest duda' }, '→ ', el('b', {}, '¿Cuál?'), ' Elegí abajo')
+    : el('div', { cls:'dest' }, '→ ', el('b', {}, 'Tarea ' + (fechaTxt(x.fecha, x.hora) || 'hoy')), ': ' + (x.paso || x.nota || x.texto));
+  const listo = x => !(x.candidatos && x.candidatos.length && !x.id) && !(x.id && !x.nota && !x.fecha);
+  const confirmar = xs => {
+    xs.forEach(x => (items = items.filter(y => y !== x))); pintar();
+    api('api_bandejaConfirmar', xs.map(x => ({ fila: x.fila, id: x.id, nota: x.nota, paso: x.paso, fecha: x.fecha, hora: x.hora })))
+      .then(r => { toast(r.length === 1 ? 'Listo: ' + r[0] : 'Listo: ' + r.length + ' ordenadas'); if (document.getElementById('tBuscar').classList.contains('on')) refrescar(); else if (alCambiar) alCambiar(); })
+      .catch(() => cargar());
+  };
+  const editor = (x, nodo) => {
+    const persona = el('input', { list:'po-contactos', value: x.nombre || '', placeholder:'Sin persona (queda como tarea)' });
+    const nota = el('textarea', { style:'min-height:60px' }); nota.value = x.nota || '';
+    const paso = el('input', { value: x.paso || '', placeholder:'Ej.: Confirmarle la visita' });
+    const fecha = el('input', { type:'date', value: x.fecha || '' }), hora = el('input', { type:'time', value: x.hora || '', step:'300' });
+    const campo = (t, i, ancho) => el('div', { cls: ancho ? 'ancho2' : '' }, el('label', {}, t), i);
+    nodo.replaceChildren(el('div', { cls:'tx' }, '“' + x.texto + '”'), el('div', { cls:'ed' },
+      campo('Persona', persona, true), campo('Nota (queda en su historial)', nota, true), campo('Próximo paso o tarea', paso, true), campo('Día', fecha), campo('Hora', hora)),
+      el('div', { cls:'bt' }, el('button', { cls:'btn pri', onclick: () => {
+        const nom = persona.value.trim(), c = contactos.find(k => k.nombre === nom);
+        if (nom && !c) return toast('No encontré a "' + nom + '": elegilo de la lista', true);
+        Object.assign(x, { id: c ? c.id : '', nombre: c ? c.nombre : '', candidatos: [], nota: nota.value.trim(), paso: paso.value.trim(), fecha: fecha.value, hora: hora.value });
+        if (!x.id && !x.paso && x.nota) { x.paso = x.nota; x.nota = ''; }
+        pintar();
+      } }, 'Listo'), el('button', { cls:'btn', onclick: pintar }, 'Cancelar')));
+  };
+  const fila = x => {
+    const nodo = el('div', { cls:'it' }, el('div', { cls:'tx' }, '“' + x.texto + '”', x.cuando ? el('small', {}, x.cuando) : ''), destino(x),
+      x.candidatos && x.candidatos.length && !x.id ? el('div', { cls:'bt' }, ...x.candidatos.map(c => el('button', { cls:'btn', onclick: () => { Object.assign(x, { id: c.id, nombre: c.nombre, candidatos: [] });
+        if (!x.nota && !x.fecha) x.nota = x.texto.replace(/^[^:]+:\s*/, ''); pintar(); } }, c.nombre))) : '',
+      el('div', { cls:'bt' },
+        listo(x) ? el('button', { cls:'btn sec', onclick: () => confirmar([x]) }, 'Confirmar') : '',
+        el('button', { cls:'btn', onclick: () => editor(x, nodo) }, 'Editar'),
+        el('button', { cls:'btn peligro', onclick: () => { items = items.filter(y => y !== x); pintar(); api('api_bandejaDescartar', x.fila).catch(() => cargar()); } }, 'Descartar')));
+    return nodo;
+  };
+  const pegar = () => {
+    const t = el('textarea', { style:'min-height:160px', placeholder:'Pegá acá lo que tenías en Notes (una nota por línea)' });
+    const fondo = el('div', { cls:'modal-fondo', onclick: e => { if (e.target === fondo) fondo.remove(); } }, el('div', { cls:'modal' }, el('h3', {}, 'Pegar notas'), t,
+      el('button', { cls:'btn pri ancho', onclick: async () => { if (!t.value.trim()) return; fondo.remove(); toast(await api('api_anotar', t.value)); cargar(); } }, 'Agregar a Para ordenar'),
+      el('button', { cls:'btn ancho', onclick: () => fondo.remove() }, 'Cancelar')));
+    document.body.append(fondo); t.focus();
+  };
+  const pintar = () => {
+    const ok = items.filter(listo);
+    caja.replaceChildren(items.length ? el('div', { cls:'po' },
+      el('div', { cls:'hd' }, el('h3', {}, 'Para ordenar'), el('span', { cls:'c', style:'font-size:13px;font-weight:700;color:var(--crema);background:var(--tinta);border-radius:999px;padding:1px 8px' }, items.length),
+        el('button', { cls:'btn', onclick: pegar }, 'Pegar')),
+      el('datalist', { id:'po-contactos' }, ...contactos.map(c => el('option', { value:c.nombre }))),
+      ...items.map(fila),
+      ok.length ? el('button', { cls:'btn pri ancho', style:'margin-top:6px', onclick: () => confirmar(ok) }, 'Confirmar todo (' + ok.length + ')') : '')
+      : el('div', { cls:'actual', style:'margin:0 2px 8px;display:flex;gap:8px;align-items:center' }, 'Para ordenar: nada pendiente.',
+        el('a', { href:'#', style:'margin-left:auto;color:var(--verde-profundo);font-weight:600', onclick: e => { e.preventDefault(); pegar(); } }, 'Pegar notas')));
+  };
+  const cargar = () => api('api_bandeja').then(b => { items = b.items; contactos = b.contactos; pintar(); }).catch(() => {});
+  pintar(); cargar();
+}
+
+// Buscador general: personas (nombre, teléfono, o lo que consultó, busca, vende o anotaste), propiedades (tus fichas) y notas del historial.
+(function () {
+  const inp = document.getElementById('qGlobal'), res = document.getElementById('resBusca');
+  let t, ultimo = '';
+  const cerrar = () => { res.classList.remove('on'); res.replaceChildren(); };
+  const buscar = async () => {
+    const q = inp.value.trim(); ultimo = q;
+    if (q.length < 2) return cerrar();
+    const r = await api('api_buscarTodo', q);
+    if (q !== ultimo) return;
+    const ir = id => { cerrar(); inp.blur(); abrir(id, 'contacto'); };
+    const sec = (titulo, xs, pintar) => xs.length ? [el('h4', {}, titulo + ' (' + xs.length + ')'), ...xs.map(pintar)] : [];
+    const nada = !r.personas.length && !r.fichas.length && !r.notas.length;
+    res.replaceChildren(
+      ...sec('Personas', r.personas, x => el('div', { cls:'rb', onclick: () => ir(x.id) }, el('b', {}, String(x.nombre).split(' - ')[0]),
+        el('small', {}, [x.resumen, x.estado === 'NUEVO' ? 'Lead' : x.estado].filter(Boolean).join(' · ')), x.por ? el('small', {}, x.por) : '')),
+      ...sec('Propiedades', r.fichas, f => el('div', { cls:'rb' }, el('b', {}, f.texto),
+        el('div', { cls:'lk' }, f.link ? el('a', { href:f.link, target:'_blank', rel:'noopener' }, 'Mía') : '', f.og ? el('a', { href:f.og, target:'_blank', rel:'noopener' }, 'Original ↗') : ''))),
+      ...sec('En lo que anotaste', r.notas, n => el('div', { cls:'rb', onclick: () => ir(n.id) }, el('b', {}, n.nombre), el('small', {}, n.fecha + ' · ' + n.texto))),
+      nada ? el('div', { cls:'vacio' }, 'No encontré nada con "' + q + '".') : '');
+    res.classList.add('on');
+  };
+  inp.addEventListener('input', () => { clearTimeout(t); t = setTimeout(buscar, 350); });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(t); buscar(); } if (e.key === 'Escape') { inp.value = ''; cerrar(); } });
+  document.addEventListener('click', e => { if (!e.target.closest('.busca-g')) cerrar(); });
+})();
 
 // Subgrupos por presupuesto: ordenados de mayor a menor, un tope sigue en el mismo subgrupo si está a 30k o menos del anterior.
 const SALTO_PRECIO = 30000;
@@ -1074,7 +1196,7 @@ function verAjustes() {
       (() => {   // Promedio de los últimos pedidos, por tipo: para saber qué tarda
         const xs = (() => { try { return JSON.parse(localStorage.getItem('crm_tiempos') || '[]'); } catch (e) { return []; } })(), por = {};
         xs.forEach(([fn, ms]) => (por[fn] = por[fn] || []).push(ms));
-        const NOM = { api_hoy:'Hoy', api_ficha:'Abrir ficha', api_lote:'Guardar', api_accion:'Botones', api_cartera:'Cartera', api_buscar:'Buscar', api_semana:'Esta semana', api_evento:'Crear evento' };
+        const NOM = { api_hoy:'Hoy', api_ficha:'Abrir ficha', api_lote:'Guardar', api_accion:'Botones', api_cartera:'Cartera', api_buscar:'Buscar', api_buscarTodo:'Buscar', api_bandeja:'Para ordenar', api_bandejaConfirmar:'Confirmar notas', api_semana:'Esta semana', api_evento:'Crear evento' };
         const filas = Object.entries(por).map(([fn, v]) => (NOM[fn] || fn) + ': ' + (v.reduce((a, b) => a + b, 0) / v.length / 1000).toFixed(1) + ' s (' + v.length + ')');
         return el('div', { cls:'actual' }, filas.length ? 'Tiempos promedio: ' + filas.join(' · ') : 'Tiempos: todavía no hay datos.');
       })(),
@@ -1713,8 +1835,8 @@ async function abrir(id, seg, ya) {
 }
 
 // Dónde está en la app: en qué bloque de Hoy (sale del Hoy guardado en el dispositivo) y en qué grupo de la cartera de Contactos
-const BLOQUE_TXT = { respuestas:'¿Te respondieron?', visitas:'Hoy sí o sí', fechas:'Relación', fiestas:'Relación', proximos:'Hoy sí o sí', opciones:'Mandar opciones',
-  llamar:'Llamar', mensajes:'Mensajes', atento:'Seguimiento', relacion:'Relación', revivir:'Revivir' };
+const BLOQUE_TXT = { tareas:'Para hoy', respuestas:'Para hoy', visitas:'Para hoy', fechas:'Cuando tengas tiempo', fiestas:'Cuando tengas tiempo', proximos:'Para hoy', opciones:'Para hoy',
+  llamar:'Leads', mensajes:'Leads', atento:'Para hoy', relacion:'Cuando tengas tiempo', revivir:'Cuando tengas tiempo' };
 const ETAPA_V_TXT = { CAPTAR:'Captar', PRELISTING:'Prelisting', ACM:'ACM', 'NO CAPTADA':'No captada', 'CON OTRA INMO':'Otra inmo', 'EN PUBLICACION':'Publicando', 'EN VENTA':'En venta', RESERVA:'Reserva' };
 function dondeEsta(d, id) {
   let hoy = null;
@@ -1731,7 +1853,7 @@ function dondeEsta(d, id) {
   const x = { nuevo: d.ESTADO === 'NUEVO', comprador: !!(d['BUSCA TIPO'] || d['BUSCA BARRIOS']), etapaC: d['ETAPA COMPRA'] || '', etapa,
     vendedor: !!(d['VENDE TIPO'] || (etapa && etapa !== 'VENDIDA') || ['VENTA','PARTE DE PAGO'].includes(d['BUSCA FORMA DE PAGO']) || ['VENDEDOR','AMBOS'].includes(d.ROL)) };
   const fuera = { 'EN PAUSA':'no (en pausa)', DESCARTADO:'no (archivado)' }[d.ESTADO] || (d.ESTADO === 'CLIENTE' && (!etapa || etapa === 'VENDIDA') ? 'no (cliente)' : '');
-  const cartera = fuera || FILTROS.slice(1).filter(f => f[2](x)).map(f => f[1]).join(' y ') || 'Todos';
+  const cartera = fuera || GRUPOS_CARTERA.filter(g => g[1](x)).map(g => g[0]).join(' y ') || (d.ESTADO === 'NUEVO' || !x.comprador ? 'no (lead: está en Hoy → Leads)' : 'no');
   return el('div', { cls:'donde' }, 'Hoy: ', el('b', {}, enHoy), ' · Cartera: ', el('b', {}, cartera));
 }
 
@@ -1739,9 +1861,10 @@ function dondeEsta(d, id) {
 // queda pendiente y se actualiza al cerrar la ficha. En la compu, donde Hoy se ve al lado, se actualiza en el momento.
 let hoyPendiente = false;
 function refrescar() {
-  if (!cfg().key || !document.getElementById('tHoy').classList.contains('on')) return;
+  const enHoy = document.getElementById('tHoy').classList.contains('on'), enCartera = document.getElementById('tBuscar').classList.contains('on');
+  if (!cfg().key || (!enHoy && !enCartera)) return;
   if (document.getElementById('ficha').classList.contains('abierta') && !esEscritorio()) { hoyPendiente = true; return; }
-  hoyPendiente = false; verHoy();
+  hoyPendiente = false; if (enHoy) verHoy(); else verBuscar();
 }
 
 // Al recargar: vuelve a la ficha abierta (y su solapa). sessionStorage dura mientras la pestaña o la app esté abierta.
@@ -1750,7 +1873,8 @@ const marcarActivo = () => { if (desbloqueado) sessionStorage.setItem('crm_activ
 window.addEventListener('pagehide', marcarActivo);     // una recarga cuenta como actividad, no como salida
 function arrancar() {
   desbloqueado = true; marcarActivo();
-  verHoy();
+  verBuscar();
+  api('api_hoy').then(r => { LINKS = r.links || {}; try { localStorage.setItem(LS_HOY, JSON.stringify({ dia: new Date().toLocaleDateString('sv'), r })); } catch (e) {} }).catch(() => {});
   const id = sessionStorage.getItem('crm_vista');
   if (id) abrir(id, sessionStorage.getItem('crm_seg') || '').catch(() => sessionStorage.removeItem('crm_vista'));
 }
