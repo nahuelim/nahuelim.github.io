@@ -371,7 +371,7 @@
 
 <script>
 const VERSION = '50';
-const COMPILACION = '50.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '50.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1031,7 +1031,7 @@ function paraOrdenar(caja, alCambiar) {
     // Persona: lista propia de coincidencias mientras escribís (la del iPhone no se ve bien); "+ Crear contacto nuevo" al final
     const nrm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     let elegida = x.id ? { id: x.id, nombre: x.nombre } : x.nuevo ? { nuevo: x.nuevo.nombre } : null;
-    const persona = el('input', { value: x.nombre || (x.nuevo ? x.nuevo.nombre : ''), autocomplete:'off', placeholder:'Escribí el nombre (vacío = sin persona, queda como "Hacer")' });
+    const persona = el('input', { value: x.nombre || (x.nuevo ? x.nuevo.nombre : ''), autocomplete:'off', autocorrect:'off', autocapitalize:'words', spellcheck:'false', placeholder:'Escribí el nombre (vacío = sin persona, queda como "Hacer")' });
     const sugs = el('div', { cls:'po-sugs' });
     const sugerir = () => {
       const q = nrm(persona.value); elegida = null; sugs.replaceChildren();
