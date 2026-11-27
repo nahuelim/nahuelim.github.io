@@ -183,6 +183,8 @@
   /* Para ordenar (arriba de Cartera) */
   .po { background:var(--blanco); border:2px solid var(--dorado); border-radius:16px; padding:10px 12px; margin:4px 0 12px; }
   .btn.mas { flex:none; width:38px; min-height:38px; padding:0; font-size:22px; font-weight:600; line-height:1; border-radius:50%; background:var(--verde-profundo); border-color:var(--verde-profundo); color:var(--crema); }
+  #borrador { position:fixed; left:12px; right:12px; bottom:calc(84px + var(--bottom)); z-index:66; background:var(--blanco); border:2px solid var(--alerta); border-radius:14px; padding:12px; box-shadow:0 10px 30px rgba(20,35,29,.25); font-size:14px; display:flex; flex-direction:column; gap:6px; max-width:560px; margin:0 auto; }
+  #borrador .txt { white-space:pre-wrap; background:var(--crema); border-radius:8px; padding:8px; max-height:120px; overflow:auto; color:var(--tinta-suave); }
   .po .hd { display:flex; align-items:center; gap:8px; padding-bottom:10px; margin-bottom:2px; border-bottom:1px solid var(--linea); }
   .po .hd + .it { border-top:0; }
   .po-sugs { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; } .po-sugs .btn { min-height:34px; padding:5px 10px; font-size:13px; } .po-sugs .btn.nuevo { color:var(--verde-profundo); border-style:dashed; }
@@ -371,7 +373,7 @@
 
 <script>
 const VERSION = '50';
-const COMPILACION = '50.5';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '50.6';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1342,7 +1344,7 @@ function imagenJpeg(file) {
 let segmentoActual = 'contacto';
 let fichaSucia = () => false;
 // Al cerrar con cambios sin guardar: Guardar y salir · Seguir editando · Salir sin guardar
-let guardarFicha = null;
+let guardarFicha = null, autoGuardarFicha = null, estadoAuto = null;
 function preguntarSalida(detalle) {
   return new Promise(ok => {
     const fin = v => { fondo.remove(); ok(v); };
@@ -1355,7 +1357,7 @@ function preguntarSalida(detalle) {
   });
 }
 function cerrarYa() {
-  fichaSucia = () => false; guardarFicha = null; document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista');
+  fichaSucia = () => false; guardarFicha = null; autoGuardarFicha = null; localStorage.removeItem('crm_borrador'); document.getElementById('ficha').classList.remove('abierta'); document.body.style.overflow = ''; sessionStorage.removeItem('crm_vista');
   if (hoyPendiente) refrescar();
 }
 async function cerrar() {
@@ -1411,6 +1413,20 @@ async function abrir(id, seg, ya) {
     return true;
   };
   guardarFicha = guardarTab;
+  p.addEventListener('input', e => { if (e.target.tagName === 'TEXTAREA') e.target.dataset.ed = '1'; }, true);
+  // Si salís de la app con cambios sin guardar: se guardan solos (keepalive: el pedido sigue aunque el iPhone suspenda la app).
+  // Si no se puede (ej. "Qué pasó" sin elegir el tipo), queda un borrador con lo que escribiste y un aviso al volver.
+  autoGuardarFicha = () => {
+    const x = juntar(); if (vacio(x)) return null;
+    const nombreF = String(d.NOMBRE || '').split(' - ')[0];
+    const borrador = error => localStorage.setItem('crm_borrador', JSON.stringify({ id, nombre: nombreF, error, ts: Date.now(),
+      textos: [...p.querySelectorAll('textarea[data-ed]')].map(t => t.value.trim()).filter(Boolean) }));   // solo lo que escribiste vos
+    if (x.error) { borrador(x.error); return 'borrador'; }
+    const { url, key } = cfg();
+    fetch(url, { method:'POST', keepalive:true, headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: JSON.stringify({ fn:'api_lote', args:[id, x.campos || {}, x.nota || '', x.proximo || null, x.accion || null], k: key }) })
+      .then(r => r.json()).then(j => { if (j.ok) localStorage.setItem('crm_autoguardado', nombreF); else borrador(j.error); }).catch(() => borrador('No se pudo guardar (sin conexión)'));
+    return 'guardado';
+  };
   // Las 4 acciones de una ficha, en una fila: Mía y Original solo abren; No mostrar la oculta para esta persona (un toque,
   // se deshace en "Ocultas"); No publicada la saca para todos (pide confirmación).
   const nombre1 = String(d.NOMBRE || '').split(' - ')[0].split(' ')[0];
@@ -1945,9 +1961,33 @@ function refrescar() {
 let desbloqueado = false;
 const marcarActivo = () => { if (desbloqueado) sessionStorage.setItem('crm_activo', Date.now()); };
 window.addEventListener('pagehide', marcarActivo);     // una recarga cuenta como actividad, no como salida
+// Aviso al volver a la app: lo que se guardó solo, o lo que quedó a medio editar (con lo que habías escrito)
+function avisoBorrador() {
+  const g = localStorage.getItem('crm_autoguardado');
+  if (g) { localStorage.removeItem('crm_autoguardado'); toast('Guardé lo que estabas editando de ' + g); }
+  let b = null; try { b = JSON.parse(localStorage.getItem('crm_borrador') || 'null'); } catch (e) {}
+  const viejo = document.getElementById('borrador'); if (viejo) viejo.remove();
+  if (!b) return;
+  const fichaAbierta = document.getElementById('ficha').classList.contains('abierta') && sessionStorage.getItem('crm_vista') === String(b.id);
+  if (fichaAbierta && fichaSucia()) return toast('Quedó a medio editar: ' + b.error, true);   // seguís en la ficha y lo escrito sigue ahí
+  const quitar = () => { localStorage.removeItem('crm_borrador'); caja.remove(); };
+  const caja = el('div', { id:'borrador' }, el('b', {}, 'Quedó a medio editar: ' + b.nombre), el('div', {}, b.error),
+    b.textos && b.textos.length ? el('div', { cls:'txt' }, b.textos.join('\n\n')) : '',
+    el('div', { cls:'fila' }, b.textos && b.textos.length ? el('button', { cls:'btn', onclick: () => navigator.clipboard.writeText(b.textos.join('\n\n')).then(() => toast('Copiado')) }, 'Copiar texto') : '',
+      el('button', { cls:'btn pri', onclick: () => { caja.remove(); abrir(b.id, 'contacto'); } }, 'Abrir'),
+      el('button', { cls:'btn peligro', onclick: quitar }, 'Descartar')));
+  document.body.append(caja);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { estadoAuto = autoGuardarFicha && document.getElementById('ficha').classList.contains('abierta') ? autoGuardarFicha() : null; return; }
+  if (estadoAuto === 'guardado') { const id = sessionStorage.getItem('crm_vista'); fichaSucia = () => false; if (id) abrir(id); }
+  estadoAuto = null;
+  setTimeout(avisoBorrador, 300);
+});
 function arrancar() {
   desbloqueado = true; marcarActivo();
   verBuscar();
+  setTimeout(avisoBorrador, 800);
   api('api_hoy').then(r => { LINKS = r.links || {}; try { localStorage.setItem(LS_HOY, JSON.stringify({ dia: new Date().toLocaleDateString('sv'), r })); } catch (e) {} }).catch(() => {});
   const id = sessionStorage.getItem('crm_vista');
   if (id) abrir(id, sessionStorage.getItem('crm_seg') || '').catch(() => sessionStorage.removeItem('crm_vista'));
