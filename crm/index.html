@@ -184,7 +184,9 @@
   .po { background:var(--blanco); border:2px solid var(--dorado); border-radius:16px; padding:10px 12px; margin:4px 0 12px; }
   .btn.mas { flex:none; width:38px; min-height:38px; padding:0; font-size:22px; font-weight:600; line-height:1; border-radius:50%; background:var(--verde-profundo); border-color:var(--verde-profundo); color:var(--crema); }
   .po .hd { display:flex; align-items:center; gap:8px; padding-bottom:10px; margin-bottom:2px; border-bottom:1px solid var(--linea); }
-  .po .hd + datalist + .it { border-top:0; } .po .hd h3 { margin:0; font-size:17px; } .po .hd .btn { margin-left:auto; min-height:34px; padding:5px 12px; font-size:13px; }
+  .po .hd + .it { border-top:0; }
+  .po-sugs { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; } .po-sugs .btn { min-height:34px; padding:5px 10px; font-size:13px; } .po-sugs .btn.nuevo { color:var(--verde-profundo); border-style:dashed; }
+  .po .ed > div > label { min-height:16px; } .po .hd h3 { margin:0; font-size:17px; } .po .hd .btn { margin-left:auto; min-height:34px; padding:5px 12px; font-size:13px; }
   .po .it { border-top:1px solid var(--linea); padding:10px 0; } .po .it:first-of-type { border-top:0; }
   .po .tx { font-size:14px; color:var(--tinta-suave); font-style:italic; white-space:pre-wrap; } .po .tx small { font-style:normal; margin-left:6px; }
   .po .dest { font-size:14px; margin-top:4px; } .po .dest b { color:var(--verde-profundo); } .po .dest.duda b { color:var(--alerta); }
@@ -369,7 +371,7 @@
 
 <script>
 const VERSION = '50';
-const COMPILACION = '50.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '50.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1026,21 +1028,41 @@ function paraOrdenar(caja, alCambiar) {
       .catch(() => cargar());
   };
   const editor = (x, nodo) => {
-    const persona = el('input', { list:'po-contactos', value: x.nombre || (x.nuevo ? x.nuevo.nombre : ''), placeholder:'Sin persona (queda en Hoy como "Hacer"). Si no está en el CRM, escribí el nombre' });
+    // Persona: lista propia de coincidencias mientras escribís (la del iPhone no se ve bien); "+ Crear contacto nuevo" al final
+    const nrm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    let elegida = x.id ? { id: x.id, nombre: x.nombre } : x.nuevo ? { nuevo: x.nuevo.nombre } : null;
+    const persona = el('input', { value: x.nombre || (x.nuevo ? x.nuevo.nombre : ''), autocomplete:'off', placeholder:'Escribí el nombre (vacío = sin persona, queda como "Hacer")' });
+    const sugs = el('div', { cls:'po-sugs' });
+    const sugerir = () => {
+      const q = nrm(persona.value); elegida = null; sugs.replaceChildren();
+      if (q.length < 2) return;
+      // Coincide si empieza igual, contiene el texto, o tiene una sola letra distinta (Mary → Mery)
+      const ok = c => { const n = nrm(c.nombre); return n.startsWith(q) || n.split(' ').some(w => w.startsWith(q)) || n.includes(q) || (q.length >= 3 && n.split(' ').some(w => { const p = w.slice(0, q.length); return p.length === q.length && [...p].filter((ch, i) => ch !== q[i]).length <= 1; })); };
+      const xs = contactos.filter(ok).sort((a, b) => (b.activo ? 1 : 0) - (a.activo ? 1 : 0) || (nrm(a.nombre).startsWith(q) ? 0 : 1) - (nrm(b.nombre).startsWith(q) ? 0 : 1)).slice(0, 6);
+      sugs.replaceChildren(...xs.map(c => el('button', { cls:'btn', type:'button', onclick: () => { elegida = { id: c.id, nombre: c.nombre }; persona.value = c.nombre; sugs.replaceChildren(); } }, etiq(c))),
+        el('button', { cls:'btn nuevo', type:'button', onclick: () => { elegida = { nuevo: persona.value.trim() }; sugs.replaceChildren(el('div', { cls:'actual' }, 'Se va a crear como contacto nuevo.')); } }, '+ Crear contacto nuevo: "' + persona.value.trim() + '"'));
+    };
+    persona.addEventListener('input', sugerir);
     const nota = el('textarea', { style:'min-height:60px' }); nota.value = x.nota || '';
-    const paso = el('input', { value: x.paso || '', placeholder:'Ej.: Confirmarle la visita' });
+    const paso = el('input', { value: x.paso || '', placeholder:'Ej.: Llamarla para ver si vio las opciones' });
     const fecha = el('input', { type:'date', value: x.fecha || '' }), hora = el('input', { type:'time', value: x.hora || '', step:'300' });
     const campo = (t, i, ancho) => el('div', { cls: ancho ? 'ancho2' : '' }, el('label', {}, t), i);
     // Día y hora solo si los agregás: el iPhone muestra la fecha de hoy en los campos vacíos y parece que ya estuvieran puestos
-    const diaHora = el('div', { cls:'ancho2 ed', style:'margin:0' }, campo('Día', fecha), campo('Hora (aviso en el calendario)', hora),
+    const diaHora = el('div', { cls:'ancho2 ed', style:'margin:0' }, campo('Día', fecha), campo('Hora', hora),
       el('a', { href:'#', cls:'ancho2', style:'font-size:13px;color:var(--alerta)', onclick: e => { e.preventDefault(); fecha.value = ''; hora.value = ''; diaHora.style.display = 'none'; agregar.style.display = ''; } }, 'Sacar día y hora'));
     const agregar = el('button', { cls:'btn ancho2', type:'button', onclick: () => { if (!fecha.value) fecha.value = isoLocal(new Date()); diaHora.style.display = ''; agregar.style.display = 'none'; } }, '+ Agregar día y hora');
     if (x.fecha) agregar.style.display = 'none'; else diaHora.style.display = 'none';
     nodo.replaceChildren(el('div', { cls:'tx' }, '“' + x.texto + '”'), el('div', { cls:'ed' },
-      campo('Persona', persona, true), campo('Nota (queda en su historial)', nota, true),
-      campo('Próximo paso de la persona (o, sin persona, qué hacer)', paso, true), agregar, diaHora),
+      el('div', { cls:'ancho2' }, el('label', {}, 'Persona'), persona, sugs), campo('Nota (queda en su historial)', nota, true),
+      campo('Qué hacer (próximo paso)', paso, true), agregar, diaHora,
+      el('div', { cls:'ancho2 actual', style:'font-size:12px' }, 'Con hora te llega un aviso en el calendario. Para una visita con dirección, usá Agenda en la ficha.')),
       el('div', { cls:'bt' }, el('button', { cls:'btn pri', onclick: () => {
-        const nom = persona.value.trim(), c = contactos.find(k => k.nombre === nom);
+        const nom = persona.value.trim();
+        let c = elegida && elegida.id ? elegida : null;
+        if (!c && nom && !(elegida && elegida.nuevo)) {   // sin elegir de la lista: vale si coincide con uno solo
+          const xs = contactos.filter(k => nrm(k.nombre) === nrm(nom));
+          if (xs.length === 1) c = xs[0]; else return toast('Elegí la persona de la lista (o "+ Crear contacto nuevo")', true);
+        }
         Object.assign(x, { id: c ? c.id : '', nombre: c ? c.nombre : '', candidatos: [], alternativas: [], nuevo: nom && !c ? { nombre: nom, vende: false } : null,
           nota: nota.value.trim(), paso: paso.value.trim(), fecha: fecha.value, hora: hora.value });
         if (!x.id && !x.nuevo && !x.paso && x.nota) { x.paso = x.nota; x.nota = ''; }
@@ -1097,7 +1119,6 @@ function paraOrdenar(caja, alCambiar) {
     caja.replaceChildren(items.length ? el('div', { cls:'po' },
       el('div', { cls:'hd' }, el('h3', {}, 'Para ordenar'), el('span', { cls:'c', style:'font-size:13px;font-weight:700;color:var(--crema);background:var(--tinta);border-radius:999px;padding:1px 8px' }, items.length),
         el('button', { cls:'btn mas', 'aria-label':'Anotar', onclick: pegar }, '+')),
-      el('datalist', { id:'po-contactos' }, ...contactos.map(c => el('option', { value:c.nombre }))),
       ...items.map(fila),
       ok.length ? el('button', { cls:'btn pri ancho', style:'margin-top:6px', onclick: () => confirmar(ok) }, 'Confirmar todo (' + ok.length + ')') : '')
       : el('div', { cls:'actual', style:'margin:0 2px 8px;display:flex;gap:8px;align-items:center' }, 'Para ordenar: nada pendiente.',
