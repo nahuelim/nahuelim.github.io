@@ -368,7 +368,7 @@
 
 <script>
 const VERSION = '49';
-const COMPILACION = '49.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '49.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -989,15 +989,20 @@ function verBuscar() {
       : el('div', { cls:'vacio' }, 'Nadie en este filtro.'));
   };
   const chips = el('div', { cls:'grid4' });
-  l.replaceChildren(po, el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:2px 2px 8px' }, el('h2', { style:'margin:0' }, 'Cartera'),
-    el('button', { cls:'btn sec', style:'flex:none;min-height:36px;padding:6px 14px;font-size:13px', onclick: () => datos && verBusquedas(datos) }, 'Búsquedas')), chips, res, caja);
+  l.replaceChildren(caja, po, el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:2px 2px 8px' }, el('h2', { style:'margin:0' }, 'Cartera'),
+    el('button', { cls:'btn sec', style:'flex:none;min-height:36px;padding:6px 14px;font-size:13px', onclick: () => datos && verBusquedas(datos) }, 'Búsquedas')), chips, res);
   pintar();
   const cargar = () => api('api_cartera').then(g => { datos = g; pintar(); }).catch(() => {});
   cargar();
   paraOrdenar(po, cargar);
   // Desde Hoy: "N contactos sin forma de pago o temperatura" abre esa lista
-  if (sessionStorage.getItem('crm_lista') === 'incompletos') { sessionStorage.removeItem('crm_lista'); api('api_lista', 'incompletos').then(xs => caja.replaceChildren(
-    el('h2', { style:'margin:14px 2px 6px' }, 'Para completar (' + xs.length + ')'), ...xs.map(x => filaCartera(x, null)))).catch(() => {}); }
+  // Si es uno solo, abre su ficha; si son varios, la lista va arriba de todo (con × para cerrarla)
+  if (sessionStorage.getItem('crm_lista') === 'incompletos') { sessionStorage.removeItem('crm_lista'); api('api_lista', 'incompletos').then(xs => {
+    if (xs.length === 1) return abrir(xs[0].id, 'contacto');
+    caja.replaceChildren(el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:4px 2px 6px' }, el('h2', { style:'margin:0' }, 'Sin forma de pago o temperatura (' + xs.length + ')'),
+      el('button', { cls:'chip chico', type:'button', onclick: () => caja.replaceChildren() }, '×')), ...xs.map(x => filaCartera(x, null)));
+    window.scrollTo(0, 0);
+  }).catch(() => {}); }
 }
 
 // Para ordenar: lo que anotaste con el atajo, con el destino que propone el CRM. Confirmar · Editar · Descartar; "Confirmar todo" arriba.
