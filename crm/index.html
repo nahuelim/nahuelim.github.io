@@ -371,7 +371,7 @@
 
 <script>
 const VERSION = '50';
-const COMPILACION = '50.4';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '50.5';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1884,7 +1884,7 @@ async function abrir(id, seg, ya) {
     barra.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.k === key));
     if (!vistas[key]) { pend = null; vistas[key] = el('div', {}, ...SEGMENTOS.find(s => s[0] === key)[2]()); if (pend) pends[key] = pend; pend = juntar; }
     cuerpo.replaceChildren(vistas[key]);
-    if (Object.keys(pends).length) cuerpo.append(barraGuardar);
+    // ponytail: sin barra de Guardar: se guarda al cerrar la ficha (pregunta Guardar y salir · Seguir editando · Salir sin guardar)
     marcar(); p.scrollTop = 0;
   };
   // En captura: así se entera aunque un control frene el toque (el selector de temperatura lo hace, para no abrir la ficha desde Hoy)
