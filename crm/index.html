@@ -375,8 +375,8 @@
 <div id="cargando">Cargando</div>
 
 <script>
-const VERSION = '50';
-const COMPILACION = '50.7';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const VERSION = '51';
+const COMPILACION = '51';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -449,7 +449,9 @@ function el(tag, attrs, ...hijos) {
   return e;
 }
 let toastT;
+// ponytail: solo errores. Lo demás ("Guardado", "Copiado"...) no se muestra: alcanza con la línea dorada de arriba.
 function toast(m, error) {
+  if (!error) return;
   const t = document.getElementById('toast');
   t.textContent = m; t.className = error ? 'error' : ''; t.style.display = 'block';
   clearTimeout(toastT); t.onclick = () => t.style.display = 'none';
@@ -808,7 +810,6 @@ function pintarHoy(r, viejo) {
   const l = document.getElementById('lista');
   LINKS = r.links || {};
   l.replaceChildren();
-  if (viejo) l.append(el('div', { cls:'actual', style:'margin:0 2px 6px' }, 'Actualizando…'));
   if (r.version !== VERSION) l.append(el('div', { cls:'aviso' }, 'El servidor (Code.gs) es la versión ' + (r.version || '?') + ' y la app es la ' + VERSION + '. Actualizá Code.gs y publicá una "Nueva versión".'));
   const L = k => r[k] || [];
   const hoyISO = new Date().toLocaleDateString('sv');
@@ -1385,7 +1386,7 @@ async function abrir(id, seg, ya) {
     const x = juntar();
     const nueva = await api('api_lote', id, x.campos || {}, x.nota || '', x.error ? null : (x.proximo || null), [tipo, detalle || '', texto || '']);
     refrescar();
-    if (x.accion) return toast('Registrado. Falta guardar lo que pasó');
+    if (x.accion) return toast('Registrado. Falta guardar lo que pasó', true);
     pend = null; toast('Guardado'); reabrir(nueva);
   };
   // Después de guardar se vuelve a dibujar la ficha, pero solo si seguís en ella (si la cerraste, no se reabre)
@@ -1816,12 +1817,29 @@ async function abrir(id, seg, ya) {
       el('div', { cls:'card' }, el('h3', {}, 'Etapa de venta'), etapa),
       el('div', { cls:'card' }, el('h3', {}, 'Qué vende'), f.nodo),
       seg.nodo,
+      tarjetaYaNoVende(),
       el('div', { cls:'card' }, el('h3', {}, 'Compradores que matchean (' + mVenta.length + ')'), mVenta.length ? mVenta.map(filaMatch) : el('div', { cls:'vacio' }, 'Sin compradores que matcheen.')),
       (r.acms || []).length ? el('div', { cls:'card' }, el('h3', {}, 'ACM'), ...r.acms.map(a => el('div', { cls:'match' }, el('div', { style:'flex:1' }, a.fecha + ' · ' + a.direccion), a.link ? el('a', { href:a.link, target:'_blank', rel:'noopener' }, 'Ver ACM') : ''))) : '',
       ['CAPTAR','PRELISTING','ACM','NO CAPTADA','CON OTRA INMO'].includes(d['ETAPA VENTA']) ? el('div', { cls:'card' }, el('h3', {}, 'Placa'),
         r.placa ? [el('div', { cls:'actual', style:'margin-bottom:8px' }, 'Abrila, descargala y mandásela por WhatsApp.'), el('a', { cls:'btn ancho', href:r.placa, target:'_blank', rel:'noopener' }, 'Ver la placa')]
                 : el('div', { cls:'vacio' }, 'No hay placa para su barrio, tipo y ambientes. Si la armás, cargala en la pestaña PLACAS del Sheet.')) : ''
     ];
+  };
+  // Ya no vende: queda en el historial qué vendía y por qué; se limpia todo lo de venta y el Rol pasa a Compra (o vacío)
+  const tarjetaYaNoVende = () => {
+    if (!d['VENDE TIPO'] && !d['ETAPA VENTA'] && !['VENDEDOR','AMBOS'].includes(d.ROL)) return '';
+    if (d['ETAPA VENTA'] === 'VENDIDA') return '';   // vendida con vos: es una operación cerrada, no "ya no vende"
+    const motivo = select(['Decidió no vender', 'Vendió con otro'], 'Decidió no vender');
+    return el('details', { cls:'card' }, el('summary', { style:'cursor:pointer' }, el('h3', { style:'display:inline;color:var(--alerta)' }, 'Ya no vende')),
+      el('div', { cls:'actual', style:'margin:8px 0' }, 'Borra todo lo de venta (qué vende, etapa y seguimiento) y deja en el historial qué vendía. Si también compra, queda como comprador.'),
+      el('div', { cls:'grid2' }, motivo, el('button', { cls:'btn peligro', onclick: async () => {
+        if (!confirm('¿' + String(d.NOMBRE).split(' - ')[0] + ' ya no vende? Motivo: ' + motivo.value)) return;
+        const x = juntar();
+        if (x.accion || Object.keys(x.campos || {}).length) await api('api_lote', id, x.campos || {}, x.nota || '', x.error ? null : (x.proximo || null), x.accion || null);
+        const res = await api('api_yaNoVende', id, motivo.value);
+        if (/forma de pago/.test(res)) toast(res, true);
+        refrescar(); reabrir();
+      }}, 'Ya no vende')));
   };
   // Vendedor no captado: revisar si publico con otra inmobiliaria, guardar la prueba y recaptar
   const tarjetaSeguimiento = () => {
@@ -1872,7 +1890,7 @@ async function abrir(id, seg, ya) {
   };
 
   // Historial en palabras (en el Sheet queda el código: CONTACTO, PROXIMO, LLAMADA_NO...)
-  const TIPO_TXT = { CONTACTO:'Qué pasó', PROXIMO:'Próximo paso', LLAMADA_NO:'No contestó', LLAMADA_SI:'Contestó la llamada', RESPONDIO:'Contestó', MENSAJE:'Mensaje',
+  const TIPO_TXT = { NO_VENDE:'Dejó de vender', OCULTAR_FICHA:'No mostrar ficha', MOSTRAR_FICHA:'Volver a mostrar ficha', CONTACTO:'Qué pasó', PROXIMO:'Próximo paso', LLAMADA_NO:'No contestó', LLAMADA_SI:'Contestó la llamada', RESPONDIO:'Contestó', MENSAJE:'Mensaje',
     OPCIONES:'Le mandaste opciones', NO_GUSTO:'No le gustó', REVISION:'Revisaste si publicó', NOTA:'Nota', ALTA:'Alta', DESCARTAR:'Archivado', AVISO:'Confirmación enviada', EVENTO:'Evento', 'EVENTO CORREGIDO':'Evento corregido' };
   const detalleTxt = x => {
     if (x.tipo !== 'PROXIMO') return x.detalle;
