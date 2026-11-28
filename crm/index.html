@@ -304,7 +304,6 @@
   .icono { background:none; border:0; color:var(--crema); width:44px; height:44px; border-radius:22px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; }
   .icono svg { width:24px; height:24px; }
   .ficha-head h1 { font-size:22px; font-weight:700; letter-spacing:-.01em; line-height:1.2; margin:0; flex:1; min-width:0; }
-  .ficha-head .mono { height:26px; flex:none; opacity:.95; }
   .etiqueta { margin:6px 4px 0; display:flex; align-items:center; gap:10px; font-size:14px; }
   .etiqueta span { flex:1; opacity:.88; }
   .etiqueta button { background:rgba(247,244,236,.12); border:0; color:var(--dorado); border-radius:999px; padding:6px 12px; font-size:13px; font-weight:600; white-space:nowrap; }
@@ -376,7 +375,7 @@
 
 <script>
 const VERSION = '51';
-const COMPILACION = '51.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '51.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -1234,7 +1233,13 @@ function armarMenu() {
   const link = (texto, url, nota) => url
     ? el('a', { href:url, target:'_blank', rel:'noopener', onclick: () => menu(false) }, texto, nota ? el('small', {}, nota) : '')
     : el('button', { cls:'op', onclick: () => toast('Todavía cargando, probá en un segundo') }, texto);
-  const op = (texto, fn, cls) => el('button', { cls:'op' + (cls ? ' ' + cls : ''), onclick: () => { menu(false); fn(); } }, texto);
+  // Las pantallas de la app se dibujan debajo de la ficha: primero se cierra (con la pregunta si hay cambios).
+  const fichaAbierta = () => document.getElementById('ficha').classList.contains('abierta');
+  const op = (texto, fn, cls) => el('button', { cls:'op' + (cls ? ' ' + cls : ''), onclick: async () => {
+    menu(false);
+    if (fichaAbierta()) { await cerrar(); if (fichaAbierta()) return; }
+    fn();
+  } }, texto);
   document.getElementById('menu').replaceChildren(
     el('div', { cls:'cab' }, el('img', { src:'../assets/nl-lockup-tinta.svg', alt:'Nahuel Lim' }), el('button', { 'aria-label':'Cerrar menú', icon:'cerrar', onclick: () => menu(false) })),
     el('div', { cls:'grupo' }, 'Herramientas'),
@@ -1944,7 +1949,7 @@ async function abrir(id, seg, ya) {
       el('div', { cls:'barra' },
         el('button', { cls:'icono', 'aria-label':'Cerrar', icon:'cerrar', onclick: cerrar }),
         el('h1', {}, String(d.NOMBRE || '').split(' - ')[0]),
-        el('img', { cls:'mono', src:'../assets/nl-mono-crema.svg', alt:'NL' })),
+        el('button', { cls:'icono', 'aria-label':'Menú', icon:'burger', onclick: () => { armarMenu(); menu(true); } })),
       r.etiqueta.includes(' - ') ? el('div', { cls:'etiqueta' }, el('span', {}, r.etiqueta.split(' - ').slice(1).join(' - '))) : '',
       el('div', { cls:'estado-linea' }, el('span', { cls:'pill' }, d.ESTADO || 'Sin estado'),
         d['ETAPA COMPRA'] ? el('span', { cls:'pill' }, 'Compra: ' + (ETAPA_C_TXT[d['ETAPA COMPRA']] || d['ETAPA COMPRA'])) : '',
