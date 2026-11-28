@@ -196,8 +196,8 @@
   .po .ed { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; } .po .ed .ancho2 { grid-column:1 / -1; } .po .ed label { font-size:12px; color:var(--tinta-suave); margin:0; }
   /* Cartera tipo planilla */
   .pl { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-bottom:10px; }
-  .pl .gh { background:var(--crema); padding:8px 10px; font-weight:700; color:var(--tinta-suave); font-size:12px; letter-spacing:.05em; text-transform:uppercase; display:flex; border-top:1px solid var(--linea); }
-  h3.lado { display:flex; font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta); margin:22px 2px 8px; }
+  .pl .gh { background:#ECE6D8; padding:8px 10px; font-weight:700; color:var(--tinta-suave); font-size:12px; letter-spacing:.05em; text-transform:uppercase; display:flex; border-top:1px solid var(--linea); }
+  h3.lado { display:flex; font-size:18px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta); margin:22px 2px 8px; }
   h3.lado:first-child { margin-top:4px; } h3.lado span { margin-left:auto; color:var(--tinta-suave); font-weight:600; }
   .pl .gh:first-child { border-top:0; } .pl .gh span { margin-left:auto; }
   .pl .fr { display:grid; grid-template-columns:1.15fr 1.25fr 1fr; gap:8px; padding:9px 10px; border-top:1px solid var(--linea); cursor:pointer; font-size:13px; align-items:start; }
@@ -377,7 +377,7 @@
 
 <script>
 const VERSION = '51';
-const COMPILACION = '51.4';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '51.5';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -999,7 +999,7 @@ function verBuscar() {
     const orden = (a, b) => (aISO(a.vuelveFecha || '') || '0') < (aISO(b.vuelveFecha || '') || '0') ? -1 : 1;
     // Dos planillas separadas: Vendedores y Compradores. En cada una, el subtítulo muestra solo su parte ("Vende…" o "Compra…").
     const lados = [['Vendedores', GRUPOS_CARTERA.slice(0, 4), 'vende'], ['Compradores', GRUPOS_CARTERA.slice(4), 'compra']].map(([lado, grupos, parte]) =>
-      [lado, parte, grupos.map(([titulo, fn]) => [titulo.split(' · ')[1], activos.filter(x => fn(x) && f(x)).sort(orden)]).filter(g => g[1].length)]).filter(l => l[2].length);
+      [lado, parte, grupos.map(([titulo, fn]) => [titulo.split(' · ')[1], activos.filter(x => fn(x) && f(x)).sort(orden)]).filter(g => g[1].length)]).filter(l => l[2].length && !(filtro === 'vend' && l[1] === 'compra') && !(filtro === 'comp' && l[1] === 'vende'));
     res.replaceChildren(...(lados.length ? lados.flatMap(([lado, parte, bloques]) => [el('h3', { cls:'lado' }, lado, el('span', {}, bloques.reduce((n, b) => n + b[1].length, 0))),
       el('div', { cls:'pl' }, ...bloques.flatMap(([titulo, xs], i) => [el('div', { cls:'gh' }, titulo, el('span', {}, xs.length)),
         i ? '' : el('div', { cls:'cab' }, el('span', {}, 'Quién'), el('span', {}, 'Qué pasó'), el('span', {}, 'Próximo paso')), ...xs.map(x => filaPlanilla(x, parte))]))])
