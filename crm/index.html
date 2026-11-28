@@ -197,6 +197,8 @@
   /* Cartera tipo planilla */
   .pl { background:var(--blanco); border:1px solid var(--linea); border-radius:12px; overflow:hidden; margin-bottom:10px; }
   .pl .gh { background:var(--crema); padding:8px 10px; font-weight:700; color:var(--tinta-suave); font-size:12px; letter-spacing:.05em; text-transform:uppercase; display:flex; border-top:1px solid var(--linea); }
+  h3.lado { display:flex; font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--tinta); margin:22px 2px 8px; }
+  h3.lado:first-child { margin-top:4px; } h3.lado span { margin-left:auto; color:var(--tinta-suave); font-weight:600; }
   .pl .gh:first-child { border-top:0; } .pl .gh span { margin-left:auto; }
   .pl .fr { display:grid; grid-template-columns:1.15fr 1.25fr 1fr; gap:8px; padding:9px 10px; border-top:1px solid var(--linea); cursor:pointer; font-size:13px; align-items:start; }
   .pl .fr b { display:block; font-size:14.5px; } .pl .fr small { display:block; color:var(--tinta-suave); font-size:12px; line-height:1.3; }
@@ -375,7 +377,7 @@
 
 <script>
 const VERSION = '51';
-const COMPILACION = '51.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '51.4';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -968,14 +970,16 @@ function filaCartera(x, hoyIds, extra) {
     extra || '');
 }
 // Fila de la planilla: Quién · Qué pasó · Próximo paso (en rojo si está atrasado o falta)
-function filaPlanilla(x) {
+function filaPlanilla(x, parte) {
+  // "Vende PH 4amb… / Compra Depto…": en cada lado, solo lo suyo
+  const resumen = (parte && String(x.resumen || '').split(' / ').find(t => t.toLowerCase().startsWith(parte))) || x.resumen;
   const hoyISO = isoLocal(new Date()), vf = aISO(x.vuelveFecha || '');
   const [fechaTxt, ...resto] = String(x.vuelve || '').split(' · ');
   const accion = resto.join(' · ') || (String(x.vuelve).includes('(CRM)') ? 'lo decide el CRM' : '');
   const px = !vf ? 'sin próximo paso' : vf === hoyISO ? 'hoy' + (x.hora ? ' ' + x.hora : '') : fechaTxt + (x.hora ? ' ' + x.hora : '');
   const [ultFecha, ...ultTipo] = String(x.ultimo || '').split(' · ');
   return el('div', { cls:'fr', onclick: () => abrir(x.id, 'contacto') },
-    el('span', {}, el('b', {}, String(x.nombre).split(' - ')[0]), x.resumen ? el('small', {}, x.resumen) : ''),
+    el('span', {}, el('b', {}, String(x.nombre).split(' - ')[0]), resumen ? el('small', {}, resumen) : ''),
     el('span', {}, x.ultimo ? el('small', {}, el('b', { style:'display:inline;font-size:12px' }, ultFecha), x.nota ? ' · ' + x.nota : ultTipo.length ? ' · ' + ultTipo.join(' · ') : '') : el('small', {}, 'sin contactos')),
     el('span', { cls:'px' + (!vf || vf < hoyISO ? ' rojo' : vf === hoyISO ? ' hoy' : '') }, px, el('small', {}, !vf ? 'tocá para ponerlo' : accion)));
 }
@@ -993,10 +997,13 @@ function verBuscar() {
     const f = FILTROS.find(x => x[0] === filtro)[2];
     // Dentro de cada etapa: sin próximo paso arriba, después por fecha (lo atrasado primero)
     const orden = (a, b) => (aISO(a.vuelveFecha || '') || '0') < (aISO(b.vuelveFecha || '') || '0') ? -1 : 1;
-    const bloques = GRUPOS_CARTERA.map(([titulo, fn]) => [titulo, activos.filter(x => fn(x) && f(x)).sort(orden)]).filter(g => g[1].length);
-    res.replaceChildren(bloques.length ? el('div', { cls:'pl' }, ...bloques.flatMap(([titulo, xs], i) => [el('div', { cls:'gh' }, titulo, el('span', {}, xs.length)),
-      i ? '' : el('div', { cls:'cab' }, el('span', {}, 'Quién'), el('span', {}, 'Qué pasó'), el('span', {}, 'Próximo paso')), ...xs.map(filaPlanilla)]))
-      : el('div', { cls:'vacio' }, 'Nadie en este filtro.'));
+    // Dos planillas separadas: Vendedores y Compradores. En cada una, el subtítulo muestra solo su parte ("Vende…" o "Compra…").
+    const lados = [['Vendedores', GRUPOS_CARTERA.slice(0, 4), 'vende'], ['Compradores', GRUPOS_CARTERA.slice(4), 'compra']].map(([lado, grupos, parte]) =>
+      [lado, parte, grupos.map(([titulo, fn]) => [titulo.split(' · ')[1], activos.filter(x => fn(x) && f(x)).sort(orden)]).filter(g => g[1].length)]).filter(l => l[2].length);
+    res.replaceChildren(...(lados.length ? lados.flatMap(([lado, parte, bloques]) => [el('h3', { cls:'lado' }, lado, el('span', {}, bloques.reduce((n, b) => n + b[1].length, 0))),
+      el('div', { cls:'pl' }, ...bloques.flatMap(([titulo, xs], i) => [el('div', { cls:'gh' }, titulo, el('span', {}, xs.length)),
+        i ? '' : el('div', { cls:'cab' }, el('span', {}, 'Quién'), el('span', {}, 'Qué pasó'), el('span', {}, 'Próximo paso')), ...xs.map(x => filaPlanilla(x, parte))]))])
+      : [el('div', { cls:'vacio' }, 'Nadie en este filtro.')]));
   };
   const chips = el('div', { cls:'grid4' });
   l.replaceChildren(caja, po, el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:2px 2px 8px' }, el('h2', { style:'margin:0' }, 'Cartera'),
