@@ -375,7 +375,7 @@
 
 <script>
 const VERSION = '51';
-const COMPILACION = '51.2';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '51.3';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -2017,7 +2017,7 @@ function avisoBorrador() {
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { estadoAuto = autoGuardarFicha && document.getElementById('ficha').classList.contains('abierta') ? autoGuardarFicha() : null; return; }
-  if (estadoAuto === 'guardado') { const id = sessionStorage.getItem('crm_vista'); fichaSucia = () => false; if (id) abrir(id); }
+  if (estadoAuto === 'guardado') { const id = sessionStorage.getItem('crm_vista'); fichaSucia = () => false; hoyPendiente = true; if (id) abrir(id); }   // al cerrar la ficha, Cartera/Hoy se actualizan
   estadoAuto = null;
   setTimeout(avisoBorrador, 300);
 });
