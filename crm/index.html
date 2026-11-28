@@ -376,7 +376,7 @@
 
 <script>
 const VERSION = '51';
-const COMPILACION = '51';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
+const COMPILACION = '51.1';   // cambia con cada ajuste de la app (sin cambiar Code.gs): se ve en Ajustes                               // tiene que coincidir con VERSION en Code.gs
 const waUrl = (tel, texto) => 'https://wa.me/' + tel + (texto ? '?text=' + encodeURIComponent(texto) : '');   // abre la app de WhatsApp instalada
 const BLOQUEO_MIN = 60;                            // minutos en segundo plano antes de pedir Face ID de nuevo
 const LS = { url:'crm_url', key:'crm_key', cred:'crm_cred' };
@@ -627,7 +627,8 @@ let ocultoDesde = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { ocultoDesde = Date.now(); marcarActivo(); return; }
   if (localStorage.getItem(LS.cred) && ocultoDesde && Date.now() - ocultoDesde > BLOQUEO_MIN * 60000) return pantallaBloqueo();
-  setTimeout(refrescar, 800);                        // al volver de WhatsApp o del telefono (la red tarda en despertar)
+  // Al volver: si fue un rato (menos de 5 minutos), queda como estaba; si no, se actualiza por detrás sin vaciar la pantalla
+  if (ocultoDesde && Date.now() - ocultoDesde > 5 * 60000) setTimeout(refrescar, 800);
 });
 
 // ─── listas ───
@@ -983,7 +984,8 @@ function verBuscar() {
   tabs('tBuscar');
   const l = document.getElementById('lista');
   const caja = el('div'), res = el('div'), po = el('div');
-  let datos = null, filtro = FILTROS.some(f => f[0] === sessionStorage.getItem('crm_filtro')) ? sessionStorage.getItem('crm_filtro') : 'todos';
+  let datos = (() => { try { return JSON.parse(localStorage.getItem('crm_cartera_cache') || 'null'); } catch (e) { return null; } })(),
+    filtro = FILTROS.some(f => f[0] === sessionStorage.getItem('crm_filtro')) ? sessionStorage.getItem('crm_filtro') : 'todos';
   const pintar = () => {
     if (!datos) return res.replaceChildren(el('div', { cls:'vacio' }, 'Cargando la cartera…'));
     const activos = datos.personas.filter(enCartera);
@@ -1001,7 +1003,11 @@ function verBuscar() {
   l.replaceChildren(caja, po, el('div', { cls:'fila', style:'align-items:center;justify-content:space-between;margin:2px 2px 8px' }, el('h2', { style:'margin:0' }, 'Cartera'),
     el('button', { cls:'btn sec', style:'flex:none;min-height:36px;padding:6px 14px;font-size:13px', onclick: () => datos && verBusquedas(datos) }, 'Búsquedas')), chips, res);
   pintar();
-  const cargar = () => api('api_cartera').then(g => { datos = g; pintar(); }).catch(() => {});
+  const cargar = () => api('api_cartera').then(g => {
+    if (!document.getElementById('tBuscar').classList.contains('on')) return;
+    const y = window.scrollY; datos = g; pintar(); window.scrollTo(0, y);
+    try { localStorage.setItem('crm_cartera_cache', JSON.stringify(g)); } catch (e) {}
+  }).catch(() => {});
   cargar();
   paraOrdenar(po, cargar);
   // Desde Hoy: "N contactos sin forma de pago o temperatura" abre esa lista
@@ -1018,6 +1024,7 @@ function verBuscar() {
 // Se ve entero y abierto, para leerlo de una pasada. Lo que confirmás va a la ficha de esa persona (nota y/o próximo paso) o queda como tarea.
 function paraOrdenar(caja, alCambiar) {
   let items = [], contactos = [];
+  try { const c = JSON.parse(localStorage.getItem('crm_bandeja_cache') || 'null'); if (c) { items = c.items || []; contactos = c.contactos || []; } } catch (e) {}
   const fechaTxt = (f, h) => { if (!f) return ''; const [y, m, d] = f.split('-'); const hoy = isoLocal(new Date()); return (f === hoy ? 'hoy' : d + '/' + m) + (h ? ' ' + h : ''); };
   const destino = x => x.id
     ? el('div', { cls:'dest' }, '→ ', el('b', {}, (x.nota ? 'Nota' : '') + (x.nota && (x.fecha || x.paso) ? ' + ' : '') + (x.fecha || x.paso ? 'paso ' + (fechaTxt(x.fecha, x.hora) || 'hoy') : '') + (!x.nota && !x.fecha && !x.paso ? 'Nada para guardar' : '') + ' en ' + x.nombre),
@@ -1130,7 +1137,11 @@ function paraOrdenar(caja, alCambiar) {
       : el('div', { cls:'actual', style:'margin:0 2px 8px;display:flex;gap:8px;align-items:center' }, 'Para ordenar: nada pendiente.',
         el('button', { cls:'btn mas', style:'margin-left:auto', 'aria-label':'Anotar', onclick: pegar }, '+')));
   };
-  const cargar = () => api('api_bandeja').then(b => { items = b.items; contactos = b.contactos; pintar(); }).catch(() => {});
+  const cargar = () => api('api_bandeja').then(b => {
+    items = b.items; contactos = b.contactos;
+    const y = window.scrollY; pintar(); window.scrollTo(0, y);
+    try { localStorage.setItem('crm_bandeja_cache', JSON.stringify(b)); } catch (e) {}
+  }).catch(() => {});
   pintar(); cargar();
 }
 
@@ -1293,7 +1304,7 @@ function verCerrarSesion() {
       confirmar,
       el('div', { style:'margin-top:10px' }, el('button', { cls:'btn peligro ancho', onclick: () => {
         if (confirmar.value.trim().toUpperCase() !== 'CERRAR') return toast('Escribí CERRAR para confirmar', true);
-        Object.values(LS).forEach(k => localStorage.removeItem(k)); localStorage.removeItem(LS_HOY); pantallaConfig();
+        Object.values(LS).forEach(k => localStorage.removeItem(k)); localStorage.removeItem(LS_HOY); ['crm_cartera_cache', 'crm_bandeja_cache', 'crm_borrador', 'crm_tiempos'].forEach(k => localStorage.removeItem(k)); pantallaConfig();
       }}, 'Confirmar cierre de sesión')),
       el('div', { style:'margin-top:10px' }, el('button', { cls:'btn ancho', onclick: verHoy }, 'Cancelar'))));
 }
